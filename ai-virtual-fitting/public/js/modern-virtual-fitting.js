@@ -54,24 +54,24 @@
             e.stopPropagation();
             // Only trigger file input if no preview exists and click wasn't on file input itself
             if (!$(this).find('.image-preview').length && e.target.id !== 'customer-image-input') {
-                $('#customer-image-input').click();
+                $('#customer-image-input').trigger('click');
             }
         });
         
-        // Change photo button
-        $(document).on('click', '.change-photo-btn', function(e) {
-            e.stopPropagation();
-            e.preventDefault();
-            $('#customer-image-input').click();
-        });
-        
-        // Clear photo button
-        $(document).on('click', '.clear-photo-btn', function(e) {
+        // Reset button
+        $(document).on('click', '.reset-btn', function(e) {
             e.stopPropagation();
             e.preventDefault();
             clearImagePreview();
             tempFileName = null;
             updateTryOnButton();
+        });
+        
+        // Download button
+        $(document).on('click', '.download-btn', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            handleDownloadImage();
         });
         
         // Action buttons
@@ -369,8 +369,25 @@
         uploadArea.append(preview);
         uploadArea.addClass('has-preview');
         
-        // Show floating buttons
-        uploadArea.find('.floating-buttons').show();
+        // Debug: Check buttons
+        console.log('Upload area has-preview class:', uploadArea.hasClass('has-preview'));
+        console.log('Floating buttons found:', uploadArea.find('.floating-buttons').length);
+        console.log('Reset button found:', uploadArea.find('.reset-btn').length);
+        console.log('Download button found:', uploadArea.find('.download-btn').length);
+        
+        // Show floating buttons explicitly
+        const floatingButtons = uploadArea.find('.floating-buttons');
+        floatingButtons.show().css({
+            'display': 'flex',
+            'visibility': 'visible',
+            'opacity': '1'
+        });
+        
+        // Debug: Check visibility
+        setTimeout(() => {
+            console.log('Floating buttons visible:', floatingButtons.is(':visible'));
+            console.log('Floating buttons display:', floatingButtons.css('display'));
+        }, 100);
         
         // Update button states
         updateTryOnButton();
@@ -587,6 +604,27 @@
                 $(this).hide();
             }
         });
+    }
+
+    /**
+     * Handle download image
+     */
+    function handleDownloadImage() {
+        const imagePreview = $('#upload-area .image-preview');
+        if (!imagePreview.length) {
+            showMessage('No image to download.', 'error');
+            return;
+        }
+
+        // Create download link
+        const link = document.createElement('a');
+        link.href = imagePreview.attr('src');
+        link.download = 'uploaded-image.jpg';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showMessage('Image downloaded successfully!', 'success');
     }
 
     /**

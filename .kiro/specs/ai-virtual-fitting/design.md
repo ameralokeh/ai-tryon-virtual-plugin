@@ -307,6 +307,61 @@ Based on the prework analysis, I'll convert the testable acceptance criteria int
 *For any* number of concurrent users, the system should process requests asynchronously, implement appropriate caching, and provide load feedback when necessary
 **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5, 10.6**
 
+## UI/UX Design Enhancements
+
+### Three-Panel Layout Design
+
+The plugin uses a modern three-panel layout optimized for virtual fitting workflows:
+
+**Left Panel (400px fixed)**: Upload & Virtual Result
+- Customer image upload area with drag & drop support
+- Virtual fitting result display
+- Floating action buttons overlaid on images
+- Smooth transitions between upload and result states
+
+**Center Panel (flexible)**: Main Product Preview
+- Large product image display with gallery thumbnails
+- Product image gallery with horizontal scroll
+- Always maintains product focus (never shows AI results)
+- Responsive image sizing and smooth transitions
+
+**Right Panel (380px stable)**: Product Selection
+- Instagram-style single-column product grid
+- Category filters and search functionality
+- Product cards with overlay information
+- Smooth scrolling and selection animations
+
+### Floating Interface Elements
+
+**Upload Area Floating Buttons:**
+- Change Photo (blue): Allows re-uploading customer image
+- Clear Photo (red): Removes uploaded image and resets state
+- Buttons appear only when image is uploaded
+- Semi-transparent background with backdrop blur
+
+**Result Area Floating Buttons:**
+- Try Another (blue): Returns to upload state while preserving customer image
+- Save Image (green): Downloads the virtual fitting result
+- Positioned consistently for intuitive user flow
+
+### Customer Image Persistence Architecture
+
+**Image State Management:**
+```php
+// Customer image is stored with unique filename on upload
+$temp_filename = 'customer_' . uniqid() . '_' . time() . '.jpg';
+
+// Original customer image is preserved across all try-on requests
+// AI processing always uses: original_customer_image + selected_product_images
+// Never uses previous AI results as input for new requests
+```
+
+**UI State Preservation:**
+- Upload area maintains customer image preview across sessions
+- "Try Another" restores upload interface without losing image data
+- Visual feedback shows "✓ Your photo is ready" when image is preserved
+- Main preview panel never changes from product display to AI result
+
 ## Error Handling
 
 ### Image Upload Errors

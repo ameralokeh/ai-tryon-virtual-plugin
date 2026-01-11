@@ -136,6 +136,32 @@ The AI Virtual Fitting Plugin is a WordPress/WooCommerce plugin that provides cu
 5. WHEN errors occur, THE Virtual_Fitting_System SHALL log detailed error information for administrators
 6. THE Virtual_Fitting_System SHALL gracefully handle all error conditions without breaking the user interface
 
+### Requirement 11: Customer Image Persistence and UI Panel Behavior
+
+**User Story:** As a customer, I want my original uploaded photo to be preserved across multiple try-on attempts, and I want the product display to remain consistent while only the virtual fitting result changes in the designated area.
+
+#### Acceptance Criteria
+
+1. WHEN a customer uploads their photo, THE Virtual_Fitting_System SHALL preserve the original customer image for all subsequent try-on requests
+2. WHEN a customer performs multiple virtual fittings, THE Virtual_Fitting_System SHALL always use the original uploaded photo as input, never previous AI results
+3. WHEN displaying virtual fitting results, THE Virtual_Fitting_System SHALL show the AI result only in the left panel upload area
+4. THE Virtual_Fitting_System SHALL maintain the main preview panel to always display the selected product and its gallery images
+5. WHEN a customer clicks "Try Another", THE Virtual_Fitting_System SHALL restore the upload interface while preserving the original customer image state
+6. THE Virtual_Fitting_System SHALL provide visual feedback indicating when the customer's photo is ready for virtual fitting
+
+### Requirement 12: Modern UI Design and Floating Interface Elements
+
+**User Story:** As a customer, I want a clean, modern interface with floating action buttons that don't clutter the visual space, so that I can focus on the virtual fitting experience.
+
+#### Acceptance Criteria
+
+1. THE Virtual_Fitting_System SHALL display action buttons as floating elements overlaid on images rather than taking separate UI space
+2. WHEN a customer uploads an image, THE Virtual_Fitting_System SHALL show floating buttons for changing or clearing the photo
+3. WHEN virtual fitting results are displayed, THE Virtual_Fitting_System SHALL provide floating buttons for trying another fitting or saving the image
+4. THE Virtual_Fitting_System SHALL remove unnecessary labels and text that clutter the interface
+5. THE Virtual_Fitting_System SHALL use a three-panel layout with proper spacing and visual hierarchy
+6. THE Virtual_Fitting_System SHALL provide smooth transitions and animations for better user experience
+
 ### Requirement 10: Performance and Scalability
 
 **User Story:** As a site administrator, I want the virtual fitting system to handle multiple concurrent users efficiently, so that customer experience remains smooth during peak usage.

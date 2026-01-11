@@ -8,7 +8,6 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     margin: 0;
     padding: 0;
-    min-height: 100vh;
     background: #f8f9fa;
     position: relative;
     width: 100%;
@@ -26,8 +25,8 @@
     gap: 20px;
     width: 100%;
     max-width: 100%;
-    height: 100vh;
-    min-height: 100vh;
+    min-height: 600px;  /* Minimum height for usability */
+    max-height: 90vh;   /* Maximum 90% of viewport height */
     padding: 20px;
     box-sizing: border-box;
 }
@@ -36,11 +35,15 @@
 .fitting-panel {
     background: white;
     border-radius: 16px;
-    padding: 24px;
+    padding: 20px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
+    width: 400px;
+    min-width: 400px;
+    max-height: 100%;
+    overflow-y: auto;
 }
 
 /* Center Panel - Main Preview */
@@ -87,12 +90,12 @@
 .upload-area {
     border: 2px dashed #e1e8ed;
     border-radius: 12px;
-    padding: 40px 20px;
+    padding: 30px 20px;
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
     background: #fafbfc;
-    min-height: 200px;
+    min-height: 180px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -145,6 +148,7 @@
     position: absolute;
     top: 0;
     left: 0;
+    z-index: 1; /* Ensure it stays below floating buttons */
 }
 
 /* Floating Buttons */
@@ -152,9 +156,9 @@
     position: absolute;
     top: 12px;
     right: 12px;
-    display: flex;
+    display: none; /* Hidden by default */
     gap: 8px;
-    z-index: 10;
+    z-index: 5; /* Ensure it stays above image preview */
 }
 
 .floating-btn {
@@ -185,27 +189,29 @@
     fill: currentColor;
 }
 
-.floating-btn.change-photo-btn {
-    background: rgba(74, 144, 226, 0.95);
-    color: white;
-}
-
-.floating-btn.change-photo-btn:hover {
-    background: #4a90e2;
-}
-
-.floating-btn.clear-photo-btn {
+.floating-btn.reset-btn {
     background: rgba(231, 76, 60, 0.95);
     color: white;
 }
 
-.floating-btn.clear-photo-btn:hover {
+.floating-btn.reset-btn:hover {
     background: #e74c3c;
+}
+
+.floating-btn.download-btn {
+    background: rgba(46, 204, 113, 0.95);
+    color: white;
+}
+
+.floating-btn.download-btn:hover {
+    background: #2ecc71;
 }
 
 /* Show floating buttons when image is uploaded */
 .upload-area.has-preview .floating-buttons {
-    display: flex;
+    display: flex !important; /* Force display when has-preview class is added */
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 /* Hide upload content when image is present */
@@ -215,14 +221,9 @@
     display: none;
 }
 
-/* Remove old preview overlay styles */
-.preview-overlay {
-    display: none;
-}
 
-.change-photo-btn {
-    display: none;
-}
+
+
 
 /* Virtual Fitting Result */
 .virtual-result {
@@ -427,6 +428,28 @@
         width: 180px;
         height: 130px;
     }
+    
+    .main-preview-image {
+        max-height: 60%;
+    }
+    
+    .fitting-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        height: auto;
+        gap: 16px;
+        padding: 16px;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-height: 500px;
+        gap: 16px;
+    }
+    
+    .product-card {
+        min-height: 200px;
+    }
 }
 
 @media (max-width: 640px) {
@@ -434,24 +457,27 @@
         width: 160px;
         height: 120px;
     }
-}
-
-/* Responsive tuning */
-@media (max-width: 968px) {
-    .main-preview-image {
-        max-height: 60%;
-    }
     
-    .product-thumbnail {
-        width: 64px;
-        height: 64px;
-    }
-}
-
-@media (max-width: 640px) {
     .product-thumbnails {
         max-width: 100%;
         padding: 8px 0;
+    }
+    
+    .products-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .category-filters {
+        flex-wrap: wrap;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .product-card {
+        min-height: 280px;
     }
 }
 
@@ -555,7 +581,7 @@
     grid-template-columns: 1fr;
     gap: 20px;
     padding: 0 12px 20px 0;
-    max-height: calc(100vh - 200px);
+    max-height: 500px;  /* Fixed reasonable height instead of viewport-based */
 }
 
 .products-grid::-webkit-scrollbar {
@@ -799,19 +825,30 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1400px) {
+@media (max-width: 1600px) {
     .fitting-container {
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 350px minmax(0, 1fr) 320px;
         gap: 16px;
         padding: 16px;
+        max-height: 85vh;
+    }
+}
+
+@media (max-width: 1400px) {
+    .fitting-container {
+        grid-template-columns: 320px minmax(0, 1fr) 300px;
+        gap: 16px;
+        padding: 16px;
+        max-height: 80vh;
     }
 }
 
 @media (max-width: 1200px) {
     .fitting-container {
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 300px minmax(0, 1fr) 280px;
         gap: 12px;
         padding: 12px;
+        max-height: 75vh;
     }
     
     .product-card {
@@ -828,44 +865,7 @@
     }
 }
 
-@media (max-width: 968px) {
-    .fitting-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto;
-        height: auto;
-        gap: 16px;
-        padding: 16px;
-    }
-    
-    .products-grid {
-        grid-template-columns: repeat(2, 1fr);
-        max-height: 500px;
-        gap: 16px;
-    }
-    
-    .product-card {
-        min-height: 200px;
-    }
-}
 
-@media (max-width: 640px) {
-    .products-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-    
-    .category-filters {
-        flex-wrap: wrap;
-    }
-    
-    .action-buttons {
-        flex-direction: column;
-    }
-    
-    .product-card {
-        min-height: 280px;
-    }
-}
 
 /* Product Image Placeholder */
 .product-image-placeholder {
