@@ -147,38 +147,81 @@
     left: 0;
 }
 
-.preview-overlay {
+/* Floating Buttons */
+.floating-buttons {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.floating-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    border-radius: 8px;
+    transition: all 0.3s ease;
+    color: #2c3e50;
 }
 
-.upload-area.has-preview .preview-overlay {
-    opacity: 1;
+.floating-btn:hover {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
-.upload-area:hover .preview-overlay {
-    opacity: 1;
+.floating-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.floating-btn.change-photo-btn {
+    background: rgba(74, 144, 226, 0.95);
+    color: white;
+}
+
+.floating-btn.change-photo-btn:hover {
+    background: #4a90e2;
+}
+
+.floating-btn.clear-photo-btn {
+    background: rgba(231, 76, 60, 0.95);
+    color: white;
+}
+
+.floating-btn.clear-photo-btn:hover {
+    background: #e74c3c;
+}
+
+/* Show floating buttons when image is uploaded */
+.upload-area.has-preview .floating-buttons {
+    display: flex;
+}
+
+/* Hide upload content when image is present */
+.upload-area.has-preview .upload-icon,
+.upload-area.has-preview .upload-text,
+.upload-area.has-preview .upload-hint {
+    display: none;
+}
+
+/* Remove old preview overlay styles */
+.preview-overlay {
+    display: none;
 }
 
 .change-photo-btn {
-    background: white;
-    color: #2c3e50;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-weight: 500;
-    cursor: pointer;
-    font-size: 14px;
+    display: none;
 }
 
 /* Virtual Fitting Result */
@@ -190,14 +233,6 @@
 .virtual-result.active {
     display: flex;
     flex-direction: column;
-}
-
-.result-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 16px;
-    text-align: center;
 }
 
 .result-preview {
@@ -217,11 +252,44 @@
     border-radius: 12px;
 }
 
-/* Clear Section */
-.clear-section {
-    margin-top: 16px;
-    text-align: center;
+/* Result floating buttons */
+.result-buttons {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
 }
+
+.result-buttons .floating-btn {
+    background: rgba(255, 255, 255, 0.95);
+    color: #2c3e50;
+}
+
+.result-buttons .floating-btn:hover {
+    background: white;
+}
+
+.result-buttons .floating-btn:first-child {
+    background: rgba(74, 144, 226, 0.95);
+    color: white;
+}
+
+.result-buttons .floating-btn:first-child:hover {
+    background: #4a90e2;
+}
+
+.result-buttons .floating-btn:last-child {
+    background: rgba(46, 204, 113, 0.95);
+    color: white;
+}
+
+.result-buttons .floating-btn:last-child:hover {
+    background: #2ecc71;
+}
+
+
 
 /* =========================================================
    Center Preview – Product Gallery Enhancement

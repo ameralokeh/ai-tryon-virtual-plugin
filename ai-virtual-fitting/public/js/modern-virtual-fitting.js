@@ -28,9 +28,6 @@
         // Add smooth scrolling to products panel
         $('.products-panel').css('scroll-behavior', 'smooth');
         
-        // Disable clear button initially
-        $('#clear-btn').prop('disabled', true);
-        
         // Animate product cards on load
         $('.product-card').each(function(index) {
             $(this).css({
@@ -68,6 +65,15 @@
             $('#customer-image-input').click();
         });
         
+        // Clear photo button
+        $(document).on('click', '.clear-photo-btn', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            clearImagePreview();
+            tempFileName = null;
+            updateTryOnButton();
+        });
+        
         // Action buttons
         $('#try-on-btn').on('click', handleTryOnRequest);
         $('#try-another-btn').on('click', handleTryAnother);
@@ -81,9 +87,6 @@
         
         // Product thumbnail clicks
         $(document).on('click', '.product-thumbnail', handleProductThumbnailClick);
-        
-        // Clear button
-        $('#clear-btn').on('click', handleClearAll);
         
         // Purchase credits button (global binding)
         $(document).on('click', '#purchase-credits-btn', function(e) {
@@ -366,9 +369,11 @@
         uploadArea.append(preview);
         uploadArea.addClass('has-preview');
         
+        // Show floating buttons
+        uploadArea.find('.floating-buttons').show();
+        
         // Update button states
         updateTryOnButton();
-        $('#clear-btn').prop('disabled', false);
     }
 
     /**
@@ -626,6 +631,7 @@
                 const placeholder = $('<div class="image-uploaded-indicator">✓ Your photo is ready</div>');
                 uploadArea.append(placeholder);
                 uploadArea.addClass('has-preview');
+                uploadArea.find('.floating-buttons').show();
             }
         }
         
@@ -646,36 +652,14 @@
     }
 
     /**
-     * Handle clear all
-     */
-    function handleClearAll() {
-        clearImagePreview();
-        $('.product-card').removeClass('selected');
-        selectedProductId = null;
-        tempFileName = null;
-        currentProductGallery = [];
-        
-        // Hide virtual result if showing
-        $('#virtual-result').removeClass('active').slideUp(400);
-        $('.upload-section').slideDown(400);
-        
-        // Reset main preview
-        $('#main-preview-image').hide();
-        $('#preview-placeholder').show();
-        $('#product-thumbnails').hide();
-        
-        updateTryOnButton();
-        
-        showMessage('All selections cleared.', 'info');
-    }
-
-    /**
      * Clear image preview
      */
     function clearImagePreview() {
         const uploadArea = $('#upload-area');
         uploadArea.find('.image-preview').remove();
+        uploadArea.find('.image-uploaded-indicator').remove();
         uploadArea.removeClass('has-preview');
+        uploadArea.find('.floating-buttons').hide();
         $('#customer-image-input').val('');
     }
 
