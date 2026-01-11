@@ -1,0 +1,39 @@
+# AI Virtual Fitting Plugin Translation Template
+# Copyright (C) 2024
+# This file is distributed under the same license as the AI Virtual Fitting Plugin package.
+msgid ""
+msgstr ""
+"Project-Id-Version: AI Virtual Fitting Plugin 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ai-virtual-fitting.php
+msgid "AI Virtual Fitting requires WordPress 5.0 or higher."
+msgstr ""
+
+#: ai-virtual-fitting.php
+msgid "AI Virtual Fitting requires PHP 7.4 or higher."
+msgstr ""
+
+#: ai-virtual-fitting.php
+msgid "AI Virtual Fitting requires WooCommerce to be installed and activated."
+msgstr ""
+
+#: ai-virtual-fitting.php
+msgid "AI Virtual Fitting requires %s to be installed and activated."
+msgstr ""
+
+#: public/virtual-fitting-page.php
+msgid "Virtual Fitting Experience"
+msgstr ""
+
+#: admin/admin-settings-page.php
+msgid "AI Virtual Fitting Settings"
+msgstr ""

@@ -1,0 +1,348 @@
+<?php
+/**
+ * WooCommerce Integration for AI Virtual Fitting Plugin
+ *
+ * @package AI_Virtual_Fitting
+ */
+
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/**
+ * AI Virtual Fitting WooCommerce Integration Class
+ */
+class AI_Virtual_Fitting_WooCommerce_Integration {
+    
+    /**
+     * Credit Manager instance
+     *
+     * @var AI_Virtual_Fitting_Credit_Manager
+     */
+    private $credit_manager;
+    
+    /**
+     * Credits product ID
+     *
+     * @var int
+     */
+    private $credits_product_id;
+    
+    /**
+     * Constructor
+     */
+    public function __construct() {
+        $this->credit_manager = new AI_Virtual_Fitting_Credit_Manager();
+        $this->credits_product_id = get_option('ai_virtual_fitting_credits_product_id', 0);
+        
+        // Hook into WooCommerce order completion
+        add_action('woocommerce_order_status_completed', array($this, 'handle_order_completed'));
+        add_action('woocommerce_payment_complete', array($this, 'handle_payment_complete'));
+        
+        // Hook into WooCommerce cart actions
+        add_action('wp_ajax_add_virtual_fitting_credits', array($this, 'ajax_add_credits_to_cart'));
+        add_action('wp_ajax_nopriv_add_virtual_fitting_credits', array($this, 'ajax_add_credits_to_cart'));
+    }
+    
+    /**
+     * Create virtual fitting credits product
+     *
+     * @return int|false Product ID on success, false on failure
+     */
+    public function create_credits_product() {
+        // Check if product already exists
+        if ($this->credits_product_id && get_post($this->credits_product_id)) {
+            return $this->credits_product_id;
+        }
+        
+        // Create the product
+        $product = new WC_Product_Simple();
+        $product->set_name('Virtual Fitting Credits - 20 Pack');
+        $product->set_description('Purchase 20 virtual fitting credits to try on wedding dresses with AI technology.');
+        $product->set_short_description('20 virtual fitting credits for AI-powered dress try-on experience.');
+        $product->set_regular_price('10.00');
+        $product->set_price('10.00');
+        $product->set_virtual(true);
+        $product->set_downloadable(false);
+        $product->set_catalog_visibility('hidden'); // Hidden from catalog
+        $product->set_status('publish');
+        $product->set_manage_stock(false);
+        $product->set_stock_status('instock');
+        
+        // Set custom meta to identify this as credits product
+        $product->add_meta_data('_virtual_fitting_credits', '20', true);
+        $product->add_meta_data('_virtual_fitting_product', 'yes', true);
+        
+        // Save the product
+        $product_id = $product->save();
+        
+        if ($product_id) {
+            // Store product ID in options
+            update_option('ai_virtual_fitting_credits_product_id', $product_id);
+            $this->credits_product_id = $product_id;
+            
+            // Log the creation
+            error_log("AI Virtual Fitting: Created credits product with ID: {$product_id}");
+            
+            return $product_id;
+        }
+        
+        error_log("AI Virtual Fitting: Failed to create credits product");
+        return false;
+    }
+    
+    /**
+     * Handle WooCommerce order completion
+     *
+     * @param int $order_id
+     */
+    public function handle_order_completed($order_id) {
+        $this->process_credits_order($order_id);
+    }
+    
+    /**
+     * Handle WooCommerce payment completion
+     *
+     * @param int $order_id
+     */
+    public function handle_payment_complete($order_id) {
+        $this->process_credits_order($order_id);
+    }
+    
+    /**
+     * Process credits order and add credits to customer account
+     *
+     * @param int $order_id
+     */
+    private function process_credits_order($order_id) {
+        if (!$order_id) {
+            return;
+        }
+        
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            error_log("AI Virtual Fitting: Invalid order ID: {$order_id}");
+            return;
+        }
+        
+        // Check if we've already processed this order
+        $processed = $order->get_meta('_virtual_fitting_credits_processed');
+        if ($processed === 'yes') {
+            return; // Already processed
+        }
+        
+        $customer_id = $order->get_customer_id();
+        if (!$customer_id) {
+            error_log("AI Virtual Fitting: No customer ID for order: {$order_id}");
+            return;
+        }
+        
+        $credits_added = 0;
+        
+        // Check each item in the order
+        foreach ($order->get_items() as $item_id => $item) {
+            $product_id = $item->get_product_id();
+            $quantity = $item->get_quantity();
+            
+            // Check if this is our credits product
+            if ($this->is_credits_product($product_id)) {
+                $credits_per_product = get_post_meta($product_id, '_virtual_fitting_credits', true);
+                $credits_per_product = intval($credits_per_product);
+                
+                if ($credits_per_product > 0) {
+                    $total_credits = $credits_per_product * $quantity;
+                    
+                    // Add credits to customer account
+                    $success = $this->credit_manager->add_credits($customer_id, $total_credits);
+                    
+                    if ($success) {
+                        $credits_added += $total_credits;
+                        error_log("AI Virtual Fitting: Added {$total_credits} credits to user {$customer_id} from order {$order_id}");
+                    } else {
+                        error_log("AI Virtual Fitting: Failed to add credits to user {$customer_id} from order {$order_id}");
+                    }
+                }
+            }
+        }
+        
+        if ($credits_added > 0) {
+            // Mark order as processed
+            $order->update_meta_data('_virtual_fitting_credits_processed', 'yes');
+            $order->save();
+            
+            // Add order note
+            $order->add_order_note(
+                sprintf(
+                    __('Virtual Fitting Credits: Added %d credits to customer account.', 'ai-virtual-fitting'),
+                    $credits_added
+                )
+            );
+            
+            // Send confirmation email (optional - can be implemented later)
+            $this->send_credits_confirmation($customer_id, $credits_added, $order_id);
+        }
+    }
+    
+    /**
+     * Add credits to cart via AJAX
+     */
+    public function ajax_add_credits_to_cart() {
+        // Verify nonce for security
+        if (!wp_verify_nonce($_POST['nonce'], 'virtual_fitting_nonce')) {
+            wp_die('Security check failed');
+        }
+        
+        // Ensure credits product exists
+        $product_id = $this->get_or_create_credits_product();
+        
+        if (!$product_id) {
+            wp_send_json_error('Failed to create credits product');
+            return;
+        }
+        
+        // Add to cart
+        $cart_item_key = WC()->cart->add_to_cart($product_id, 1);
+        
+        if ($cart_item_key) {
+            wp_send_json_success(array(
+                'message' => 'Credits added to cart',
+                'cart_url' => wc_get_cart_url(),
+                'checkout_url' => wc_get_checkout_url()
+            ));
+        } else {
+            wp_send_json_error('Failed to add credits to cart');
+        }
+    }
+    
+    /**
+     * Add credits to cart programmatically
+     *
+     * @param int $quantity Number of credit packs to add
+     * @return bool|string Cart item key on success, false on failure
+     */
+    public function add_credits_to_cart($quantity = 1) {
+        $product_id = $this->get_or_create_credits_product();
+        
+        if (!$product_id) {
+            return false;
+        }
+        
+        return WC()->cart->add_to_cart($product_id, $quantity);
+    }
+    
+    /**
+     * Get or create credits product
+     *
+     * @return int|false Product ID on success, false on failure
+     */
+    public function get_or_create_credits_product() {
+        if ($this->credits_product_id && get_post($this->credits_product_id)) {
+            return $this->credits_product_id;
+        }
+        
+        return $this->create_credits_product();
+    }
+    
+    /**
+     * Check if a product is a credits product
+     *
+     * @param int $product_id
+     * @return bool
+     */
+    public function is_credits_product($product_id) {
+        $is_credits_product = get_post_meta($product_id, '_virtual_fitting_product', true);
+        return $is_credits_product === 'yes';
+    }
+    
+    /**
+     * Validate credits product in order
+     *
+     * @param WC_Order $order
+     * @return bool
+     */
+    public function validate_credits_product($order) {
+        if (!$order) {
+            return false;
+        }
+        
+        foreach ($order->get_items() as $item) {
+            $product_id = $item->get_product_id();
+            if ($this->is_credits_product($product_id)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Get credits product ID
+     *
+     * @return int
+     */
+    public function get_credits_product_id() {
+        return $this->credits_product_id;
+    }
+    
+    /**
+     * Send credits confirmation notification
+     *
+     * @param int $customer_id
+     * @param int $credits_added
+     * @param int $order_id
+     */
+    private function send_credits_confirmation($customer_id, $credits_added, $order_id) {
+        $user = get_user_by('ID', $customer_id);
+        if (!$user) {
+            return;
+        }
+        
+        $subject = __('Virtual Fitting Credits Added to Your Account', 'ai-virtual-fitting');
+        $message = sprintf(
+            __('Hello %s,
+
+Thank you for your purchase! We have added %d virtual fitting credits to your account.
+
+You can now use these credits to try on wedding dresses with our AI-powered virtual fitting technology.
+
+Order #: %d
+
+Best regards,
+The Virtual Fitting Team', 'ai-virtual-fitting'),
+            $user->display_name,
+            $credits_added,
+            $order_id
+        );
+        
+        wp_mail($user->user_email, $subject, $message);
+        
+        error_log("AI Virtual Fitting: Sent confirmation email to {$user->user_email} for {$credits_added} credits");
+    }
+    
+    /**
+     * Get purchase URL for credits
+     *
+     * @return string
+     */
+    public function get_credits_purchase_url() {
+        $product_id = $this->get_or_create_credits_product();
+        
+        if (!$product_id) {
+            return wc_get_cart_url();
+        }
+        
+        return add_query_arg(array(
+            'add-to-cart' => $product_id
+        ), wc_get_cart_url());
+    }
+    
+    /**
+     * Initialize WooCommerce integration
+     * Called during plugin activation
+     */
+    public function initialize() {
+        // Create credits product during plugin activation
+        $this->create_credits_product();
+    }
+}

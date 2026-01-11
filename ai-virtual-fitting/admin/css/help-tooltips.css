@@ -1,0 +1,420 @@
+/**
+ * Help Tooltips CSS for AI Virtual Fitting Admin Interface
+ *
+ * @package AI_Virtual_Fitting
+ */
+
+/* Tooltip Icon */
+.ai-virtual-fitting-tooltip {
+    display: inline-block;
+    margin-left: 8px;
+    cursor: help;
+    color: #666;
+    transition: color 0.2s ease;
+}
+
+.ai-virtual-fitting-tooltip:hover {
+    color: #0073aa;
+}
+
+.ai-virtual-fitting-tooltip .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+/* Tooltip Popup */
+.ai-virtual-fitting-tooltip-popup {
+    position: absolute;
+    z-index: 999999;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+    max-width: 350px;
+    min-width: 250px;
+    display: none;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.ai-virtual-fitting-tooltip-popup::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -8px;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 8px 8px 0;
+    border-color: transparent #ccd0d4 transparent transparent;
+}
+
+.ai-virtual-fitting-tooltip-popup::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -7px;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 7px 7px 7px 0;
+    border-color: transparent #fff transparent transparent;
+}
+
+/* Tooltip Header */
+.tooltip-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e1e5e9;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tooltip-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.tooltip-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tooltip-close:hover {
+    color: #d63638;
+}
+
+/* Tooltip Content */
+.tooltip-content {
+    padding: 15px;
+}
+
+.tooltip-content p {
+    margin: 0 0 10px 0;
+    color: #555;
+}
+
+.tooltip-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Tooltip Example */
+.tooltip-example {
+    background: #f0f6fc;
+    border: 1px solid #c3d9ed;
+    border-radius: 3px;
+    padding: 8px 10px;
+    margin: 10px 0;
+    font-size: 12px;
+}
+
+.tooltip-example strong {
+    color: #0073aa;
+}
+
+/* Tooltip Note */
+.tooltip-note {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 3px;
+    padding: 8px 10px;
+    margin: 10px 0;
+    font-size: 12px;
+}
+
+.tooltip-note strong {
+    color: #856404;
+}
+
+/* Tooltip Link */
+.tooltip-link {
+    margin-top: 12px;
+    text-align: center;
+}
+
+.tooltip-link .button {
+    font-size: 12px;
+    padding: 4px 12px;
+    height: auto;
+    line-height: 1.4;
+}
+
+/* Section Help Button */
+.section-help-btn {
+    margin-left: 10px;
+    font-size: 12px;
+    padding: 2px 8px;
+    height: auto;
+    line-height: 1.4;
+    vertical-align: middle;
+}
+
+.section-help-btn .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+}
+
+/* Help Modal */
+.ai-virtual-fitting-help-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999999;
+    display: none;
+}
+
+.help-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.help-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.help-modal-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e1e5e9;
+    padding: 20px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.help-modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #23282d;
+}
+
+.help-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+}
+
+.help-modal-close:hover {
+    background: #f0f0f0;
+    color: #d63638;
+}
+
+.help-modal-body {
+    padding: 25px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.help-modal-body h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #0073aa;
+}
+
+.help-modal-body p {
+    margin: 0 0 15px 0;
+    line-height: 1.6;
+}
+
+.help-modal-body ul,
+.help-modal-body ol {
+    margin: 0 0 15px 20px;
+    line-height: 1.6;
+}
+
+.help-modal-body li {
+    margin-bottom: 8px;
+}
+
+.help-modal-body a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.help-modal-body a:hover {
+    text-decoration: underline;
+}
+
+.help-modal-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #e1e5e9;
+    padding: 15px 25px;
+    text-align: right;
+}
+
+/* Contextual Help Messages */
+#contextual-help-messages {
+    margin: 20px 0;
+}
+
+.contextual-help-message {
+    margin-bottom: 15px;
+}
+
+.contextual-help-message p {
+    margin: 0;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 782px) {
+    .ai-virtual-fitting-tooltip-popup {
+        max-width: 280px;
+        min-width: 200px;
+        font-size: 12px;
+    }
+    
+    .tooltip-header {
+        padding: 10px 12px;
+    }
+    
+    .tooltip-content {
+        padding: 12px;
+    }
+    
+    .help-modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .help-modal-header {
+        padding: 15px 20px;
+    }
+    
+    .help-modal-header h2 {
+        font-size: 16px;
+    }
+    
+    .help-modal-body {
+        padding: 20px;
+    }
+    
+    .help-modal-footer {
+        padding: 12px 20px;
+    }
+    
+    .section-help-btn {
+        display: block;
+        margin: 10px 0 0 0;
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .ai-virtual-fitting-tooltip-popup {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        max-width: 90vw;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .ai-virtual-fitting-tooltip-popup::before,
+    .ai-virtual-fitting-tooltip-popup::after {
+        display: none;
+    }
+    
+    .help-modal-content {
+        width: 98%;
+        height: 95vh;
+        max-height: none;
+        top: 2.5vh;
+        transform: translateX(-50%);
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .ai-virtual-fitting-tooltip-popup {
+        border: 2px solid #000;
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .tooltip-header {
+        background: #f0f0f0;
+        border-bottom: 2px solid #000;
+    }
+    
+    .tooltip-example {
+        background: #e6f3ff;
+        border: 2px solid #0073aa;
+    }
+    
+    .tooltip-note {
+        background: #fff8dc;
+        border: 2px solid #856404;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .ai-virtual-fitting-tooltip,
+    .tooltip-close,
+    .help-modal-close {
+        transition: none;
+    }
+    
+    .ai-virtual-fitting-tooltip-popup,
+    .ai-virtual-fitting-help-modal,
+    .contextual-help-message {
+        animation: none;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .ai-virtual-fitting-tooltip,
+    .ai-virtual-fitting-tooltip-popup,
+    .ai-virtual-fitting-help-modal,
+    .section-help-btn,
+    #contextual-help-messages {
+        display: none !important;
+    }
+}
