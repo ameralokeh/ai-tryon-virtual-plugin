@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Floating Buttons</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .test-container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .upload-area {
+            border: 2px dashed #e1e8ed;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #fafbfc;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: #4a90e2;
+            background: #f0f7ff;
+        }
+        
+        .upload-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        
+        .upload-hint {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        /* Image Preview */
+        .image-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        /* Floating Buttons */
+        .floating-buttons {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            display: none;
+            gap: 8px;
+            z-index: 5;
+            justify-content: space-between;
+        }
+        
+        .floating-btn {
+            flex: 1;
+            height: 36px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            color: #2c3e50;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .floating-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .floating-btn.reset-btn {
+            background: rgba(108, 117, 125, 0.9);
+            color: white;
+        }
+        
+        .floating-btn.reset-btn:hover {
+            background: rgba(108, 117, 125, 1);
+        }
+        
+        .floating-btn.download-btn {
+            background: rgba(74, 144, 226, 0.9);
+            color: white;
+        }
+        
+        .floating-btn.download-btn:hover {
+            background: rgba(74, 144, 226, 1);
+        }
+        
+        /* Show floating buttons when image is uploaded */
+        .upload-area.has-preview .floating-buttons {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* Hide upload content when image is present */
+        .upload-area.has-preview .upload-text,
+        .upload-area.has-preview .upload-hint {
+            display: none;
+        }
+        
+        .test-buttons {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .test-btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        
+        .test-btn:hover {
+            background: #357abd;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Test Floating Buttons Functionality</h1>
+        
+        <div class="upload-area" id="upload-area">
+            <div class="upload-text">Upload Your Photo</div>
+            <div class="upload-hint">Click to test image preview</div>
+            
+            <!-- Floating action buttons -->
+            <div class="floating-buttons">
+                <button class="floating-btn reset-btn" type="button" id="reset-btn">
+                    Reset
+                </button>
+                <button class="floating-btn download-btn" type="button" id="download-btn">
+                    Download
+                </button>
+            </div>
+        </div>
+        
+        <div class="test-buttons">
+            <button class="test-btn" id="simulate-upload">Simulate Image Upload</button>
+            <button class="test-btn" id="clear-image">Clear Image</button>
+        </div>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('upload-area');
+            const resetBtn = document.getElementById('reset-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const simulateBtn = document.getElementById('simulate-upload');
+            const clearBtn = document.getElementById('clear-image');
+            const status = document.getElementById('status');
+            
+            function showStatus(message, type = 'success') {
+                status.textContent = message;
+                status.className = 'status ' + type;
+                setTimeout(() => {
+                    status.textContent = '';
+                    status.className = 'status';
+                }, 3000);
+            }
+            
+            function simulateImageUpload() {
+                // Create a sample image (colored rectangle)
+                const canvas = document.createElement('canvas');
+                canvas.width = 300;
+                canvas.height = 200;
+                const ctx = canvas.getContext('2d');
+                
+                // Create gradient background
+                const gradient = ctx.createLinearGradient(0, 0, 300, 200);
+                gradient.addColorStop(0, '#4a90e2');
+                gradient.addColorStop(1, '#357abd');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 300, 200);
+                
+                // Add text
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Test Image', 150, 100);
+                ctx.fillText('Preview', 150, 130);
+                
+                // Convert to data URL
+                const dataURL = canvas.toDataURL('image/png');
+                
+                // Remove existing preview
+                const existingPreview = uploadArea.querySelector('.image-preview');
+                if (existingPreview) {
+                    existingPreview.remove();
+                }
+                
+                // Add new preview
+                const preview = document.createElement('img');
+                preview.src = dataURL;
+                preview.className = 'image-preview';
+                preview.alt = 'Test image preview';
+                
+                uploadArea.appendChild(preview);
+                uploadArea.classList.add('has-preview');
+                
+                showStatus('Image preview added! Buttons should now be visible.', 'success');
+            }
+            
+            function clearImagePreview() {
+                const preview = uploadArea.querySelector('.image-preview');
+                if (preview) {
+                    preview.remove();
+                }
+                uploadArea.classList.remove('has-preview');
+                showStatus('Image preview cleared.', 'success');
+            }
+            
+            // Event listeners
+            simulateBtn.addEventListener('click', simulateImageUpload);
+            clearBtn.addEventListener('click', clearImagePreview);
+            
+            resetBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                clearImagePreview();
+                showStatus('Reset button clicked!', 'success');
+            });
+            
+            downloadBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                const preview = uploadArea.querySelector('.image-preview');
+                if (preview) {
+                    // Create download link
+                    const link = document.createElement('a');
+                    link.href = preview.src;
+                    link.download = 'test-image.png';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showStatus('Download button clicked! Image downloaded.', 'success');
+                } else {
+                    showStatus('No image to download.', 'error');
+                }
+            });
+            
+            uploadArea.addEventListener('click', function(e) {
+                if (!uploadArea.classList.contains('has-preview')) {
+                    simulateImageUpload();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

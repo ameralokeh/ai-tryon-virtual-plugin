@@ -15,20 +15,207 @@
     overflow-x: hidden;
 }
 
+/* Credits Banner */
+.credits-banner {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.credits-banner-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+}
+
+.credits-info {
+    flex: 1;
+}
+
+.credits-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.credits-icon {
+    width: 24px;
+    height: 24px;
+    fill: #4a90e2;
+}
+
+.credits-title span {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.credits-stats {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.credit-stat {
+    text-align: center;
+}
+
+.credit-number {
+    font-size: 32px;
+    font-weight: 700;
+    color: #2c3e50;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.credit-number.free-number {
+    color: #27ae60;
+}
+
+.credit-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.credit-divider {
+    width: 1px;
+    height: 40px;
+    background: #e1e8ed;
+}
+
+.credits-actions {
+    flex-shrink: 0;
+}
+
+.credits-purchase-btn {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.25);
+}
+
+.credits-purchase-btn:hover {
+    background: #357abd;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74, 144, 226, 0.35);
+    color: white;
+    text-decoration: none;
+}
+
+.credits-purchase-btn .btn-icon {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+/* Low Credits State */
+.credits-banner.low-credits {
+    border-color: rgba(231, 76, 60, 0.2);
+    background: linear-gradient(135deg, #fff 0%, #fdf2f2 100%);
+}
+
+.credits-banner.low-credits .credit-number {
+    color: #e74c3c;
+}
+
+.credits-banner.low-credits .credits-purchase-btn {
+    background: #e74c3c;
+    animation: gentle-pulse 2s ease-in-out infinite;
+}
+
+.credits-banner.low-credits .credits-purchase-btn:hover {
+    background: #c0392b;
+}
+
+/* Responsive Credits Banner */
+@media (max-width: 768px) {
+    .credits-banner-content {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .credits-stats {
+        justify-content: center;
+    }
+    
+    .credits-purchase-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .credits-banner {
+        padding: 20px;
+        margin-bottom: 16px;
+    }
+    
+    .credits-stats {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .credit-divider {
+        width: 40px;
+        height: 1px;
+    }
+    
+    .credit-number {
+        font-size: 28px;
+    }
+}
+
+/* Animations */
+@keyframes gentle-pulse {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);
+    }
+    50% {
+        box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+    }
+}
+
+.credit-number.updated {
+    animation: credit-bounce 0.6s ease-in-out;
+}
+
+@keyframes credit-bounce {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); color: #27ae60; }
+    100% { transform: scale(1); }
+}
+
 /* Main Layout - Three Equal Columns Full Width */
 .fitting-container {
     display: grid;
-    grid-template-columns: 
-        400px           /* LEFT: upload / result – fixed */
-        minmax(0, 1fr)  /* CENTER: main preview – flexible */
-        380px;          /* RIGHT: product list – stable */
+    grid-template-columns: 1fr 1fr 1fr; /* Three equal flexible columns */
     gap: 20px;
     width: 100%;
     max-width: 100%;
-    min-height: 600px;  /* Minimum height for usability */
-    max-height: 90vh;   /* Maximum 90% of viewport height */
+    height: min(90vh, 900px); /* Fixed height to prevent overflow */
     padding: 20px;
     box-sizing: border-box;
+    align-items: stretch; /* Fix grid overlap when header grows */
+    overflow: hidden; /* Prevent horizontal overflow */
 }
 
 /* Left Panel - Upload & Result */
@@ -40,10 +227,10 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    width: 400px;
-    min-width: 400px;
-    max-height: 100%;
-    overflow-y: auto;
+    width: 100%; /* Use full grid track width */
+    overflow-y: auto; /* Panel controls internal scrolling */
+    min-height: 0; /* critical for grid + flex children */
+    box-sizing: border-box; /* Include padding in width calculation */
 }
 
 /* Center Panel - Main Preview */
@@ -57,17 +244,24 @@
     align-items: center;
     justify-content: center;
     position: relative;
+    min-height: 0; /* critical for grid + flex children */
+    overflow: hidden; /* Panel controls internal scrolling */
+    width: 100%; /* Use full grid track width */
+    box-sizing: border-box; /* Include padding in width calculation */
 }
 
 /* Right Panel - Product Selection */
 .products-panel {
     background: white;
     border-radius: 16px;
-    padding: 24px;
+    padding: 24px 0;  /* Only top/bottom padding, let header control horizontal */
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    min-height: 0; /* critical for grid + flex children */
+    width: 100%; /* Use full grid track width */
+    box-sizing: border-box; /* Include padding in width calculation */
 }
 
 /* Section Headers */
@@ -154,17 +348,19 @@
 /* Floating Buttons */
 .floating-buttons {
     position: absolute;
-    top: 12px;
+    bottom: 12px;
+    left: 12px;
     right: 12px;
     display: none; /* Hidden by default */
     gap: 8px;
     z-index: 5; /* Ensure it stays above image preview */
+    justify-content: space-between;
 }
 
 .floating-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    flex: 1;
+    height: 36px;
+    border-radius: 6px;
     border: none;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
@@ -175,6 +371,10 @@
     justify-content: center;
     transition: all 0.3s ease;
     color: #2c3e50;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .floating-btn:hover {
@@ -183,28 +383,22 @@
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
-.floating-btn svg {
-    width: 20px;
-    height: 20px;
-    fill: currentColor;
-}
-
 .floating-btn.reset-btn {
-    background: rgba(231, 76, 60, 0.95);
+    background: rgba(108, 117, 125, 0.9); /* Soft gray instead of red */
     color: white;
 }
 
 .floating-btn.reset-btn:hover {
-    background: #e74c3c;
+    background: rgba(108, 117, 125, 1);
 }
 
 .floating-btn.download-btn {
-    background: rgba(46, 204, 113, 0.95);
+    background: rgba(74, 144, 226, 0.9); /* Soft blue matching the theme */
     color: white;
 }
 
 .floating-btn.download-btn:hover {
-    background: #2ecc71;
+    background: rgba(74, 144, 226, 1);
 }
 
 /* Show floating buttons when image is uploaded */
@@ -256,38 +450,57 @@
 /* Result floating buttons */
 .result-buttons {
     position: absolute;
-    top: 12px;
+    bottom: 12px;
+    left: 12px;
     right: 12px;
     display: flex;
     gap: 8px;
     z-index: 10;
+    justify-content: space-between;
 }
 
 .result-buttons .floating-btn {
+    flex: 1;
+    height: 36px;
+    border-radius: 6px;
+    border: none;
     background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
     color: #2c3e50;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .result-buttons .floating-btn:hover {
     background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
-.result-buttons .floating-btn:first-child {
-    background: rgba(74, 144, 226, 0.95);
+.result-buttons .floating-btn.reset-btn {
+    background: rgba(108, 117, 125, 0.9);
     color: white;
 }
 
-.result-buttons .floating-btn:first-child:hover {
-    background: #4a90e2;
+.result-buttons .floating-btn.reset-btn:hover {
+    background: rgba(108, 117, 125, 1);
 }
 
-.result-buttons .floating-btn:last-child {
-    background: rgba(46, 204, 113, 0.95);
+.result-buttons .floating-btn.download-btn {
+    background: rgba(74, 144, 226, 0.9);
     color: white;
 }
 
-.result-buttons .floating-btn:last-child:hover {
-    background: #2ecc71;
+.result-buttons .floating-btn.download-btn:hover {
+    background: rgba(74, 144, 226, 1);
 }
 
 
@@ -530,32 +743,98 @@
 /* Product Selection */
 .products-header {
     margin-bottom: 20px;
+    padding: 0 24px;  /* Match original panel padding for consistent spacing */
 }
 
+/* DEBUG: Test if CSS is working - REMOVED */
+/* .ai-virtual-fitting-app .category-dropdown-container {
+    background: red !important;
+    border: 5px solid blue !important;
+} */
+
+/* CATEGORY DROPDOWN – NUCLEAR OPTION (maximum specificity) */
+.ai-virtual-fitting-app .products-panel .products-header .category-dropdown-container {
+    position: relative !important;
+    margin-bottom: 12px !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+/* Draw our own arrow */
+.ai-virtual-fitting-app .products-panel .products-header .category-dropdown-container::after {
+    content: "" !important;
+    position: absolute !important;
+    right: 18px !important;
+    top: 50% !important;
+    width: 10px !important;
+    height: 10px !important;
+    border-right: 2px solid #7f8c8d !important;
+    border-bottom: 2px solid #7f8c8d !important;
+    transform: translateY(-55%) rotate(45deg) !important;
+    pointer-events: none !important;
+    opacity: 0.85 !important;
+    transition: transform 0.2s ease, opacity 0.2s ease !important;
+}
+
+/* Force select styling with maximum specificity */
+.ai-virtual-fitting-app .products-panel .products-header select.category-dropdown,
+.ai-virtual-fitting-app select#category-dropdown {
+    width: 100% !important;
+    height: 44px !important;
+    padding: 0 46px 0 16px !important;
+    border: 1px solid #e1e8ed !important;
+    border-radius: 25px !important;
+    background-color: #ffffff !important;
+    color: #2c3e50 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    line-height: 44px !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    outline: none !important;
+    
+    /* kill native "classic" look */
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    
+    /* remove OS bevels */
+    box-shadow: none !important;
+    background-image: none !important;
+}
+
+/* Hover/focus identical to search box */
+.ai-virtual-fitting-app .products-panel .products-header select.category-dropdown:hover,
+.ai-virtual-fitting-app select#category-dropdown:hover {
+    border-color: #4a90e2 !important;
+}
+
+.ai-virtual-fitting-app .products-panel .products-header select.category-dropdown:focus,
+.ai-virtual-fitting-app select#category-dropdown:focus {
+    border-color: #4a90e2 !important;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1) !important;
+}
+
+/* Arrow flips on focus */
+.ai-virtual-fitting-app .products-panel .products-header .category-dropdown-container:focus-within::after {
+    transform: translateY(-45%) rotate(225deg) !important;
+    opacity: 1 !important;
+}
+
+/* Optional: make disabled state match your buttons */
+.ai-virtual-fitting-app .products-panel .products-header select.category-dropdown:disabled,
+.ai-virtual-fitting-app select#category-dropdown:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+}
+
+/* Remove old category button styles */
 .category-filters {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 20px;
-    justify-content: center;
+    display: none;
 }
 
 .category-btn {
-    padding: 8px 16px;
-    border: 1px solid #e1e8ed;
-    background: white;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    color: #7f8c8d;
-}
-
-.category-btn.active,
-.category-btn:hover {
-    background: #4a90e2;
-    color: white;
-    border-color: #4a90e2;
+    display: none;
 }
 
 .search-box {
@@ -564,8 +843,10 @@
     border: 1px solid #e1e8ed;
     border-radius: 25px;
     font-size: 14px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
     outline: none;
+    box-sizing: border-box;
+    display: block;
 }
 
 .search-box:focus {
@@ -580,8 +861,10 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: 20px;
-    padding: 0 12px 20px 0;
+    padding: 0 24px 20px 24px;  /* Match header padding for alignment */
     max-height: 500px;  /* Fixed reasonable height instead of viewport-based */
+    scrollbar-gutter: stable;   /* prevents visual shift */
+    box-sizing: border-box;
 }
 
 .products-grid::-webkit-scrollbar {
@@ -836,7 +1119,7 @@
 
 @media (max-width: 1400px) {
     .fitting-container {
-        grid-template-columns: 320px minmax(0, 1fr) 300px;
+        grid-template-columns: 380px minmax(0, 1fr) 360px;
         gap: 16px;
         padding: 16px;
         max-height: 80vh;
@@ -845,7 +1128,7 @@
 
 @media (max-width: 1200px) {
     .fitting-container {
-        grid-template-columns: 300px minmax(0, 1fr) 280px;
+        grid-template-columns: 360px minmax(0, 1fr) 340px;
         gap: 12px;
         padding: 12px;
         max-height: 75vh;

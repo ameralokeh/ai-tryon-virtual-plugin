@@ -13,6 +13,48 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="ai-virtual-fitting-app">
+    <!-- Credits Banner -->
+    <div class="credits-banner" id="credits-banner">
+        <div class="credits-banner-content">
+            <div class="credits-info">
+                <div class="credits-title">
+                    <svg viewBox="0 0 24 24" class="credits-icon">
+                        <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/>
+                    </svg>
+                    <span>Virtual Try-On Credits</span>
+                </div>
+                <div class="credits-stats">
+                    <div class="credit-stat">
+                        <div class="credit-number" id="total-credits"><?php echo $is_logged_in ? $credits : '0'; ?></div>
+                        <div class="credit-label">Available</div>
+                    </div>
+                    <div class="credit-divider"></div>
+                    <div class="credit-stat free-stat">
+                        <div class="credit-number free-number" id="free-credits"><?php echo $is_logged_in ? $free_credits : '0'; ?></div>
+                        <div class="credit-label">Free Remaining</div>
+                    </div>
+                </div>
+            </div>
+            <div class="credits-actions">
+                <?php if ($is_logged_in): ?>
+                    <button class="btn btn-primary credits-purchase-btn" id="add-credits-btn">
+                        <svg viewBox="0 0 24 24" class="btn-icon">
+                            <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                        </svg>
+                        Get More Credits
+                    </button>
+                <?php else: ?>
+                    <a href="<?php echo esc_url(wp_login_url(get_permalink())); ?>" class="btn btn-primary credits-purchase-btn">
+                        <svg viewBox="0 0 24 24" class="btn-icon">
+                            <path d="M10,17V14H3V10H10V7L15,12L10,17M10,2H19A2,2 0 0,1 21,4V20A2,2 0 0,1 19,22H10A2,2 0 0,1 8,20V18H10V20H19V4H10V6H8V4A2,2 0 0,1 10,2Z"/>
+                        </svg>
+                        Login to Start
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
     <div class="fitting-container">
         <!-- Left Panel - Upload & Virtual Result -->
         <div class="fitting-panel">
@@ -30,14 +72,10 @@ if (!defined('ABSPATH')) {
                     <!-- Floating action buttons -->
                     <div class="floating-buttons" style="display: none;">
                         <button class="floating-btn reset-btn" type="button" title="Reset">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
-                            </svg>
+                            Reset
                         </button>
                         <button class="floating-btn download-btn" type="button" title="Download">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
-                            </svg>
+                            Download
                         </button>
                     </div>
                 </div>
@@ -53,15 +91,11 @@ if (!defined('ABSPATH')) {
                     
                     <!-- Floating action buttons for result -->
                     <div class="floating-buttons result-buttons">
-                        <button class="floating-btn" id="try-another-btn">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
-                            </svg>
+                        <button class="floating-btn reset-btn" id="try-another-btn" type="button" title="Try Another">
+                            Try Another
                         </button>
-                        <button class="floating-btn" id="save-image-btn">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/>
-                            </svg>
+                        <button class="floating-btn download-btn" id="save-image-btn" type="button" title="Save Result">
+                            Save Result
                         </button>
                     </div>
                 </div>
@@ -99,12 +133,18 @@ if (!defined('ABSPATH')) {
                 <!-- Search Box -->
                 <input type="text" class="search-box" placeholder="Search dresses..." id="search-box">
                 
-                <!-- Category Filters -->
-                <div class="category-filters">
-                    <button class="category-btn active" data-category="all">All</button>
-                    <button class="category-btn" data-category="elegant">Elegant</button>
-                    <button class="category-btn" data-category="boho">Boho</button>
-                    <button class="category-btn" data-category="modern">Modern</button>
+                <!-- Category Dropdown -->
+                <div class="category-dropdown-container">
+                    <select class="category-dropdown" id="category-dropdown">
+                        <option value="all">All Categories</option>
+                        <?php if (!empty($categories)): ?>
+                            <?php foreach ($categories as $category): ?>
+                                <option value="<?php echo esc_attr($category['slug']); ?>">
+                                    <?php echo esc_html($category['name']); ?> (<?php echo $category['count']; ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
                 </div>
             </div>
 
@@ -113,16 +153,13 @@ if (!defined('ABSPATH')) {
                 <?php if (!empty($products)): ?>
                     <?php foreach ($products as $index => $product): ?>
                         <?php 
-                        // Assign categories based on product name for demo
-                        $category = 'elegant'; // default
-                        $product_name_lower = strtolower($product['name']);
-                        if (strpos($product_name_lower, 'modern') !== false || strpos($product_name_lower, 'a-line') !== false) {
-                            $category = 'modern';
-                        } elseif (strpos($product_name_lower, 'boho') !== false || strpos($product_name_lower, 'vintage') !== false || strpos($product_name_lower, 'champagne') !== false) {
-                            $category = 'boho';
-                        }
+                        // Use actual WooCommerce categories
+                        $product_categories = !empty($product['categories']) ? implode(' ', $product['categories']) : 'uncategorized';
                         ?>
-                        <div class="product-card" data-product-id="<?php echo esc_attr($product['id']); ?>" data-category="<?php echo esc_attr($category); ?>" data-gallery="<?php echo esc_attr(json_encode($product['gallery'])); ?>">
+                        <div class="product-card" 
+                             data-product-id="<?php echo esc_attr($product['id']); ?>" 
+                             data-categories="<?php echo esc_attr($product_categories); ?>" 
+                             data-gallery="<?php echo esc_attr(json_encode($product['gallery'])); ?>">
                             <!-- Selection Indicator -->
                             <div class="selection-indicator">
                                 <svg viewBox="0 0 24 24">

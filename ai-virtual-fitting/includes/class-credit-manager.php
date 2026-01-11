@@ -408,6 +408,36 @@ class AI_Virtual_Fitting_Credit_Manager {
     }
     
     /**
+     * Get free credits remaining for customer
+     *
+     * @param int $user_id WordPress user ID
+     * @return int Number of free credits remaining
+     */
+    public function get_free_credits_remaining($user_id) {
+        if (!$user_id || !is_numeric($user_id)) {
+            return 0;
+        }
+        
+        $initial_credits = AI_Virtual_Fitting_Core::get_option('initial_credits', 2);
+        $current_credits = $this->get_customer_credits($user_id);
+        $total_purchased = $this->get_total_credits_purchased($user_id);
+        
+        // If user has purchased credits, calculate how many of current credits are free
+        if ($total_purchased > 0) {
+            // If current credits are more than purchased, the excess are free credits
+            if ($current_credits > $total_purchased) {
+                return min($current_credits - $total_purchased, $initial_credits);
+            } else {
+                // All current credits are purchased credits, no free credits remaining
+                return 0;
+            }
+        } else {
+            // User hasn't purchased any credits, so all current credits are free
+            return min($current_credits, $initial_credits);
+        }
+    }
+    
+    /**
      * Get total system credit statistics
      *
      * @return array System-wide credit statistics

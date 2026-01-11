@@ -84,7 +84,7 @@ class AI_Virtual_Fitting_Public_Interface {
                 'ai-virtual-fitting-modern-style',
                 plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
                 array(),
-                '1.1.0'
+                '1.2.0'  // Updated version to bust cache
             );
             
             // Enqueue modern JavaScript
@@ -129,9 +129,13 @@ class AI_Virtual_Fitting_Public_Interface {
         $current_user_id = get_current_user_id();
         $is_logged_in = is_user_logged_in();
         $credits = $is_logged_in ? $this->credit_manager->get_customer_credits($current_user_id) : 0;
+        $free_credits = $is_logged_in ? $this->credit_manager->get_free_credits_remaining($current_user_id) : 0;
         
         // Get WooCommerce products for the slider
         $products = $this->get_woocommerce_products();
+        
+        // Get WooCommerce categories for the dropdown
+        $categories = $this->get_woocommerce_categories();
         
         // Debug: Log product count
         error_log('AI Virtual Fitting - Products loaded: ' . count($products));
@@ -142,6 +146,36 @@ class AI_Virtual_Fitting_Public_Interface {
         include plugin_dir_path(__FILE__) . 'modern-virtual-fitting-page.php';
     }
     
+    /**
+     * Get WooCommerce product categories
+     */
+    private function get_woocommerce_categories() {
+        $categories = get_terms(array(
+            'taxonomy' => 'product_cat',
+            'hide_empty' => true,
+            'orderby' => 'name',
+            'order' => 'ASC'
+        ));
+        
+        $category_data = array();
+        
+        if (!is_wp_error($categories)) {
+            foreach ($categories as $category) {
+                $category_data[] = array(
+                    'id' => $category->term_id,
+                    'slug' => $category->slug,
+                    'name' => $category->name,
+                    'count' => $category->count
+                );
+            }
+        }
+        
+        // Debug: Log categories
+        error_log('AI Virtual Fitting - Categories loaded: ' . json_encode($category_data));
+        
+        return $category_data;
+    }
+
     /**
      * Get WooCommerce products for virtual fitting
      */
@@ -168,13 +202,23 @@ class AI_Virtual_Fitting_Public_Interface {
                 }
                 $all_images = array_merge($all_images, $gallery_images);
                 
+                // Get product categories
+                $product_categories = wp_get_post_terms($product->get_id(), 'product_cat');
+                $category_slugs = array();
+                if (!is_wp_error($product_categories) && !empty($product_categories)) {
+                    foreach ($product_categories as $cat) {
+                        $category_slugs[] = $cat->slug;
+                    }
+                }
+                
                 $product_data[] = array(
                     'id' => $product->get_id(),
                     'name' => $product->get_name(),
                     'price' => $product->get_price_html(),
                     'description' => $product->get_short_description() ?: wp_trim_words($product->get_description(), 20),
                     'image' => $featured_image ? array($featured_image[0]) : array(),
-                    'gallery' => $all_images // All images including featured
+                    'gallery' => $all_images, // All images including featured
+                    'categories' => $category_slugs // WooCommerce category slugs
                 );
             }
         }

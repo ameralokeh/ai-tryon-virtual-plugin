@@ -58,8 +58,8 @@
             }
         });
         
-        // Reset button
-        $(document).on('click', '.reset-btn', function(e) {
+        // Reset button (upload area only)
+        $(document).on('click', '.upload-section .reset-btn', function(e) {
             e.stopPropagation();
             e.preventDefault();
             clearImagePreview();
@@ -67,8 +67,8 @@
             updateTryOnButton();
         });
         
-        // Download button
-        $(document).on('click', '.download-btn', function(e) {
+        // Download button (upload area only)
+        $(document).on('click', '.upload-section .download-btn', function(e) {
             e.stopPropagation();
             e.preventDefault();
             handleDownloadImage();
@@ -76,11 +76,22 @@
         
         // Action buttons
         $('#try-on-btn').on('click', handleTryOnRequest);
-        $('#try-another-btn').on('click', handleTryAnother);
-        $('#save-image-btn').on('click', handleDownloadResult);
         
-        // Category filters
-        $(document).on('click', '.category-btn', handleCategoryFilter);
+        // Result area buttons (specific handlers)
+        $(document).on('click', '#try-another-btn', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            handleTryAnother();
+        });
+        
+        $(document).on('click', '#save-image-btn', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            handleDownloadResult();
+        });
+        
+        // Category dropdown (replaces old category buttons)
+        $(document).on('change', '#category-dropdown', handleCategoryFilter);
         
         // Search functionality
         $('#search-box').on('input', handleProductSearch);
@@ -90,6 +101,12 @@
         
         // Purchase credits button (global binding)
         $(document).on('click', '#purchase-credits-btn', function(e) {
+            e.preventDefault();
+            window.location.href = '/shop/?add-to-cart=virtual-fitting-credits';
+        });
+        
+        // Add credits button (banner)
+        $(document).on('click', '#add-credits-btn', function(e) {
             e.preventDefault();
             window.location.href = '/shop/?add-to-cart=virtual-fitting-credits';
         });
@@ -356,6 +373,10 @@
     function showImagePreview(imageSrc) {
         const uploadArea = $('#upload-area');
         
+        console.log('=== DEBUGGING FLOATING BUTTONS ===');
+        console.log('1. Upload area element:', uploadArea[0]);
+        console.log('2. Upload area HTML before:', uploadArea.html().substring(0, 200) + '...');
+        
         // Remove existing preview
         uploadArea.find('.image-preview').remove();
         
@@ -369,25 +390,51 @@
         uploadArea.append(preview);
         uploadArea.addClass('has-preview');
         
-        // Debug: Check buttons
-        console.log('Upload area has-preview class:', uploadArea.hasClass('has-preview'));
-        console.log('Floating buttons found:', uploadArea.find('.floating-buttons').length);
-        console.log('Reset button found:', uploadArea.find('.reset-btn').length);
-        console.log('Download button found:', uploadArea.find('.download-btn').length);
+        console.log('3. Added has-preview class:', uploadArea.hasClass('has-preview'));
+        console.log('4. Upload area classes:', uploadArea.attr('class'));
         
-        // Show floating buttons explicitly
+        // Check if floating buttons exist in HTML
         const floatingButtons = uploadArea.find('.floating-buttons');
-        floatingButtons.show().css({
-            'display': 'flex',
-            'visibility': 'visible',
-            'opacity': '1'
-        });
+        console.log('5. Floating buttons container found:', floatingButtons.length);
+        console.log('6. Floating buttons HTML:', floatingButtons[0]);
         
-        // Debug: Check visibility
-        setTimeout(() => {
-            console.log('Floating buttons visible:', floatingButtons.is(':visible'));
-            console.log('Floating buttons display:', floatingButtons.css('display'));
-        }, 100);
+        if (floatingButtons.length > 0) {
+            console.log('7. Buttons before show:', {
+                display: floatingButtons.css('display'),
+                visibility: floatingButtons.css('visibility'),
+                opacity: floatingButtons.css('opacity'),
+                zIndex: floatingButtons.css('z-index')
+            });
+            
+            // Show floating buttons explicitly
+            floatingButtons.show().css({
+                'display': 'flex',
+                'visibility': 'visible',
+                'opacity': '1'
+            });
+            
+            console.log('8. Buttons after show:', {
+                display: floatingButtons.css('display'),
+                visibility: floatingButtons.css('visibility'),
+                opacity: floatingButtons.css('opacity'),
+                zIndex: floatingButtons.css('z-index'),
+                position: floatingButtons.css('position'),
+                top: floatingButtons.css('top'),
+                right: floatingButtons.css('right')
+            });
+            
+            // Check individual buttons
+            const resetBtn = uploadArea.find('.reset-btn');
+            const downloadBtn = uploadArea.find('.download-btn');
+            console.log('9. Reset button found:', resetBtn.length);
+            console.log('10. Download button found:', downloadBtn.length);
+            
+        } else {
+            console.error('❌ FLOATING BUTTONS CONTAINER NOT FOUND!');
+            console.log('Upload area HTML:', uploadArea.html());
+        }
+        
+        console.log('=== END DEBUGGING ===');
         
         // Update button states
         updateTryOnButton();
@@ -562,24 +609,28 @@
     }
 
     /**
-     * Handle category filter
+     * Handle category filter (dropdown)
      */
     function handleCategoryFilter() {
-        // Remove active class from all buttons
-        $('.category-btn').removeClass('active');
+        const selectedCategory = $(this).val();
         
-        // Add active class to clicked button
-        $(this).addClass('active');
-        
-        const category = $(this).data('category');
-        
-        // Filter products
-        if (category === 'all') {
+        // Filter products based on selected category
+        if (selectedCategory === 'all') {
             $('.product-card').show();
         } else {
             $('.product-card').each(function() {
-                const productCategory = $(this).data('category');
-                if (productCategory === category) {
+                const productCategories = $(this).data('categories');
+                
+                // Handle both string and array formats
+                let categoryList = [];
+                if (typeof productCategories === 'string') {
+                    categoryList = productCategories.split(' ');
+                } else if (Array.isArray(productCategories)) {
+                    categoryList = productCategories;
+                }
+                
+                // Show product if it belongs to the selected category
+                if (categoryList.includes(selectedCategory)) {
                     $(this).show();
                 } else {
                     $(this).hide();
@@ -606,33 +657,63 @@
         });
     }
 
+    // Global variables to prevent multiple downloads
+    let isDownloading = false;
+
     /**
      * Handle download image
      */
     function handleDownloadImage() {
+        if (isDownloading) {
+            console.log('Download already in progress, ignoring click');
+            return;
+        }
+        
+        isDownloading = true;
+        
         const imagePreview = $('#upload-area .image-preview');
         if (!imagePreview.length) {
             showMessage('No image to download.', 'error');
+            isDownloading = false;
             return;
         }
 
+        console.log('Downloading customer image...');
+        
         // Create download link
         const link = document.createElement('a');
         link.href = imagePreview.attr('src');
-        link.download = 'uploaded-image.jpg';
+        link.download = 'customer-image.jpg';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
-        showMessage('Image downloaded successfully!', 'success');
+        showMessage('Customer image downloaded successfully!', 'success');
+        
+        // Reset download flag after a short delay
+        setTimeout(() => {
+            isDownloading = false;
+        }, 1000);
     }
 
     /**
      * Handle download result
      */
     function handleDownloadResult() {
+        if (isDownloading) {
+            console.log('Download already in progress, ignoring click');
+            return;
+        }
+        
+        isDownloading = true;
+        
         const resultImage = $('#virtual-result-image').attr('src');
-        if (!resultImage) return;
+        if (!resultImage) {
+            isDownloading = false;
+            return;
+        }
+
+        console.log('Downloading AI result image...');
 
         // Create download link
         const link = document.createElement('a');
@@ -642,7 +723,12 @@
         link.click();
         document.body.removeChild(link);
         
-        showMessage('Image downloaded successfully!', 'success');
+        showMessage('AI result downloaded successfully!', 'success');
+        
+        // Reset download flag after a short delay
+        setTimeout(() => {
+            isDownloading = false;
+        }, 1000);
     }
 
     /**
@@ -726,7 +812,11 @@
      * Check user credits
      */
     function checkUserCredits() {
-        if (!ai_virtual_fitting_ajax.user_logged_in) return;
+        if (!ai_virtual_fitting_ajax.user_logged_in) {
+            // For non-logged-in users, show 0 credits
+            updateCreditsDisplay(0);
+            return;
+        }
 
         $.ajax({
             url: ai_virtual_fitting_ajax.ajax_url,
@@ -747,13 +837,33 @@
      * Update credits display
      */
     function updateCreditsDisplay(credits) {
+        // Update main credits count (if exists)
         $('#credits-count').text(credits);
         
-        // Add animation
-        $('#credits-count').addClass('updated');
+        // Update banner credits
+        $('#total-credits').text(credits);
+        
+        // Add animation to both displays
+        $('#credits-count, #total-credits').addClass('updated');
         setTimeout(function() {
-            $('#credits-count').removeClass('updated');
+            $('#credits-count, #total-credits').removeClass('updated');
         }, 1000);
+        
+        // Update banner visibility based on credits
+        updateBannerState(credits);
+    }
+    
+    /**
+     * Update banner state based on credits
+     */
+    function updateBannerState(credits) {
+        const banner = $('#credits-banner');
+        
+        if (credits <= 0) {
+            banner.addClass('low-credits');
+        } else {
+            banner.removeClass('low-credits');
+        }
     }
 
     /**
