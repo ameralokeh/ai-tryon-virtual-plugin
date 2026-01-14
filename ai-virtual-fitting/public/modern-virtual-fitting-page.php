@@ -128,8 +128,6 @@ if (!defined('ABSPATH')) {
         <div class="products-panel">
             <!-- Header -->
             <div class="products-header">
-                <h3 class="section-header">Select Your Dress</h3>
-                
                 <!-- Search Box -->
                 <input type="text" class="search-box" placeholder="Search dresses..." id="search-box">
                 
@@ -205,10 +203,68 @@ if (!defined('ABSPATH')) {
     <div class="loading-overlay" id="loading-overlay" style="display: none;">
         <div class="loading-spinner"></div>
         <div class="loading-text">Processing your virtual fitting...</div>
+        <div class="loading-fact" id="loading-fact"></div>
     </div>
 
     <!-- Messages Container -->
     <div id="message-container"></div>
+
+    <!-- Checkout Modal -->
+    <div class="checkout-modal-overlay" id="checkout-modal" style="display: none;">
+        <div class="checkout-modal">
+            <div class="checkout-modal-header">
+                <h3>Purchase Credits</h3>
+                <button class="checkout-modal-close" id="close-checkout-modal" type="button">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="checkout-modal-content">
+                <div class="checkout-loading" id="checkout-loading">
+                    <div class="checkout-spinner"></div>
+                    <p>Loading checkout...</p>
+                </div>
+                <div class="checkout-form-container" id="checkout-form-container" style="display: none;">
+                    <!-- WooCommerce checkout form will be loaded here -->
+                </div>
+                <div class="checkout-success" id="checkout-success" style="display: none;">
+                    <div class="success-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
+                        </svg>
+                    </div>
+                    <h4>Purchase Successful!</h4>
+                    <p>Your 20 credits have been added to your account. You can now continue with virtual fitting.</p>
+                    <div class="success-details">
+                        <div class="success-detail">
+                            <span class="detail-label">Credits Added:</span>
+                            <span class="detail-value">20 Credits</span>
+                        </div>
+                        <div class="success-detail">
+                            <span class="detail-label">Amount Paid:</span>
+                            <span class="detail-value">$10.00</span>
+                        </div>
+                    </div>
+                    <p class="success-note">This modal will close automatically in a few seconds.</p>
+                    <button class="btn btn-primary" id="continue-fitting-btn">Continue Virtual Fitting</button>
+                </div>
+                <div class="checkout-error" id="checkout-error" style="display: none;">
+                    <div class="error-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+                        </svg>
+                    </div>
+                    <h4>Payment Failed</h4>
+                    <p id="checkout-error-message">There was an issue processing your payment. Please try again.</p>
+                    <div class="checkout-error-actions">
+                        <button class="btn btn-primary" id="retry-checkout-btn">Try Again</button>
+                        <button class="btn btn-secondary" id="cancel-checkout-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Login Modal (if not logged in) -->

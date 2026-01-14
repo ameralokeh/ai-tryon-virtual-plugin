@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium React Modal Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .test-button:hover {
+            background: #357abd;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: #e8f4fd;
+            border-left: 4px solid #4a90e2;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Premium React Modal Test</h1>
+        <p>Testing the updated React checkout modal with premium scoped styles.</p>
+        
+        <div class="status">
+            <strong>WordPress Environment:</strong> http://localhost:8080<br>
+            <strong>Test Page:</strong> <a href="http://localhost:8080/virtual-fitting-2/" target="_blank">Virtual Fitting Page</a><br>
+            <strong>Admin:</strong> <a href="http://localhost:8080/wp-admin" target="_blank">WordPress Admin</a>
+        </div>
+
+        <h2>Test Scenarios</h2>
+        <button class="test-button" onclick="openWordPressTest()">Open WordPress Test Page</button>
+        <button class="test-button" onclick="testModalStates()">Test Modal States</button>
+        <button class="test-button" onclick="testMobileView()">Test Mobile View</button>
+
+        <h2>Expected Features</h2>
+        <ul>
+            <li>✅ Scoped styles with <code>.ai-virtual-fitting-app</code> prefix</li>
+            <li>✅ Premium color palette (#1f2d3d, #54606b, #6b7785)</li>
+            <li>✅ Card-based form sections with better visual hierarchy</li>
+            <li>✅ Enhanced typography with font weights 800/900</li>
+            <li>✅ Hover effects with transform and shadow</li>
+            <li>✅ CSS Grid layout for better responsiveness</li>
+            <li>✅ Custom animations with proper easing</li>
+            <li>✅ Mobile-first responsive design</li>
+        </ul>
+
+        <h2>Testing Instructions</h2>
+        <ol>
+            <li>Click "Open WordPress Test Page" to navigate to the virtual fitting page</li>
+            <li>Look for the "Try Virtual Fitting" or checkout buttons</li>
+            <li>Click to open the React modal</li>
+            <li>Verify the premium styling is applied</li>
+            <li>Test form interactions and validation</li>
+            <li>Test mobile responsiveness by resizing browser</li>
+        </ol>
+
+        <div id="test-results" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; display: none;">
+            <h3>Test Results</h3>
+            <div id="results-content"></div>
+        </div>
+    </div>
+
+    <script>
+        function openWordPressTest() {
+            window.open('http://localhost:8080/virtual-fitting-2/', '_blank');
+        }
+
+        function testModalStates() {
+            const results = document.getElementById('test-results');
+            const content = document.getElementById('results-content');
+            
+            content.innerHTML = `
+                <h4>Modal State Testing</h4>
+                <p>To test different modal states:</p>
+                <ul>
+                    <li><strong>Loading State:</strong> Modal should show spinner with "Loading checkout..." text</li>
+                    <li><strong>Form State:</strong> Should display form with premium card sections</li>
+                    <li><strong>Processing State:</strong> Should show processing steps with animations</li>
+                    <li><strong>Success State:</strong> Should display success checkmark and details</li>
+                    <li><strong>Error State:</strong> Should show error icon and retry options</li>
+                </ul>
+                <p><strong>Key Style Features to Verify:</strong></p>
+                <ul>
+                    <li>Scoped styles prevent WordPress theme conflicts</li>
+                    <li>Premium color scheme with sophisticated grays</li>
+                    <li>Smooth animations and hover effects</li>
+                    <li>Grid-based responsive layout</li>
+                    <li>Enhanced typography and spacing</li>
+                </ul>
+            `;
+            
+            results.style.display = 'block';
+        }
+
+        function testMobileView() {
+            const results = document.getElementById('test-results');
+            const content = document.getElementById('results-content');
+            
+            content.innerHTML = `
+                <h4>Mobile Responsiveness Testing</h4>
+                <p>To test mobile view:</p>
+                <ol>
+                    <li>Open browser developer tools (F12)</li>
+                    <li>Toggle device toolbar (Ctrl+Shift+M)</li>
+                    <li>Select different device sizes (iPhone, iPad, etc.)</li>
+                    <li>Open the modal and verify:</li>
+                    <ul>
+                        <li>Modal takes full width on mobile</li>
+                        <li>Form fields stack vertically</li>
+                        <li>Buttons stack vertically</li>
+                        <li>Touch interactions work properly</li>
+                        <li>Text remains readable at all sizes</li>
+                    </ul>
+                </ol>
+                <p><strong>Breakpoint:</strong> 640px and below switches to mobile layout</p>
+            `;
+            
+            results.style.display = 'block';
+        }
+
+        // Auto-check WordPress status
+        window.addEventListener('load', function() {
+            fetch('http://localhost:8080')
+                .then(response => {
+                    if (response.ok) {
+                        console.log('✅ WordPress is running at localhost:8080');
+                    }
+                })
+                .catch(error => {
+                    console.log('❌ WordPress may not be running:', error);
+                });
+        });
+    </script>
+</body>
+</html>

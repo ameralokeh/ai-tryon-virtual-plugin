@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #005a87;
+        }
+        .success {
+            color: #46b450;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3232;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Button Fix Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <p>This page will help you test if the "Get More Credits" button fix is working:</p>
+        
+        <ol>
+            <li><strong>Clear Browser Cache:</strong> Press Ctrl+F5 (or Cmd+Shift+R on Mac) to hard refresh</li>
+            <li><strong>Open Virtual Fitting Page:</strong> <a href="http://localhost:8080/virtual-fitting-2/" target="_blank">Click here</a></li>
+            <li><strong>Login:</strong> Use credentials: hooktest / password</li>
+            <li><strong>Test Button:</strong> Click "Get More Credits" button</li>
+            <li><strong>Expected Result:</strong> Modal should open instead of redirecting to shop</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Quick JavaScript Test</h2>
+        <p>Click the button below to test if the modal function is available:</p>
+        
+        <button class="button" onclick="testModalFunction()">Test Modal Function</button>
+        <div id="test-result" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Troubleshooting</h2>
+        <h3>If the button still redirects to shop:</h3>
+        <ul>
+            <li>Clear browser cache completely (Ctrl+Shift+Delete)</li>
+            <li>Check browser console for JavaScript errors (F12 → Console)</li>
+            <li>Verify both scripts are loading in Network tab (F12 → Network)</li>
+            <li>Try in incognito/private browsing mode</li>
+        </ul>
+        
+        <h3>Expected Behavior:</h3>
+        <ul>
+            <li>✅ Modal opens with checkout form</li>
+            <li>✅ Product shows "20 Credits for $10.00"</li>
+            <li>✅ Payment methods are available</li>
+            <li>✅ Modal can be closed with X or clicking outside</li>
+            <li>❌ Should NOT redirect to shop/cart page</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>Debug Information</h2>
+        <p>If you're still having issues, check these in the browser console:</p>
+        <pre>
+// Check if functions are available
+console.log('openCheckoutModal available:', typeof openCheckoutModal);
+console.log('jQuery available:', typeof $ !== 'undefined');
+console.log('Modal element exists:', $('#checkout-modal').length > 0);
+
+// Test the function directly
+if (typeof openCheckoutModal === 'function') {
+    openCheckoutModal();
+}
+        </pre>
+    </div>
+
+    <script>
+        function testModalFunction() {
+            const resultDiv = document.getElementById('test-result');
+            
+            if (typeof openCheckoutModal === 'function') {
+                resultDiv.innerHTML = '<span class="success">✅ Modal function is available! The fix should work.</span>';
+            } else {
+                resultDiv.innerHTML = '<span class="error">❌ Modal function not found. You may need to visit the virtual fitting page first.</span>';
+            }
+        }
+    </script>
+</body>
+</html>

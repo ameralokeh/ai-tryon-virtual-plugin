@@ -203,6 +203,57 @@ get_header(); ?>
         <!-- Loading content will be dynamically inserted here -->
     </div>
 
+    <!-- Checkout Modal -->
+    <div class="checkout-modal-overlay" id="checkout-modal" style="display: none;">
+        <div class="checkout-modal">
+            <div class="checkout-modal-header">
+                <h3>Purchase Credits</h3>
+                <button class="checkout-modal-close" id="close-checkout-modal" type="button">
+                    <span class="dashicons dashicons-no"></span>
+                </button>
+            </div>
+            <div class="checkout-modal-content">
+                <div class="checkout-loading" id="checkout-loading">
+                    <div class="checkout-spinner"></div>
+                    <p>Loading checkout...</p>
+                </div>
+                <div class="checkout-form-container" id="checkout-form-container" style="display: none;">
+                    <!-- WooCommerce checkout form will be loaded here -->
+                </div>
+                <div class="checkout-success" id="checkout-success" style="display: none;">
+                    <div class="success-icon">
+                        <span class="dashicons dashicons-yes"></span>
+                    </div>
+                    <h4>Purchase Successful!</h4>
+                    <p>Your 20 credits have been added to your account. You can now continue with virtual fitting.</p>
+                    <div class="success-details">
+                        <div class="success-detail">
+                            <span class="detail-label">Credits Added:</span>
+                            <span class="detail-value">20 Credits</span>
+                        </div>
+                        <div class="success-detail">
+                            <span class="detail-label">Amount Paid:</span>
+                            <span class="detail-value">$10.00</span>
+                        </div>
+                    </div>
+                    <p class="success-note">This modal will close automatically in a few seconds.</p>
+                    <button class="button button-primary" id="continue-fitting-btn">Continue Virtual Fitting</button>
+                </div>
+                <div class="checkout-error" id="checkout-error" style="display: none;">
+                    <div class="error-icon">
+                        <span class="dashicons dashicons-warning"></span>
+                    </div>
+                    <h4>Payment Failed</h4>
+                    <p id="checkout-error-message">There was an issue processing your payment. Please try again.</p>
+                    <div class="checkout-error-actions">
+                        <button class="button button-primary" id="retry-checkout-btn">Try Again</button>
+                        <button class="button button-secondary" id="cancel-checkout-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <?php get_footer();

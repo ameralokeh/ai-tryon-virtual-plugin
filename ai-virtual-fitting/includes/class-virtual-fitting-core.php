@@ -79,6 +79,13 @@ class AI_Virtual_Fitting_Core {
     private $analytics_manager;
     
     /**
+     * Virtual Credit System instance
+     *
+     * @var AI_Virtual_Fitting_Virtual_Credit_System
+     */
+    private $virtual_credit_system;
+    
+    /**
      * Get core instance
      *
      * @return AI_Virtual_Fitting_Core
@@ -148,6 +155,9 @@ class AI_Virtual_Fitting_Core {
         if (is_admin()) {
             $this->admin_settings = new AI_Virtual_Fitting_Admin_Settings();
         }
+        
+        // Initialize Virtual Credit System
+        $this->virtual_credit_system = new AI_Virtual_Fitting_Virtual_Credit_System();
         
         // Initialize Performance Manager
         $this->performance_manager = new AI_Virtual_Fitting_Performance_Manager();

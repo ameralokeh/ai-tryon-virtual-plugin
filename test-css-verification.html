@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Verification Test</title>
+    <style>
+        /* Test the exact CSS from WordPress */
+        .fitting-container {
+            display: grid;
+            grid-template-columns: 1fr 0.75fr 1.25fr; /* Left: normal, Middle: 75%, Right: 125% */
+            gap: 20px;
+            width: 100%;
+            max-width: 100%;
+            height: min(90vh, 900px);
+            padding: 20px;
+            box-sizing: border-box;
+            align-items: stretch;
+            overflow: hidden;
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            position: relative;
+        }
+        
+        .left { background: #e8f4fd !important; border: 3px solid #4a90e2; }
+        .middle { background: #fff3cd !important; border: 3px solid #ffc107; }
+        .right { background: #d1ecf1 !important; border: 3px solid #17a2b8; }
+        
+        .label {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <h1>CSS Grid Layout Test</h1>
+    <p>This should show: Left (normal width) | Middle (75% width) | Right (125% width)</p>
+    
+    <div class="fitting-container">
+        <div class="panel left">
+            <div class="label">LEFT PANEL<br>(1fr - normal)</div>
+        </div>
+        <div class="panel middle">
+            <div class="label">MIDDLE PANEL<br>(0.75fr - 75%)</div>
+        </div>
+        <div class="panel right">
+            <div class="label">RIGHT PANEL<br>(1.25fr - 125%)</div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 20px; padding: 20px; background: white; border-radius: 8px;">
+        <h3>Expected Result:</h3>
+        <ul>
+            <li><strong>Left Panel (Blue):</strong> Normal width (1fr)</li>
+            <li><strong>Middle Panel (Yellow):</strong> 75% of normal width (0.75fr) - should be noticeably smaller</li>
+            <li><strong>Right Panel (Teal):</strong> 125% of normal width (1.25fr) - should be noticeably larger</li>
+        </ul>
+        <p>If all three panels look the same size, the CSS is not being applied correctly.</p>
+    </div>
+</body>
+</html>

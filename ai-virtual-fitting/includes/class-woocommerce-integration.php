@@ -232,11 +232,22 @@ class AI_Virtual_Fitting_WooCommerce_Integration {
     }
     
     /**
-     * Get or create credits product
+     * Get or create credits product (uses Virtual Credit System's self-healing method)
      *
      * @return int|false Product ID on success, false on failure
      */
     public function get_or_create_credits_product() {
+        // Use the Virtual Credit System's self-healing method
+        // This ensures the product is automatically recreated if deleted
+        $virtual_credit_system = new AI_Virtual_Fitting_Virtual_Credit_System();
+        $product_id = $virtual_credit_system->get_or_create_credit_product();
+        
+        if ($product_id) {
+            $this->credits_product_id = $product_id;
+            return $product_id;
+        }
+        
+        // Fallback to old method if Virtual Credit System fails
         if ($this->credits_product_id && get_post($this->credits_product_id)) {
             return $this->credits_product_id;
         }

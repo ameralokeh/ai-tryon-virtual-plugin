@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Updated React Checkout Modal Test</title>
+    
+    <!-- React CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Updated CSS with scoped styles -->
+    <style>
+        /* =========================================================
+        Checkout Modal (React) — Premium Look & Feel
+        Scoped to the app to avoid theme conflicts
+        ========================================================= */
+
+        .ai-virtual-fitting-app .checkout-modal-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 99999;
+            background: rgba(10, 12, 16, 0.65);
+            backdrop-filter: blur(10px);
+        }
+
+        .ai-virtual-fitting-app .checkout-modal-overlay.active {
+            display: flex;
+        }
+
+        /* Modal container */
+        .ai-virtual-fitting-app .checkout-modal.react-modal {
+            width: min(720px, 100%);
+            max-height: min(86vh, 860px);
+            overflow: hidden;
+            border-radius: 18px;
+            background: #ffffff;
+            box-shadow: 0 30px 90px rgba(0,0,0,0.35);
+            border: 1px solid rgba(225,232,237,0.9);
+            transform: translateY(6px);
+            animation: avfModalIn 180ms ease-out forwards;
+        }
+
+        @keyframes avfModalIn {
+            from { opacity: 0; transform: translateY(14px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Header */
+        .ai-virtual-fitting-app .checkout-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 16px 18px;
+            border-bottom: 1px solid #eef2f6;
+            background: linear-gradient(180deg, rgba(248,249,250,0.9), rgba(255,255,255,1));
+        }
+
+        .ai-virtual-fitting-app .checkout-modal-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 800;
+            color: #1f2d3d;
+            letter-spacing: 0.2px;
+        }
+
+        .ai-virtual-fitting-app .checkout-modal-close {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            border: 1px solid #e7edf3;
+            background: #ffffff;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+        }
+
+        .ai-virtual-fitting-app .checkout-modal-close:hover {
+            background: #f6f8fa;
+            transform: translateY(-1px);
+        }
+
+        .ai-virtual-fitting-app .checkout-modal-close svg {
+            width: 18px;
+            height: 18px;
+            fill: #2c3e50;
+        }
+
+        /* Content */
+        .ai-virtual-fitting-app .checkout-modal-content {
+            padding: 16px 18px 18px;
+            overflow: auto;
+            max-height: calc(min(86vh, 860px) - 64px);
+        }
+
+        /* Steps base */
+        .ai-virtual-fitting-app .checkout-step {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Loading / Processing */
+        .ai-virtual-fitting-app .checkout-spinner,
+        .ai-virtual-fitting-app .processing-spinner {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 4px solid #e9eef4;
+            border-top-color: #4a90e2;
+            animation: avfSpin 1s linear infinite;
+            margin: 6px auto;
+        }
+
+        @keyframes avfSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        .ai-virtual-fitting-app .loading-step p,
+        .ai-virtual-fitting-app .processing-step p {
+            margin: 0;
+            text-align: center;
+            color: #54606b;
+            font-weight: 600;
+        }
+
+        /* Summary box */
+        .ai-virtual-fitting-app .checkout-summary {
+            border: 1px solid #eef2f6;
+            background: #fbfcfd;
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .ai-virtual-fitting-app .summary-item,
+        .ai-virtual-fitting-app .summary-total {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .ai-virtual-fitting-app .summary-item span,
+        .ai-virtual-fitting-app .summary-total span {
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .ai-virtual-fitting-app .summary-item .price {
+            font-weight: 800;
+        }
+
+        .ai-virtual-fitting-app .summary-total {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #e6ecf2;
+        }
+
+        .ai-virtual-fitting-app .summary-total .total-price {
+            font-weight: 900;
+            color: #4a90e2;
+        }
+
+        /* Form */
+        .ai-virtual-fitting-app .checkout-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .ai-virtual-fitting-app .form-section {
+            border: 1px solid #eef2f6;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .ai-virtual-fitting-app .form-section h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: 800;
+            color: #1f2d3d;
+        }
+
+        .ai-virtual-fitting-app .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .ai-virtual-fitting-app .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .ai-virtual-fitting-app .form-field label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #54606b;
+        }
+
+        .ai-virtual-fitting-app .form-field input {
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid #e1e8ed;
+            padding: 0 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            outline: none;
+            background: #ffffff;
+            transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+        }
+
+        .ai-virtual-fitting-app .form-field input::placeholder {
+            color: #9aa6b2;
+            font-weight: 500;
+        }
+
+        .ai-virtual-fitting-app .form-field input:focus {
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 4px rgba(74,144,226,0.14);
+            background: #fbfdff;
+        }
+
+        .ai-virtual-fitting-app .form-field input.error {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 4px rgba(231,76,60,0.12);
+        }
+
+        .ai-virtual-fitting-app .field-error {
+            font-size: 12px;
+            font-weight: 700;
+            color: #b3261e;
+            background: rgba(231,76,60,0.08);
+            border-left: 3px solid #e74c3c;
+            padding: 8px 10px;
+            border-radius: 10px;
+        }
+
+        /* Payment method cards */
+        .ai-virtual-fitting-app .payment-methods {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .ai-virtual-fitting-app .payment-method {
+            border: 1px solid #e7edf3;
+            border-radius: 14px;
+            background: #ffffff;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+        }
+
+        .ai-virtual-fitting-app .payment-method:hover {
+            border-color: #4a90e2;
+            box-shadow: 0 10px 26px rgba(74,144,226,0.12);
+            transform: translateY(-1px);
+        }
+
+        .ai-virtual-fitting-app .payment-method input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #4a90e2;
+        }
+
+        .ai-virtual-fitting-app .payment-method label {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .ai-virtual-fitting-app .payment-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(74,144,226,0.10);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .ai-virtual-fitting-app .payment-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .ai-virtual-fitting-app .payment-name {
+            font-weight: 900;
+            color: #1f2d3d;
+        }
+
+        .ai-virtual-fitting-app .payment-desc {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7785;
+        }
+
+        /* Actions */
+        .ai-virtual-fitting-app .form-actions,
+        .ai-virtual-fitting-app .error-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .ai-virtual-fitting-app .checkout-modal .btn {
+            height: 44px;
+            border-radius: 14px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-virtual-fitting-app .checkout-modal .btn.btn-secondary {
+            background: #f3f5f7;
+            color: #2c3e50;
+            border: 1px solid #e1e8ed;
+        }
+
+        .ai-virtual-fitting-app .checkout-modal .btn.btn-secondary:hover {
+            background: #e9eef3;
+        }
+
+        .ai-virtual-fitting-app .checkout-modal .btn.btn-primary {
+            background: #4a90e2;
+            color: #ffffff;
+        }
+
+        .ai-virtual-fitting-app .checkout-modal .btn.btn-primary:hover {
+            background: #357abd;
+        }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+            .ai-virtual-fitting-app .checkout-modal.react-modal {
+                width: 100%;
+                border-radius: 16px;
+            }
+            
+            .ai-virtual-fitting-app .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .ai-virtual-fitting-app .form-actions,
+            .ai-virtual-fitting-app .error-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Test page styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .test-button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .test-button:hover {
+            background: #357abd;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎨 Updated React Checkout Modal Test</h1>
+        <p>Testing the new premium scoped CSS styles for the React checkout modal.</p>
+        
+        <h3>Key Improvements:</h3>
+        <ul>
+            <li>✅ Scoped to <code>.ai-virtual-fitting-app</code> to prevent theme conflicts</li>
+            <li>✅ Premium color palette with refined grays</li>
+            <li>✅ Card-based form sections with better visual hierarchy</li>
+            <li>✅ Enhanced hover effects and micro-interactions</li>
+            <li>✅ Improved mobile responsiveness with CSS Grid</li>
+            <li>✅ Custom animations and better spacing</li>
+        </ul>
+
+        <button class="test-button" onclick="openModal()">🚀 Test Updated Modal</button>
+        <button class="test-button" onclick="testMobile()">📱 Test Mobile View</button>
+    </div>
+
+    <!-- Modal Container -->
+    <div class="ai-virtual-fitting-app">
+        <div id="modal-root"></div>
+    </div>
+
+    <script>
+        // Mock AJAX object for testing
+        window.ai_virtual_fitting_ajax = {
+            ajax_url: '/wp-admin/admin-ajax.php',
+            nonce: 'test-nonce-123'
+        };
+
+        // Mock fetch for testing
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            console.log('Mock AJAX call:', url, options);
+            
+            if (options && options.body && options.body.toString().includes('add_credits_to_cart')) {
+                return Promise.resolve({
+                    json: () => Promise.resolve({
+                        success: true,
+                        data: { cart_total: '$10.00' }
+                    })
+                });
+            }
+            
+            if (options && options.body && options.body.toString().includes('process_checkout')) {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        resolve({
+                            json: () => Promise.resolve({
+                                success: true,
+                                data: { message: 'Payment successful!' }
+                            })
+                        });
+                    }, 2000);
+                });
+            }
+            
+            return originalFetch.apply(this, arguments);
+        };
+
+        // Simple React checkout modal component
+        const CheckoutModal = function(props) {
+            const { isOpen, onClose, onSuccess } = props;
+            const [step, setStep] = React.useState('loading');
+            const [formData, setFormData] = React.useState({
+                billing_first_name: '',
+                billing_last_name: '',
+                billing_email: '',
+                billing_phone: '',
+                billing_address_1: '',
+                billing_city: '',
+                billing_postcode: '',
+                payment_method: 'stripe'
+            });
+            const [errors, setErrors] = React.useState({});
+
+            React.useEffect(function() {
+                if (isOpen) {
+                    setStep('loading');
+                    setTimeout(() => setStep('form'), 1000);
+                }
+            }, [isOpen]);
+
+            const handleInputChange = function(field, value) {
+                setFormData(prev => ({ ...prev, [field]: value }));
+                if (errors[field]) {
+                    setErrors(prev => ({ ...prev, [field]: '' }));
+                }
+            };
+
+            const handleSubmit = async function(e) {
+                e.preventDefault();
+                setStep('processing');
+                
+                try {
+                    await fetch('/mock-checkout', {
+                        method: 'POST',
+                        body: new URLSearchParams({ action: 'process_checkout', ...formData })
+                    });
+                    setStep('success');
+                    setTimeout(() => onSuccess(), 2000);
+                } catch (error) {
+                    setStep('error');
+                }
+            };
+
+            if (!isOpen) return null;
+
+            return React.createElement('div', {
+                className: 'checkout-modal-overlay active',
+                onClick: onClose
+            }, React.createElement('div', {
+                className: 'checkout-modal react-modal',
+                onClick: function(e) { e.stopPropagation(); }
+            }, [
+                React.createElement('div', {
+                    key: 'header',
+                    className: 'checkout-modal-header'
+                }, [
+                    React.createElement('h3', { key: 'title' }, 'Purchase 20 Credits - $10.00'),
+                    React.createElement('button', {
+                        key: 'close',
+                        className: 'checkout-modal-close',
+                        onClick: onClose
+                    }, '×')
+                ]),
+                
+                React.createElement('div', {
+                    key: 'content',
+                    className: 'checkout-modal-content'
+                }, [
+                    step === 'loading' && React.createElement('div', {
+                        key: 'loading',
+                        className: 'checkout-step loading-step'
+                    }, [
+                        React.createElement('div', { key: 'spinner', className: 'checkout-spinner' }),
+                        React.createElement('p', { key: 'text' }, 'Preparing your checkout...')
+                    ]),
+
+                    step === 'form' && React.createElement('div', {
+                        key: 'form',
+                        className: 'checkout-step form-step'
+                    }, [
+                        React.createElement('div', {
+                            key: 'summary',
+                            className: 'checkout-summary'
+                        }, [
+                            React.createElement('div', {
+                                key: 'item',
+                                className: 'summary-item'
+                            }, [
+                                React.createElement('span', { key: 'label' }, '20 Virtual Fitting Credits'),
+                                React.createElement('span', { key: 'price', className: 'price' }, '$10.00')
+                            ]),
+                            React.createElement('div', {
+                                key: 'total',
+                                className: 'summary-total'
+                            }, [
+                                React.createElement('span', { key: 'label' }, 'Total'),
+                                React.createElement('span', { key: 'price', className: 'total-price' }, '$10.00')
+                            ])
+                        ]),
+
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleSubmit,
+                            className: 'checkout-form'
+                        }, [
+                            React.createElement('div', {
+                                key: 'billing',
+                                className: 'form-section'
+                            }, [
+                                React.createElement('h4', { key: 'title' }, 'Billing Information'),
+                                
+                                React.createElement('div', {
+                                    key: 'name-row',
+                                    className: 'form-row'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'first-name',
+                                        className: 'form-field'
+                                    }, [
+                                        React.createElement('label', { key: 'label' }, 'First Name *'),
+                                        React.createElement('input', {
+                                            key: 'input',
+                                            type: 'text',
+                                            value: formData.billing_first_name,
+                                            onChange: function(e) { handleInputChange('billing_first_name', e.target.value); },
+                                            placeholder: 'Enter your first name'
+                                        })
+                                    ]),
+                                    React.createElement('div', {
+                                        key: 'last-name',
+                                        className: 'form-field'
+                                    }, [
+                                        React.createElement('label', { key: 'label' }, 'Last Name *'),
+                                        React.createElement('input', {
+                                            key: 'input',
+                                            type: 'text',
+                                            value: formData.billing_last_name,
+                                            onChange: function(e) { handleInputChange('billing_last_name', e.target.value); },
+                                            placeholder: 'Enter your last name'
+                                        })
+                                    ])
+                                ]),
+
+                                React.createElement('div', {
+                                    key: 'email',
+                                    className: 'form-field'
+                                }, [
+                                    React.createElement('label', { key: 'label' }, 'Email Address *'),
+                                    React.createElement('input', {
+                                        key: 'input',
+                                        type: 'email',
+                                        value: formData.billing_email,
+                                        onChange: function(e) { handleInputChange('billing_email', e.target.value); },
+                                        placeholder: 'Enter your email address'
+                                    })
+                                ])
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'payment',
+                                className: 'form-section'
+                            }, [
+                                React.createElement('h4', { key: 'title' }, 'Payment Method'),
+                                React.createElement('div', {
+                                    key: 'methods',
+                                    className: 'payment-methods'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'stripe',
+                                        className: 'payment-method'
+                                    }, [
+                                        React.createElement('input', {
+                                            key: 'radio',
+                                            type: 'radio',
+                                            id: 'stripe',
+                                            name: 'payment_method',
+                                            value: 'stripe',
+                                            checked: true
+                                        }),
+                                        React.createElement('label', {
+                                            key: 'label',
+                                            htmlFor: 'stripe'
+                                        }, [
+                                            React.createElement('div', { key: 'icon', className: 'payment-icon' }, '💳'),
+                                            React.createElement('div', {
+                                                key: 'info',
+                                                className: 'payment-info'
+                                            }, [
+                                                React.createElement('span', { key: 'name', className: 'payment-name' }, 'Credit Card'),
+                                                React.createElement('span', { key: 'desc', className: 'payment-desc' }, 'Secure payment via Stripe')
+                                            ])
+                                        ])
+                                    ])
+                                ])
+                            ]),
+
+                            React.createElement('div', {
+                                key: 'actions',
+                                className: 'form-actions'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'cancel',
+                                    type: 'button',
+                                    className: 'btn btn-secondary',
+                                    onClick: onClose
+                                }, 'Cancel'),
+                                React.createElement('button', {
+                                    key: 'submit',
+                                    type: 'submit',
+                                    className: 'btn btn-primary'
+                                }, 'Pay $10.00')
+                            ])
+                        ])
+                    ]),
+
+                    step === 'processing' && React.createElement('div', {
+                        key: 'processing',
+                        className: 'checkout-step processing-step'
+                    }, [
+                        React.createElement('div', { key: 'spinner', className: 'processing-spinner' }),
+                        React.createElement('p', { key: 'text' }, 'Processing your payment...')
+                    ]),
+
+                    step === 'success' && React.createElement('div', {
+                        key: 'success',
+                        className: 'checkout-step success-step'
+                    }, [
+                        React.createElement('h4', { key: 'title' }, '✅ Payment Successful!'),
+                        React.createElement('p', { key: 'desc' }, 'Your 20 credits have been added to your account.')
+                    ])
+                ])
+            ]));
+        };
+
+        let modalOpen = false;
+
+        function openModal() {
+            modalOpen = true;
+            renderModal();
+        }
+
+        function closeModal() {
+            modalOpen = false;
+            renderModal();
+        }
+
+        function handleSuccess() {
+            setTimeout(closeModal, 1000);
+        }
+
+        function renderModal() {
+            const modalRoot = document.getElementById('modal-root');
+            ReactDOM.render(
+                React.createElement(CheckoutModal, {
+                    isOpen: modalOpen,
+                    onClose: closeModal,
+                    onSuccess: handleSuccess
+                }),
+                modalRoot
+            );
+        }
+
+        function testMobile() {
+            // Simulate mobile viewport
+            const viewport = document.querySelector('meta[name=viewport]');
+            viewport.setAttribute('content', 'width=375, initial-scale=1.0');
+            openModal();
+        }
+
+        // Initial render
+        renderModal();
+    </script>
+</body>
+</html>

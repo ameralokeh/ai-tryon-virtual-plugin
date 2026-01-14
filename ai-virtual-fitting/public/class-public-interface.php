@@ -67,6 +67,30 @@ class AI_Virtual_Fitting_Public_Interface {
         add_action('wp_ajax_ai_virtual_fitting_check_credits', array($this, 'handle_check_credits'));
         add_action('wp_ajax_nopriv_ai_virtual_fitting_check_credits', array($this, 'handle_check_credits'));
         
+        // Embedded checkout AJAX endpoints
+        add_action('wp_ajax_ai_virtual_fitting_add_credits_to_cart', array($this, 'handle_add_credits_to_cart'));
+        add_action('wp_ajax_nopriv_ai_virtual_fitting_add_credits_to_cart', array($this, 'handle_add_credits_to_cart'));
+        
+        add_action('wp_ajax_ai_virtual_fitting_clear_cart', array($this, 'handle_clear_cart'));
+        add_action('wp_ajax_nopriv_ai_virtual_fitting_clear_cart', array($this, 'handle_clear_cart'));
+        
+        add_action('wp_ajax_ai_virtual_fitting_load_checkout', array($this, 'handle_load_checkout'));
+        add_action('wp_ajax_nopriv_ai_virtual_fitting_load_checkout', array($this, 'handle_load_checkout'));
+        
+        add_action('wp_ajax_ai_virtual_fitting_process_checkout', array($this, 'handle_process_checkout'));
+        add_action('wp_ajax_nopriv_ai_virtual_fitting_process_checkout', array($this, 'handle_process_checkout'));
+        
+        // Real-time credit updates AJAX endpoint
+        add_action('wp_ajax_ai_virtual_fitting_refresh_credits', array($this, 'handle_refresh_credits'));
+        add_action('wp_ajax_nopriv_ai_virtual_fitting_refresh_credits', array($this, 'handle_refresh_credits'));
+        
+        // Payment method fee calculation AJAX endpoint
+        add_action('wp_ajax_ai_virtual_fitting_calculate_fees', array($this, 'handle_calculate_fees'));
+        add_action('wp_ajax_nopriv_ai_virtual_fitting_calculate_fees', array($this, 'handle_calculate_fees'));
+        
+        // WooCommerce hooks for fee calculation
+        add_action('woocommerce_cart_calculate_fees', array($this, 'add_payment_method_fees'));
+        
         // Enqueue scripts and styles
         add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
         
@@ -78,21 +102,103 @@ class AI_Virtual_Fitting_Public_Interface {
      * Enqueue frontend scripts and styles
      */
     public function enqueue_scripts() {
-        if (is_page() && has_shortcode(get_post()->post_content, 'ai_virtual_fitting')) {
+        // Check if we're on a page with the virtual fitting shortcode
+        global $post;
+        
+        $should_enqueue = false;
+        
+        // Method 1: Check current post
+        if (is_page() && $post && has_shortcode($post->post_content, 'ai_virtual_fitting')) {
+            $should_enqueue = true;
+        }
+        
+        // Method 2: Check if this is the virtual fitting page by slug
+        if (is_page('virtual-fitting-2')) {
+            $should_enqueue = true;
+        }
+        
+        // Method 3: Check query var for virtual fitting page
+        if (get_query_var('virtual_fitting_page')) {
+            $should_enqueue = true;
+        }
+        
+        // Method 4: Check for virtual fitting page by common slugs
+        if (is_page(array('virtual-fitting', 'ai-virtual-fitting', 'virtual-try-on'))) {
+            $should_enqueue = true;
+        }
+        
+        // Method 5: Force enqueue on admin pages for testing
+        if (is_admin() && isset($_GET['page']) && strpos($_GET['page'], 'virtual-fitting') !== false) {
+            $should_enqueue = true;
+        }
+        
+        // Method 6: Fallback - enqueue on all pages if we detect the shortcode anywhere
+        if (!$should_enqueue && $post) {
+            // Check post content more thoroughly
+            if (strpos($post->post_content, 'ai_virtual_fitting') !== false || 
+                strpos($post->post_content, 'virtual-fitting') !== false) {
+                $should_enqueue = true;
+            }
+        }
+        
+        // Method 7: Emergency fallback - check URL for virtual fitting indicators
+        if (!$should_enqueue) {
+            $current_url = $_SERVER['REQUEST_URI'] ?? '';
+            if (strpos($current_url, 'virtual-fitting') !== false || 
+                strpos($current_url, 'virtual_fitting') !== false) {
+                $should_enqueue = true;
+            }
+        }
+        
+        if ($should_enqueue) {
             // Enqueue modern CSS
             wp_enqueue_style(
                 'ai-virtual-fitting-modern-style',
                 plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
                 array(),
-                '1.2.0'  // Updated version to bust cache
+                '1.7.4'  // Updated: Added rotating wedding dress facts to loading screen
+            );
+            
+            // Enqueue React checkout modal CSS
+            wp_enqueue_style(
+                'ai-virtual-fitting-checkout-modal-react',
+                plugin_dir_url(__FILE__) . 'css/checkout-modal-react.css',
+                array(),
+                '1.0.0'
+            );
+            
+            // Enqueue React and ReactDOM from CDN for checkout modal
+            wp_enqueue_script(
+                'react',
+                'https://unpkg.com/react@18/umd/react.production.min.js',
+                array(),
+                '18.2.0',
+                true
+            );
+            
+            wp_enqueue_script(
+                'react-dom',
+                'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
+                array('react'),
+                '18.2.0',
+                true
+            );
+            
+            // Enqueue React checkout modal component (converted to JS)
+            wp_enqueue_script(
+                'ai-virtual-fitting-checkout-modal-react',
+                plugin_dir_url(__FILE__) . 'js/checkout-modal-react.js',
+                array('react', 'react-dom'),
+                '1.0.0',
+                true
             );
             
             // Enqueue modern JavaScript
             wp_enqueue_script(
                 'ai-virtual-fitting-modern-script',
                 plugin_dir_url(__FILE__) . 'js/modern-virtual-fitting.js',
-                array('jquery'),
-                '1.1.0',
+                array('jquery', 'ai-virtual-fitting-checkout-modal-react'),
+                '1.5.0',  // Updated: Added rotating wedding dress facts
                 true
             );
             
@@ -101,13 +207,16 @@ class AI_Virtual_Fitting_Public_Interface {
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('ai_virtual_fitting_nonce'),
                 'user_logged_in' => is_user_logged_in(),
+                'checkout_url' => wc_get_checkout_url(),
                 'messages' => array(
                     'login_required' => __('Please log in to use virtual fitting.', 'ai-virtual-fitting'),
                     'insufficient_credits' => __('You have insufficient credits. Please purchase more.', 'ai-virtual-fitting'),
                     'upload_error' => __('Error uploading image. Please try again.', 'ai-virtual-fitting'),
                     'processing_error' => __('Error processing virtual fitting. Please try again.', 'ai-virtual-fitting'),
                     'select_product' => __('Please select a product to try on.', 'ai-virtual-fitting'),
-                    'upload_image' => __('Please upload your image first.', 'ai-virtual-fitting')
+                    'upload_image' => __('Please upload your image first.', 'ai-virtual-fitting'),
+                    'cart_add_error' => __('Error adding credits to cart. Please try again.', 'ai-virtual-fitting'),
+                    'cart_clear_error' => __('Error clearing cart. Please try again.', 'ai-virtual-fitting')
                 )
             ));
         }
@@ -180,11 +289,19 @@ class AI_Virtual_Fitting_Public_Interface {
      * Get WooCommerce products for virtual fitting
      */
     private function get_woocommerce_products() {
+        // Get virtual credit product ID to exclude it
+        $credit_product_id = get_option('ai_virtual_fitting_credit_product_id');
+        
         $args = array(
             'post_type' => 'product',
             'posts_per_page' => 20,
             'post_status' => 'publish'
         );
+        
+        // Exclude virtual credit product
+        if ($credit_product_id) {
+            $args['post__not_in'] = array($credit_product_id);
+        }
         
         $products = get_posts($args);
         $product_data = array();
@@ -192,6 +309,11 @@ class AI_Virtual_Fitting_Public_Interface {
         foreach ($products as $product_post) {
             $product = wc_get_product($product_post->ID);
             if ($product) {
+                // Double-check: skip if this is the credit product
+                if ($credit_product_id && $product->get_id() == $credit_product_id) {
+                    continue;
+                }
+                
                 $featured_image = wp_get_attachment_image_src(get_post_thumbnail_id($product->get_id()), 'medium');
                 $gallery_images = $this->get_product_gallery_images($product->get_id());
                 
@@ -548,6 +670,1220 @@ class AI_Virtual_Fitting_Public_Interface {
     }
     
     /**
+     * Handle add credits to cart AJAX request for embedded checkout
+     */
+    public function handle_add_credits_to_cart() {
+        try {
+            // Verify nonce
+            if (!wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
+                $this->log_error('Security check failed for add credits to cart', array(
+                    'user_id' => get_current_user_id(),
+                    'ip' => $this->get_client_ip()
+                ));
+                wp_send_json_error(array(
+                    'message' => 'Security check failed',
+                    'error_code' => 'SECURITY_FAILED',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Check if WooCommerce is active
+            if (!class_exists('WooCommerce')) {
+                wp_send_json_error(array(
+                    'message' => 'WooCommerce is not active',
+                    'error_code' => 'WOOCOMMERCE_INACTIVE',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Initialize WooCommerce cart if not already done
+            if (!WC()->cart) {
+                wc_load_cart();
+            }
+            
+            // Handle cart conflicts and validation
+            $cart_validation_result = $this->validate_and_prepare_cart_for_credits();
+            if (is_wp_error($cart_validation_result)) {
+                wp_send_json_error(array(
+                    'message' => $cart_validation_result->get_error_message(),
+                    'error_code' => $cart_validation_result->get_error_code(),
+                    'retry_allowed' => true,
+                    'cart_action_required' => $cart_validation_result->get_error_data('cart_action')
+                ));
+            }
+            
+            // Get or create credits product
+            $product_id = $this->woocommerce_integration->get_or_create_credits_product();
+            
+            if (!$product_id) {
+                $this->log_error('Failed to get or create credits product', array(
+                    'user_id' => get_current_user_id()
+                ));
+                wp_send_json_error(array(
+                    'message' => 'Failed to create credits product. Please try again.',
+                    'error_code' => 'PRODUCT_CREATION_FAILED',
+                    'retry_allowed' => true
+                ));
+            }
+            
+            // Validate product before adding to cart
+            $product_validation = $this->validate_credits_product($product_id);
+            if (is_wp_error($product_validation)) {
+                wp_send_json_error(array(
+                    'message' => $product_validation->get_error_message(),
+                    'error_code' => $product_validation->get_error_code(),
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Check if credits product is already in cart
+            $existing_cart_item = $this->find_credits_product_in_cart($product_id);
+            if ($existing_cart_item) {
+                // Credits already in cart - return success with existing data
+                WC()->cart->calculate_totals();
+                
+                wp_send_json_success(array(
+                    'message' => 'Credits already in cart',
+                    'cart_item_key' => $existing_cart_item['key'],
+                    'cart_total' => WC()->cart->get_total(),
+                    'cart_total_text' => html_entity_decode(wp_strip_all_tags(WC()->cart->get_total()), ENT_QUOTES, 'UTF-8'), // Plain text version for React
+                    'cart_count' => WC()->cart->get_cart_contents_count(),
+                    'product_id' => $product_id,
+                    'payment_methods' => $this->get_available_payment_methods(), // Add available payment methods
+                    'already_in_cart' => true
+                ));
+            }
+            
+            // Add credits product to cart
+            $cart_item_key = WC()->cart->add_to_cart($product_id, 1);
+            
+            if (!$cart_item_key) {
+                // Get WooCommerce notices for specific error details
+                $notices = wc_get_notices('error');
+                $error_message = 'Failed to add credits to cart';
+                
+                if (!empty($notices)) {
+                    $error_messages = array();
+                    foreach ($notices as $notice) {
+                        $error_messages[] = $notice['notice'];
+                    }
+                    $error_message = implode(' ', $error_messages);
+                    wc_clear_notices();
+                }
+                
+                $this->log_error('Failed to add credits to cart', array(
+                    'user_id' => get_current_user_id(),
+                    'product_id' => $product_id,
+                    'error_message' => $error_message,
+                    'cart_contents' => WC()->cart->get_cart_contents_count()
+                ));
+                
+                wp_send_json_error(array(
+                    'message' => $error_message,
+                    'error_code' => 'CART_ADD_FAILED',
+                    'retry_allowed' => true
+                ));
+            }
+            
+            // Calculate cart totals and validate
+            WC()->cart->calculate_totals();
+            $cart_total = WC()->cart->get_total();
+            $cart_count = WC()->cart->get_cart_contents_count();
+            
+            // Validate cart state after addition
+            if ($cart_count === 0 || empty($cart_total)) {
+                $this->log_error('Cart validation failed after adding credits', array(
+                    'user_id' => get_current_user_id(),
+                    'product_id' => $product_id,
+                    'cart_item_key' => $cart_item_key,
+                    'cart_count' => $cart_count,
+                    'cart_total' => $cart_total
+                ));
+                
+                wp_send_json_error(array(
+                    'message' => 'Cart validation failed. Please refresh and try again.',
+                    'error_code' => 'CART_VALIDATION_FAILED',
+                    'retry_allowed' => true
+                ));
+            }
+            
+            $this->log_info('Credits added to cart successfully', array(
+                'user_id' => get_current_user_id(),
+                'product_id' => $product_id,
+                'cart_item_key' => $cart_item_key,
+                'cart_total' => $cart_total,
+                'cart_count' => $cart_count
+            ));
+            
+            wp_send_json_success(array(
+                'message' => 'Credits added to cart successfully',
+                'cart_item_key' => $cart_item_key,
+                'cart_total' => $cart_total,
+                'cart_total_text' => html_entity_decode(wp_strip_all_tags($cart_total), ENT_QUOTES, 'UTF-8'), // Plain text version for React
+                'cart_count' => $cart_count,
+                'product_id' => $product_id,
+                'payment_methods' => $this->get_available_payment_methods(), // Add available payment methods
+                'already_in_cart' => false
+            ));
+            
+        } catch (Exception $e) {
+            $this->log_error('Exception in add credits to cart', array(
+                'user_id' => get_current_user_id(),
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ));
+            
+            wp_send_json_error(array(
+                'message' => 'An unexpected error occurred while adding credits to cart. Please try again.',
+                'error_code' => 'ADD_CART_EXCEPTION',
+                'retry_allowed' => true
+            ));
+        }
+    }
+    
+    /**
+     * Validate and prepare cart for credits addition
+     */
+    private function validate_and_prepare_cart_for_credits() {
+        // Check if cart is accessible
+        if (!WC()->cart) {
+            return new WP_Error('CART_NOT_AVAILABLE', 'Shopping cart is not available. Please refresh the page.');
+        }
+        
+        // Get current cart contents
+        $cart_contents = WC()->cart->get_cart();
+        $credits_product_id = $this->woocommerce_integration->get_credits_product_id();
+        
+        // Check for cart conflicts
+        $has_non_credits_items = false;
+        $has_credits_items = false;
+        
+        foreach ($cart_contents as $cart_item_key => $cart_item) {
+            if ($this->woocommerce_integration->is_credits_product($cart_item['product_id'])) {
+                $has_credits_items = true;
+            } else {
+                $has_non_credits_items = true;
+            }
+        }
+        
+        // Handle cart conflicts
+        if ($has_non_credits_items && !$has_credits_items) {
+            // Cart has other products - need user confirmation to clear
+            return new WP_Error(
+                'CART_CONFLICT_OTHER_PRODUCTS',
+                'Your cart contains other items. Adding credits will clear your current cart. Do you want to continue?',
+                array('cart_action' => 'clear_and_add')
+            );
+        }
+        
+        if ($has_credits_items) {
+            // Credits already in cart - this is handled in the main function
+            return true;
+        }
+        
+        // Clear cart if it has non-credits items (user confirmed via retry)
+        if ($has_non_credits_items) {
+            WC()->cart->empty_cart();
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Validate credits product
+     */
+    private function validate_credits_product($product_id) {
+        $product = wc_get_product($product_id);
+        
+        if (!$product) {
+            return new WP_Error('PRODUCT_NOT_FOUND', 'Credits product not found. Please contact support.');
+        }
+        
+        if (!$product->is_purchasable()) {
+            return new WP_Error('PRODUCT_NOT_PURCHASABLE', 'Credits product is not available for purchase.');
+        }
+        
+        if ($product->get_status() !== 'publish') {
+            return new WP_Error('PRODUCT_NOT_PUBLISHED', 'Credits product is not available.');
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Find credits product in cart
+     */
+    private function find_credits_product_in_cart($product_id) {
+        foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
+            if ($cart_item['product_id'] == $product_id) {
+                return array(
+                    'key' => $cart_item_key,
+                    'item' => $cart_item
+                );
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Handle clear cart AJAX request for embedded checkout
+     */
+    public function handle_clear_cart() {
+        try {
+            // Verify nonce
+            if (!wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
+                $this->log_error('Security check failed for clear cart', array(
+                    'user_id' => get_current_user_id(),
+                    'ip' => $this->get_client_ip()
+                ));
+                wp_send_json_error(array(
+                    'message' => 'Security check failed',
+                    'error_code' => 'SECURITY_FAILED',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Check if WooCommerce is active
+            if (!class_exists('WooCommerce')) {
+                wp_send_json_error(array(
+                    'message' => 'WooCommerce is not active',
+                    'error_code' => 'WOOCOMMERCE_INACTIVE',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Initialize WooCommerce cart if not already done
+            if (!WC()->cart) {
+                wc_load_cart();
+            }
+            
+            // Get current cart state for logging and validation
+            $cart_contents_before = WC()->cart->get_cart_contents_count();
+            $cart_items_before = WC()->cart->get_cart();
+            
+            // Handle empty cart scenario
+            if ($cart_contents_before === 0) {
+                wp_send_json_success(array(
+                    'message' => 'Cart is already empty',
+                    'cart_count' => 0,
+                    'cleared_items' => 0,
+                    'was_empty' => true
+                ));
+            }
+            
+            // Perform cart clearing with validation
+            $clear_result = $this->clear_cart_with_validation($cart_items_before);
+            
+            if (is_wp_error($clear_result)) {
+                wp_send_json_error(array(
+                    'message' => $clear_result->get_error_message(),
+                    'error_code' => $clear_result->get_error_code(),
+                    'retry_allowed' => true
+                ));
+            }
+            
+            // Recalculate cart totals
+            WC()->cart->calculate_totals();
+            $cart_contents_after = WC()->cart->get_cart_contents_count();
+            
+            // Validate that cart was actually cleared
+            if ($cart_contents_after > 0) {
+                $this->log_error('Cart clearing validation failed', array(
+                    'user_id' => get_current_user_id(),
+                    'cart_contents_before' => $cart_contents_before,
+                    'cart_contents_after' => $cart_contents_after,
+                    'remaining_items' => WC()->cart->get_cart()
+                ));
+                
+                wp_send_json_error(array(
+                    'message' => 'Failed to clear cart completely. Please refresh and try again.',
+                    'error_code' => 'CART_CLEAR_VALIDATION_FAILED',
+                    'retry_allowed' => true
+                ));
+            }
+            
+            $this->log_info('Cart cleared successfully', array(
+                'user_id' => get_current_user_id(),
+                'cart_contents_before' => $cart_contents_before,
+                'cart_contents_after' => $cart_contents_after,
+                'cleared_items' => $cart_contents_before - $cart_contents_after
+            ));
+            
+            wp_send_json_success(array(
+                'message' => 'Cart cleared successfully',
+                'cart_count' => $cart_contents_after,
+                'cleared_items' => $cart_contents_before - $cart_contents_after,
+                'was_empty' => false
+            ));
+            
+        } catch (Exception $e) {
+            $this->log_error('Exception in clear cart', array(
+                'user_id' => get_current_user_id(),
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ));
+            
+            wp_send_json_error(array(
+                'message' => 'An unexpected error occurred while clearing cart. Please try again.',
+                'error_code' => 'CLEAR_CART_EXCEPTION',
+                'retry_allowed' => true
+            ));
+        }
+    }
+    
+    /**
+     * Clear cart with validation and selective clearing
+     */
+    private function clear_cart_with_validation($cart_items_before) {
+        try {
+            $credits_product_id = $this->woocommerce_integration->get_credits_product_id();
+            $has_non_credits_items = false;
+            $credits_items_to_remove = array();
+            $other_items_to_preserve = array();
+            
+            // Analyze cart contents
+            foreach ($cart_items_before as $cart_item_key => $cart_item) {
+                if ($this->woocommerce_integration->is_credits_product($cart_item['product_id'])) {
+                    $credits_items_to_remove[] = $cart_item_key;
+                } else {
+                    $has_non_credits_items = true;
+                    $other_items_to_preserve[] = array(
+                        'key' => $cart_item_key,
+                        'product_id' => $cart_item['product_id'],
+                        'quantity' => $cart_item['quantity']
+                    );
+                }
+            }
+            
+            // Determine clearing strategy
+            if ($has_non_credits_items && !empty($other_items_to_preserve)) {
+                // Only remove credits products, preserve other items
+                foreach ($credits_items_to_remove as $cart_item_key) {
+                    $remove_result = WC()->cart->remove_cart_item($cart_item_key);
+                    if (!$remove_result) {
+                        return new WP_Error(
+                            'SELECTIVE_CLEAR_FAILED',
+                            'Failed to remove credits from cart. Please try again.'
+                        );
+                    }
+                }
+            } else {
+                // Safe to clear entire cart (only contains credits or is empty)
+                WC()->cart->empty_cart();
+            }
+            
+            return true;
+            
+        } catch (Exception $e) {
+            return new WP_Error(
+                'CART_CLEAR_EXCEPTION',
+                'Error occurred while clearing cart: ' . $e->getMessage()
+            );
+        }
+    }
+    
+    /**
+     * Handle load checkout AJAX request for embedded checkout
+     */
+    public function handle_load_checkout() {
+        try {
+            // Verify nonce
+            if (!wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
+                $this->log_error('Security check failed for load checkout', array(
+                    'user_id' => get_current_user_id(),
+                    'ip' => $this->get_client_ip()
+                ));
+                wp_send_json_error(array(
+                    'message' => 'Security check failed',
+                    'error_code' => 'SECURITY_FAILED',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Check if WooCommerce is active
+            if (!class_exists('WooCommerce')) {
+                wp_send_json_error(array(
+                    'message' => 'WooCommerce is not active',
+                    'error_code' => 'WOOCOMMERCE_INACTIVE',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Initialize WooCommerce cart if not already done
+            if (!WC()->cart) {
+                wc_load_cart();
+            }
+            
+            // Handle empty cart scenario with recovery
+            if (WC()->cart->is_empty()) {
+                $recovery_result = $this->recover_empty_cart_for_checkout();
+                if (is_wp_error($recovery_result)) {
+                    wp_send_json_error(array(
+                        'message' => $recovery_result->get_error_message(),
+                        'error_code' => $recovery_result->get_error_code(),
+                        'retry_allowed' => true,
+                        'recovery_action' => 'add_credits_to_cart'
+                    ));
+                }
+            }
+            
+            // Validate cart contents for checkout
+            $cart_validation = $this->validate_cart_for_checkout();
+            if (is_wp_error($cart_validation)) {
+                wp_send_json_error(array(
+                    'message' => $cart_validation->get_error_message(),
+                    'error_code' => $cart_validation->get_error_code(),
+                    'retry_allowed' => true
+                ));
+            }
+            
+            // Start output buffering to capture checkout form HTML
+            ob_start();
+            
+            // Set up WooCommerce checkout context
+            if (!defined('WOOCOMMERCE_CHECKOUT')) {
+                define('WOOCOMMERCE_CHECKOUT', true);
+            }
+            
+            // Get checkout object
+            $checkout = WC()->checkout();
+            
+            // Ensure checkout fields are loaded
+            $checkout->checkout_fields = $checkout->get_checkout_fields();
+            
+            // Load checkout template with minimal styling for modal
+            echo '<div class="woocommerce-checkout-wrapper">';
+            
+            // Display any notices
+            if (wc_notice_count() > 0) {
+                wc_print_notices();
+            }
+            
+            // Display checkout form
+            echo '<form name="checkout" method="post" class="checkout woocommerce-checkout" action="' . esc_url(wc_get_checkout_url()) . '" enctype="multipart/form-data">';
+            
+            // Checkout fields
+            do_action('woocommerce_checkout_before_customer_details');
+            
+            echo '<div class="col2-set" id="customer_details">';
+            echo '<div class="col-1">';
+            
+            // Billing fields
+            $checkout->get_checkout_fields('billing');
+            
+            do_action('woocommerce_checkout_billing');
+            
+            echo '</div>';
+            echo '<div class="col-2">';
+            
+            // Shipping fields (if needed)
+            if (WC()->cart->needs_shipping() && WC()->cart->show_shipping()) {
+                do_action('woocommerce_checkout_shipping');
+            }
+            
+            echo '</div>';
+            echo '</div>';
+            
+            do_action('woocommerce_checkout_after_customer_details');
+            
+            // Order review
+            echo '<h3 id="order_review_heading">' . esc_html__('Your order', 'woocommerce') . '</h3>';
+            
+            do_action('woocommerce_checkout_before_order_review');
+            
+            echo '<div id="order_review" class="woocommerce-checkout-review-order">';
+            woocommerce_order_review();
+            echo '</div>';
+            
+            do_action('woocommerce_checkout_after_order_review');
+            
+            echo '</form>';
+            echo '</div>';
+            
+            // Get the checkout HTML
+            $checkout_html = ob_get_clean();
+            
+            // Add modal-specific CSS
+            $modal_css = '
+            <style>
+            .woocommerce-checkout-wrapper {
+                max-height: 70vh;
+                overflow-y: auto;
+                padding: 20px;
+            }
+            .woocommerce-checkout-wrapper .col2-set {
+                display: flex;
+                gap: 20px;
+                margin-bottom: 20px;
+            }
+            .woocommerce-checkout-wrapper .col-1,
+            .woocommerce-checkout-wrapper .col-2 {
+                flex: 1;
+            }
+            .woocommerce-checkout-wrapper .form-row {
+                margin-bottom: 15px;
+            }
+            .woocommerce-checkout-wrapper input[type="text"],
+            .woocommerce-checkout-wrapper input[type="email"],
+            .woocommerce-checkout-wrapper input[type="tel"],
+            .woocommerce-checkout-wrapper select,
+            .woocommerce-checkout-wrapper textarea {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-size: 14px;
+            }
+            .woocommerce-checkout-wrapper label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 500;
+            }
+            .woocommerce-checkout-wrapper .required {
+                color: #e74c3c;
+            }
+            .woocommerce-checkout-wrapper #order_review {
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
+                margin-top: 20px;
+            }
+            .woocommerce-checkout-wrapper .place-order {
+                text-align: center;
+                margin-top: 20px;
+            }
+            .woocommerce-checkout-wrapper #place_order {
+                background: #4a90e2;
+                color: white;
+                border: none;
+                padding: 15px 30px;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                width: 100%;
+            }
+            .woocommerce-checkout-wrapper #place_order:hover {
+                background: #357abd;
+            }
+            @media (max-width: 768px) {
+                .woocommerce-checkout-wrapper .col2-set {
+                    flex-direction: column;
+                }
+            }
+            </style>';
+            
+            $this->log_info('Checkout form loaded successfully', array(
+                'user_id' => get_current_user_id(),
+                'cart_count' => WC()->cart->get_cart_contents_count(),
+                'cart_total' => WC()->cart->get_total()
+            ));
+            
+            wp_send_json_success(array(
+                'message' => 'Checkout form loaded successfully',
+                'checkout_html' => $modal_css . $checkout_html,
+                'cart_total' => WC()->cart->get_total(),
+                'cart_count' => WC()->cart->get_cart_contents_count()
+            ));
+            
+        } catch (Exception $e) {
+            $this->log_error('Exception in load checkout', array(
+                'user_id' => get_current_user_id(),
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ));
+            
+            wp_send_json_error(array(
+                'message' => 'An unexpected error occurred while loading checkout. Please try again.',
+                'error_code' => 'LOAD_CHECKOUT_EXCEPTION',
+                'retry_allowed' => true
+            ));
+        }
+    }
+    
+    /**
+     * Recover empty cart for checkout
+     */
+    private function recover_empty_cart_for_checkout() {
+        try {
+            // Get or create credits product
+            $product_id = $this->woocommerce_integration->get_or_create_credits_product();
+            
+            if (!$product_id) {
+                return new WP_Error(
+                    'PRODUCT_RECOVERY_FAILED',
+                    'Unable to recover cart. Credits product not available.'
+                );
+            }
+            
+            // Add credits product to cart
+            $cart_item_key = WC()->cart->add_to_cart($product_id, 1);
+            
+            if (!$cart_item_key) {
+                return new WP_Error(
+                    'CART_RECOVERY_FAILED',
+                    'Unable to recover cart. Please refresh and try again.'
+                );
+            }
+            
+            // Calculate totals
+            WC()->cart->calculate_totals();
+            
+            $this->log_info('Empty cart recovered for checkout', array(
+                'user_id' => get_current_user_id(),
+                'product_id' => $product_id,
+                'cart_item_key' => $cart_item_key
+            ));
+            
+            return true;
+            
+        } catch (Exception $e) {
+            return new WP_Error(
+                'CART_RECOVERY_EXCEPTION',
+                'Error recovering cart: ' . $e->getMessage()
+            );
+        }
+    }
+    
+    /**
+     * Validate cart for checkout
+     */
+    private function validate_cart_for_checkout() {
+        // Check if cart is still empty after recovery attempts
+        if (WC()->cart->is_empty()) {
+            return new WP_Error(
+                'EMPTY_CART_VALIDATION',
+                'Cart is empty. Please add credits and try again.'
+            );
+        }
+        
+        // Check if cart has valid items
+        $cart_contents = WC()->cart->get_cart();
+        $valid_items = 0;
+        
+        foreach ($cart_contents as $cart_item) {
+            $product = wc_get_product($cart_item['product_id']);
+            if ($product && $product->is_purchasable()) {
+                $valid_items++;
+            }
+        }
+        
+        if ($valid_items === 0) {
+            return new WP_Error(
+                'NO_VALID_ITEMS',
+                'Cart contains no valid items. Please refresh and try again.'
+            );
+        }
+        
+        // Check cart totals
+        WC()->cart->calculate_totals();
+        $cart_total = WC()->cart->get_total();
+        
+        if (empty($cart_total) || $cart_total <= 0) {
+            return new WP_Error(
+                'INVALID_CART_TOTAL',
+                'Cart total is invalid. Please refresh and try again.'
+            );
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Handle process checkout AJAX request for embedded checkout
+     */
+    public function handle_process_checkout() {
+        try {
+            // Verify nonce
+            if (!wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
+                $this->log_error('Security check failed for process checkout', array(
+                    'user_id' => get_current_user_id(),
+                    'ip' => $this->get_client_ip()
+                ));
+                wp_send_json_error(array(
+                    'message' => 'Security check failed',
+                    'error_code' => 'SECURITY_FAILED',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Check if WooCommerce is active
+            if (!class_exists('WooCommerce')) {
+                wp_send_json_error(array(
+                    'message' => 'WooCommerce is not active',
+                    'error_code' => 'WOOCOMMERCE_INACTIVE',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Ensure cart has items
+            if (WC()->cart->is_empty()) {
+                wp_send_json_error(array(
+                    'message' => 'Cart is empty. Please refresh and try again.',
+                    'error_code' => 'EMPTY_CART',
+                    'retry_allowed' => true
+                ));
+            }
+            
+            // Set up checkout context
+            if (!defined('WOOCOMMERCE_CHECKOUT')) {
+                define('WOOCOMMERCE_CHECKOUT', true);
+            }
+            
+            // Get checkout object
+            $checkout = WC()->checkout();
+            
+            // Validate checkout fields using WooCommerce's public validation
+            $validation_errors = new WP_Error();
+            
+            // Use WooCommerce's built-in validation instead of calling protected method
+            // Validate required fields manually
+            $required_fields = array(
+                'billing_first_name' => 'First name',
+                'billing_last_name' => 'Last name', 
+                'billing_email' => 'Email address',
+                'billing_phone' => 'Phone number',
+                'billing_address_1' => 'Address',
+                'billing_city' => 'City',
+                'billing_postcode' => 'Postal code',
+                'payment_method' => 'Payment method'
+            );
+            
+            foreach ($required_fields as $field => $label) {
+                if (empty($_POST[$field])) {
+                    $validation_errors->add('required_field', sprintf('%s is a required field.', $label));
+                }
+            }
+            
+            // Validate email format
+            if (!empty($_POST['billing_email']) && !is_email($_POST['billing_email'])) {
+                $validation_errors->add('invalid_email', 'Please enter a valid email address.');
+            }
+            
+            // Validate payment method
+            $available_gateways = WC()->payment_gateways->get_available_payment_gateways();
+            $payment_method = sanitize_text_field($_POST['payment_method']);
+            
+            if (!isset($available_gateways[$payment_method])) {
+                $validation_errors->add('invalid_payment_method', 'Invalid payment method selected.');
+            } else {
+                // Validate payment method specific fields
+                $gateway = $available_gateways[$payment_method];
+                if (method_exists($gateway, 'validate_fields')) {
+                    $gateway_validation = $gateway->validate_fields();
+                    if (!$gateway_validation) {
+                        // Gateway validation failed, errors are already added to WC notices
+                        $validation_errors->add('gateway_validation', 'Payment method validation failed.');
+                    }
+                }
+            }
+            
+            // Check for validation errors
+            if (wc_notice_count('error') > 0 || $validation_errors->has_errors()) {
+                $notices = wc_get_notices('error');
+                $error_messages = array();
+                
+                // Collect WooCommerce notices
+                foreach ($notices as $notice) {
+                    $error_messages[] = $notice['notice'];
+                }
+                
+                // Collect validation errors
+                foreach ($validation_errors->get_error_messages() as $error) {
+                    $error_messages[] = $error;
+                }
+                
+                wc_clear_notices();
+                
+                wp_send_json_error(array(
+                    'message' => implode(' ', $error_messages),
+                    'error_code' => 'VALIDATION_FAILED',
+                    'retry_allowed' => true,
+                    'field_errors' => $this->extract_field_errors($error_messages)
+                ));
+            }
+            
+            // Process the order
+            $order_id = $checkout->create_order($_POST);
+            
+            if (is_wp_error($order_id)) {
+                $this->log_error('Order creation failed', array(
+                    'user_id' => get_current_user_id(),
+                    'error' => $order_id->get_error_message(),
+                    'post_data' => $this->sanitize_post_data_for_logging($_POST)
+                ));
+                
+                wp_send_json_error(array(
+                    'message' => 'Order creation failed: ' . $order_id->get_error_message(),
+                    'error_code' => 'ORDER_CREATION_FAILED',
+                    'retry_allowed' => true
+                ));
+            }
+            
+            // Get the order object
+            $order = wc_get_order($order_id);
+            
+            if (!$order) {
+                wp_send_json_error(array(
+                    'message' => 'Failed to retrieve order',
+                    'error_code' => 'ORDER_RETRIEVAL_FAILED',
+                    'retry_allowed' => true
+                ));
+            }
+            
+            // Process payment with enhanced error handling
+            $payment_result = $this->process_payment_with_error_handling($order, $_POST);
+            
+            if ($payment_result['success']) {
+                // Payment successful - complete the order
+                $order->payment_complete();
+                
+                // Process credits addition through WooCommerce integration
+                $this->woocommerce_integration->handle_payment_complete($order_id);
+                
+                // Get updated credits for user
+                $user_id = get_current_user_id();
+                $updated_credits = $user_id ? $this->credit_manager->get_customer_credits($user_id) : 0;
+                
+                // Clear cart
+                WC()->cart->empty_cart();
+                
+                $this->log_info('Checkout processed successfully', array(
+                    'user_id' => $user_id,
+                    'order_id' => $order_id,
+                    'payment_method' => $order->get_payment_method(),
+                    'updated_credits' => $updated_credits
+                ));
+                
+                wp_send_json_success(array(
+                    'message' => 'Payment processed successfully',
+                    'order_id' => $order_id,
+                    'credits' => $updated_credits,
+                    'redirect_url' => $payment_result['redirect_url']
+                ));
+                
+            } else {
+                // Payment failed - handle specific error types
+                $this->handle_payment_failure($order, $payment_result);
+            }
+            
+        } catch (Exception $e) {
+            $this->log_error('Exception in process checkout', array(
+                'user_id' => get_current_user_id(),
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ));
+            
+            wp_send_json_error(array(
+                'message' => 'An unexpected error occurred during checkout processing. Please try again.',
+                'error_code' => 'CHECKOUT_EXCEPTION',
+                'retry_allowed' => true
+            ));
+        }
+    }
+    
+    /**
+     * Process payment with enhanced error handling
+     */
+    private function process_payment_with_error_handling($order, $post_data) {
+        $available_gateways = WC()->payment_gateways->get_available_payment_gateways();
+        $payment_method = isset($post_data['payment_method']) ? sanitize_text_field($post_data['payment_method']) : '';
+        
+        if (empty($payment_method) || !isset($available_gateways[$payment_method])) {
+            return array(
+                'success' => false,
+                'error_code' => 'INVALID_PAYMENT_METHOD',
+                'message' => 'Invalid payment method selected. Please choose a valid payment option.',
+                'retry_allowed' => true
+            );
+        }
+        
+        // Set payment method
+        $order->set_payment_method($available_gateways[$payment_method]);
+        $order->save();
+        
+        try {
+            // Process payment with timeout handling
+            $payment_result = $this->process_payment_with_timeout($available_gateways[$payment_method], $order->get_id());
+            
+            if (isset($payment_result['result']) && $payment_result['result'] === 'success') {
+                return array(
+                    'success' => true,
+                    'redirect_url' => isset($payment_result['redirect']) ? $payment_result['redirect'] : null
+                );
+            } else {
+                // Extract specific error message from payment gateway
+                $error_message = $this->extract_payment_error_message($payment_result, $payment_method);
+                
+                return array(
+                    'success' => false,
+                    'error_code' => 'PAYMENT_GATEWAY_ERROR',
+                    'message' => $error_message,
+                    'retry_allowed' => $this->is_payment_error_retryable($payment_result, $payment_method),
+                    'gateway_code' => isset($payment_result['error_code']) ? $payment_result['error_code'] : null
+                );
+            }
+            
+        } catch (Exception $e) {
+            $this->log_error('Payment gateway exception', array(
+                'order_id' => $order->get_id(),
+                'payment_method' => $payment_method,
+                'exception' => $e->getMessage()
+            ));
+            
+            return array(
+                'success' => false,
+                'error_code' => 'PAYMENT_GATEWAY_EXCEPTION',
+                'message' => 'Payment processing encountered an error. Please try again or use a different payment method.',
+                'retry_allowed' => true
+            );
+        }
+    }
+    
+    /**
+     * Process payment with timeout handling
+     */
+    private function process_payment_with_timeout($gateway, $order_id) {
+        // Set a reasonable timeout for payment processing
+        $original_timeout = ini_get('max_execution_time');
+        set_time_limit(60); // 60 seconds for payment processing
+        
+        try {
+            $result = $gateway->process_payment($order_id);
+            set_time_limit($original_timeout); // Restore original timeout
+            return $result;
+        } catch (Exception $e) {
+            set_time_limit($original_timeout); // Restore original timeout
+            throw $e;
+        }
+    }
+    
+    /**
+     * Extract payment error message from gateway response
+     */
+    private function extract_payment_error_message($payment_result, $payment_method) {
+        // Default error message
+        $default_message = 'Payment failed. Please check your payment details and try again.';
+        
+        // Check for specific error messages
+        if (isset($payment_result['messages'])) {
+            if (is_array($payment_result['messages'])) {
+                return implode(' ', $payment_result['messages']);
+            } else {
+                return $payment_result['messages'];
+            }
+        }
+        
+        if (isset($payment_result['error'])) {
+            return $payment_result['error'];
+        }
+        
+        if (isset($payment_result['message'])) {
+            return $payment_result['message'];
+        }
+        
+        // Gateway-specific error handling
+        switch ($payment_method) {
+            case 'stripe':
+                return 'Credit card payment failed. Please check your card details and try again.';
+            case 'paypal':
+                return 'PayPal payment failed. Please check your PayPal account and try again.';
+            case 'bacs':
+                return 'Bank transfer setup failed. Please try again or contact support.';
+            default:
+                return $default_message;
+        }
+    }
+    
+    /**
+     * Determine if payment error is retryable
+     */
+    private function is_payment_error_retryable($payment_result, $payment_method) {
+        // Check for specific non-retryable errors
+        if (isset($payment_result['error_code'])) {
+            $non_retryable_codes = array(
+                'card_declined_permanently',
+                'insufficient_funds',
+                'invalid_account',
+                'account_closed',
+                'fraud_detected'
+            );
+            
+            if (in_array($payment_result['error_code'], $non_retryable_codes)) {
+                return false;
+            }
+        }
+        
+        // Check for specific error messages that indicate non-retryable errors
+        $error_message = strtolower($this->extract_payment_error_message($payment_result, $payment_method));
+        $non_retryable_keywords = array(
+            'insufficient funds',
+            'card declined',
+            'invalid card',
+            'expired card',
+            'fraud',
+            'blocked'
+        );
+        
+        foreach ($non_retryable_keywords as $keyword) {
+            if (strpos($error_message, $keyword) !== false) {
+                return false;
+            }
+        }
+        
+        // Default to retryable for temporary issues
+        return true;
+    }
+    
+    /**
+     * Handle payment failure with specific error responses
+     */
+    private function handle_payment_failure($order, $payment_result) {
+        $order_id = $order->get_id();
+        $payment_method = $order->get_payment_method();
+        
+        $this->log_error('Payment processing failed', array(
+            'user_id' => get_current_user_id(),
+            'order_id' => $order_id,
+            'payment_method' => $payment_method,
+            'error_code' => $payment_result['error_code'],
+            'error_message' => $payment_result['message'],
+            'retry_allowed' => $payment_result['retry_allowed']
+        ));
+        
+        // Update order status based on error type
+        if ($payment_result['retry_allowed']) {
+            $order->update_status('pending', 'Payment failed - retry allowed: ' . $payment_result['message']);
+        } else {
+            $order->update_status('cancelled', 'Payment failed - not retryable: ' . $payment_result['message']);
+        }
+        
+        wp_send_json_error(array(
+            'message' => $payment_result['message'],
+            'error_code' => $payment_result['error_code'],
+            'retry_allowed' => $payment_result['retry_allowed'],
+            'gateway_code' => isset($payment_result['gateway_code']) ? $payment_result['gateway_code'] : null,
+            'order_id' => $order_id
+        ));
+    }
+    
+    /**
+     * Extract field-specific errors for frontend validation
+     */
+    private function extract_field_errors($error_messages) {
+        $field_errors = array();
+        
+        foreach ($error_messages as $message) {
+            // Common field error patterns
+            if (strpos($message, 'email') !== false) {
+                $field_errors['billing_email'] = $message;
+            } elseif (strpos($message, 'phone') !== false) {
+                $field_errors['billing_phone'] = $message;
+            } elseif (strpos($message, 'first name') !== false) {
+                $field_errors['billing_first_name'] = $message;
+            } elseif (strpos($message, 'last name') !== false) {
+                $field_errors['billing_last_name'] = $message;
+            } elseif (strpos($message, 'address') !== false) {
+                $field_errors['billing_address_1'] = $message;
+            } elseif (strpos($message, 'city') !== false) {
+                $field_errors['billing_city'] = $message;
+            } elseif (strpos($message, 'postcode') !== false || strpos($message, 'zip') !== false) {
+                $field_errors['billing_postcode'] = $message;
+            }
+        }
+        
+        return $field_errors;
+    }
+    
+    /**
+     * Sanitize POST data for logging (remove sensitive information)
+     */
+    private function sanitize_post_data_for_logging($post_data) {
+        $sanitized = $post_data;
+        
+        // Remove sensitive payment information
+        $sensitive_fields = array(
+            'billing_first_name',
+            'billing_last_name',
+            'billing_email',
+            'billing_phone',
+            'billing_address_1',
+            'billing_address_2',
+            'billing_city',
+            'billing_postcode',
+            'billing_state',
+            'billing_country'
+        );
+        
+        foreach ($sensitive_fields as $field) {
+            if (isset($sanitized[$field])) {
+                $sanitized[$field] = '[REDACTED]';
+            }
+        }
+        
+        return $sanitized;
+    }
+    
+    /**
+     * Handle refresh credits AJAX request for real-time credit updates
+     */
+    public function handle_refresh_credits() {
+        try {
+            // Verify nonce
+            if (!wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
+                $this->log_error('Security check failed for refresh credits', array(
+                    'user_id' => get_current_user_id(),
+                    'ip' => $this->get_client_ip()
+                ));
+                wp_send_json_error(array(
+                    'message' => 'Security check failed',
+                    'error_code' => 'SECURITY_FAILED'
+                ));
+            }
+            
+            // Check if user is logged in
+            if (!is_user_logged_in()) {
+                wp_send_json_success(array(
+                    'credits' => 0,
+                    'free_credits' => 0,
+                    'logged_in' => false
+                ));
+            }
+            
+            $user_id = get_current_user_id();
+            
+            // Get updated credit information
+            $total_credits = $this->credit_manager->get_customer_credits($user_id);
+            $free_credits = $this->credit_manager->get_free_credits_remaining($user_id);
+            
+            $this->log_info('Credits refreshed successfully', array(
+                'user_id' => $user_id,
+                'total_credits' => $total_credits,
+                'free_credits' => $free_credits
+            ));
+            
+            wp_send_json_success(array(
+                'credits' => $total_credits,
+                'free_credits' => $free_credits,
+                'logged_in' => true,
+                'message' => 'Credits refreshed successfully'
+            ));
+            
+        } catch (Exception $e) {
+            $this->log_error('Exception in refresh credits', array(
+                'user_id' => get_current_user_id(),
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ));
+            
+            wp_send_json_error(array(
+                'message' => 'An unexpected error occurred while refreshing credits',
+                'error_code' => 'REFRESH_CREDITS_EXCEPTION'
+            ));
+        }
+    }
+    
+    /**
      * Get upload error message
      *
      * @param int $error_code PHP upload error code
@@ -637,5 +1973,169 @@ class AI_Virtual_Fitting_Public_Interface {
         }
         
         return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'unknown';
+    }
+
+    /**
+     * Get available WooCommerce payment methods
+     * 
+     * @return array Array of available payment methods with their details
+     */
+    private function get_available_payment_methods() {
+        if (!class_exists('WC_Payment_Gateways')) {
+            return array();
+        }
+
+        $payment_gateways = WC()->payment_gateways->get_available_payment_gateways();
+        $available_methods = array();
+
+        foreach ($payment_gateways as $gateway_id => $gateway) {
+            if ($gateway->is_available()) {
+                // Check if gateway has form fields (like credit card fields)
+                $has_fields = false;
+                
+                // Specifically check for credit card payment methods that need form fields
+                if ($gateway_id === 'test_credit_card' ||
+                    strpos(strtolower($gateway_id), 'stripe') !== false ||
+                    strpos(strtolower($gateway_id), 'paypal_pro') !== false ||
+                    strpos(strtolower($gateway_id), 'square') !== false ||
+                    (strpos(strtolower($gateway_id), 'credit') !== false && strpos(strtolower($gateway_id), 'card') !== false)) {
+                    $has_fields = true;
+                }
+                
+                // Calculate fee for this payment method
+                $fee_amount = $this->calculate_payment_method_fee($gateway_id);
+                
+                $available_methods[] = array(
+                    'id' => $gateway_id,
+                    'title' => $gateway->get_title(),
+                    'description' => $gateway->get_description(),
+                    'icon' => $gateway->get_icon(),
+                    'method_title' => $gateway->get_method_title(),
+                    'method_description' => $gateway->get_method_description(),
+                    'has_fields' => $has_fields, // Add this property for React component
+                    'fee_amount' => $fee_amount, // Add fee amount
+                    'fee_display' => $fee_amount > 0 ? '+$' . number_format($fee_amount, 2) . ' processing fee' : '',
+                    'supports' => array(
+                        'products' => $gateway->supports('products'),
+                        'refunds' => $gateway->supports('refunds'),
+                        'subscriptions' => $gateway->supports('subscriptions'),
+                        'tokenization' => $gateway->supports('tokenization')
+                    )
+                );
+            }
+        }
+
+        return $available_methods;
+    }
+    
+    /**
+     * Calculate payment method fee
+     * 
+     * @param string $payment_method Payment method ID
+     * @return float Fee amount
+     */
+    private function calculate_payment_method_fee($payment_method) {
+        // No fees for any payment methods - customers pay only the product price
+        return 0.00;
+    }
+    
+    /**
+     * Handle calculate fees AJAX request
+     */
+    public function handle_calculate_fees() {
+        try {
+            // Verify nonce
+            if (!wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
+                wp_send_json_error(array(
+                    'message' => 'Security check failed',
+                    'error_code' => 'SECURITY_FAILED'
+                ));
+            }
+            
+            $payment_method = sanitize_text_field($_POST['payment_method'] ?? '');
+            
+            if (empty($payment_method)) {
+                wp_send_json_error(array(
+                    'message' => 'Payment method is required',
+                    'error_code' => 'MISSING_PAYMENT_METHOD'
+                ));
+            }
+            
+            // Calculate fee for the selected payment method
+            $fee_amount = $this->calculate_payment_method_fee($payment_method);
+            
+            // Get current cart total
+            if (!WC()->cart) {
+                wc_load_cart();
+            }
+            
+            // Temporarily add the fee to calculate new total
+            if ($fee_amount > 0) {
+                WC()->cart->add_fee('Processing Fee', $fee_amount);
+            }
+            
+            WC()->cart->calculate_totals();
+            $new_total = WC()->cart->get_total();
+            $new_total_text = html_entity_decode(wp_strip_all_tags($new_total), ENT_QUOTES, 'UTF-8');
+            
+            // Remove the temporary fee
+            if ($fee_amount > 0) {
+                WC()->cart->fees_api()->remove_all_fees();
+                WC()->cart->calculate_totals();
+            }
+            
+            wp_send_json_success(array(
+                'fee_amount' => $fee_amount,
+                'fee_display' => $fee_amount > 0 ? '+$' . number_format($fee_amount, 2) . ' processing fee' : '',
+                'new_total' => $new_total,
+                'new_total_text' => $new_total_text,
+                'payment_method' => $payment_method
+            ));
+            
+        } catch (Exception $e) {
+            $this->log_error('Exception in calculate fees', array(
+                'user_id' => get_current_user_id(),
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ));
+            
+            wp_send_json_error(array(
+                'message' => 'An unexpected error occurred while calculating fees',
+                'error_code' => 'CALCULATE_FEES_EXCEPTION'
+            ));
+        }
+    }
+    
+    /**
+     * Add payment method fees to cart
+     */
+    public function add_payment_method_fees() {
+        if (is_admin() && !defined('DOING_AJAX')) {
+            return;
+        }
+        
+        // Only add fees during checkout process
+        if (!is_checkout() && !defined('WOOCOMMERCE_CHECKOUT')) {
+            return;
+        }
+        
+        // Get the selected payment method from session or POST data
+        $chosen_payment_method = WC()->session->get('chosen_payment_method');
+        
+        // If not in session, check POST data (for AJAX requests)
+        if (empty($chosen_payment_method) && isset($_POST['payment_method'])) {
+            $chosen_payment_method = sanitize_text_field($_POST['payment_method']);
+        }
+        
+        if (empty($chosen_payment_method)) {
+            return;
+        }
+        
+        // Calculate and add fee
+        $fee_amount = $this->calculate_payment_method_fee($chosen_payment_method);
+        
+        if ($fee_amount > 0) {
+            WC()->cart->add_fee('Processing Fee', $fee_amount);
+        }
     }
 }

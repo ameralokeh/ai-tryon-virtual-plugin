@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Adjustment Test</title>
+    <link rel="stylesheet" href="ai-virtual-fitting/public/css/modern-virtual-fitting.css">
+    <style>
+        /* Visual indicators for testing */
+        .fitting-panel {
+            background: #e8f4fd !important;
+            border: 2px solid #4a90e2 !important;
+        }
+        
+        .main-preview {
+            background: #fff3cd !important;
+            border: 2px solid #ffc107 !important;
+        }
+        
+        .products-panel {
+            background: #d1ecf1 !important;
+            border: 2px solid #17a2b8 !important;
+        }
+        
+        .panel-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="ai-virtual-fitting-app">
+        <div class="fitting-container">
+            <!-- Left Panel - Upload & Result (unchanged) -->
+            <div class="fitting-panel" style="position: relative;">
+                <div class="panel-label">LEFT PANEL (unchanged)</div>
+                <div class="section-header">Upload & Result</div>
+                <div class="upload-section">
+                    <div class="upload-area">
+                        <div class="upload-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                            </svg>
+                        </div>
+                        <div class="upload-text">Upload Your Photo</div>
+                        <div class="upload-hint">Drag & drop or click to select</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel - Main Preview (75% of original) -->
+            <div class="main-preview" style="position: relative;">
+                <div class="panel-label">MIDDLE PANEL (75% width)</div>
+                <div class="preview-placeholder">
+                    <p>Main Preview Area</p>
+                    <p>This should be 75% of the original width</p>
+                </div>
+            </div>
+
+            <!-- Right Panel - Product Selection (125% of original) -->
+            <div class="products-panel" style="position: relative;">
+                <div class="panel-label">RIGHT PANEL (125% width)</div>
+                <div class="products-header">
+                    <div class="section-header">Select Products</div>
+                    <div class="category-dropdown-container">
+                        <select class="category-dropdown" id="category-dropdown">
+                            <option value="">All Categories</option>
+                            <option value="dresses">Dresses</option>
+                            <option value="tops">Tops</option>
+                        </select>
+                    </div>
+                    <input type="text" class="search-box" placeholder="Search products...">
+                </div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-image-placeholder">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                            </svg>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">Sample Product</h4>
+                            <div class="product-price">$99.99</div>
+                        </div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-image-placeholder">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                            </svg>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">Another Product</h4>
+                            <div class="product-price">$149.99</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+        <h3>Layout Test Instructions:</h3>
+        <ul>
+            <li><strong>Left Panel (Blue):</strong> Should remain the same size</li>
+            <li><strong>Middle Panel (Yellow):</strong> Should be 75% of its original width</li>
+            <li><strong>Right Panel (Teal):</strong> Should be 125% of its original width (gained space from middle)</li>
+        </ul>
+        <p><strong>Test:</strong> Resize your browser window to test responsive breakpoints at 1600px, 1400px, and 1200px widths.</p>
+    </div>
+</body>
+</html>

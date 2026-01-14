@@ -73,6 +73,10 @@
         // Purchase credits
         $('#purchase-credits-btn').on('click', handlePurchaseCredits);
         
+        // Global purchase button handler for dynamically created buttons
+        $(document).on('click', '#purchase-credits-btn', handlePurchaseCredits);
+        $(document).on('click', '.credits-purchase-btn', handlePurchaseCredits);
+        
         // Result actions
         $('#download-result-btn').on('click', handleDownloadResult);
         $('#try-another-btn').on('click', handleTryAnother);
@@ -769,9 +773,197 @@
     }
     
     /**
-     * Handle purchase credits with enhanced feedback
+     * Handle purchase credits - Updated to use modal instead of redirect
      */
     function handlePurchaseCredits() {
+        // Check if modal system is available (modern interface)
+        if (typeof openCheckoutModal === 'function') {
+            // Use the modal system
+            openCheckoutModal();
+            return;
+        }
+        
+        // Fallback: Check if modal HTML exists in the page
+        if ($('#checkout-modal').length > 0) {
+            // Modal exists, try to open it manually
+            openCheckoutModalFallback();
+            return;
+        }
+        
+        // Final fallback: Use the old redirect system for backward compatibility
+        handlePurchaseCreditsLegacy();
+    }
+    
+    /**
+     * Fallback function to open checkout modal manually
+     */
+    function openCheckoutModalFallback() {
+        const modal = $('#checkout-modal');
+        
+        if (modal.length === 0) {
+            // Modal doesn't exist, fall back to legacy
+            handlePurchaseCreditsLegacy();
+            return;
+        }
+        
+        // Reset modal state
+        resetCheckoutModalFallback();
+        
+        // Show modal
+        modal.addClass('active').show();
+        
+        // Prevent body scrolling
+        $('body').addClass('modal-open').css('overflow', 'hidden');
+        
+        // Load checkout form
+        loadCheckoutFormFallback();
+        
+        // Bind close events
+        bindCheckoutModalEventsFallback();
+    }
+    
+    /**
+     * Reset checkout modal to initial state (fallback)
+     */
+    function resetCheckoutModalFallback() {
+        $('#checkout-loading').show();
+        $('#checkout-form-container').hide();
+        $('#checkout-success').hide();
+        $('#checkout-error').hide();
+    }
+    
+    /**
+     * Load checkout form (fallback)
+     */
+    function loadCheckoutFormFallback() {
+        // Add credit product to cart first
+        $.ajax({
+            url: ai_virtual_fitting_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'ai_virtual_fitting_add_credits_to_cart',
+                nonce: ai_virtual_fitting_ajax.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Load WooCommerce checkout form
+                    loadWooCommerceCheckoutFallback();
+                } else {
+                    showCheckoutErrorFallback('Failed to add credits to cart. Please try again.');
+                }
+            },
+            error: function() {
+                showCheckoutErrorFallback('Network error. Please try again.');
+            }
+        });
+    }
+    
+    /**
+     * Load WooCommerce checkout form (fallback)
+     */
+    function loadWooCommerceCheckoutFallback() {
+        $.ajax({
+            url: ai_virtual_fitting_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'ai_virtual_fitting_load_checkout',
+                nonce: ai_virtual_fitting_ajax.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#checkout-loading').hide();
+                    $('#checkout-form-container').html(response.data.checkout_html).show();
+                    
+                    // Initialize WooCommerce checkout scripts
+                    if (typeof wc_checkout_params !== 'undefined') {
+                        $('body').trigger('init_checkout');
+                    }
+                } else {
+                    showCheckoutErrorFallback('Failed to load checkout form. Please try again.');
+                }
+            },
+            error: function() {
+                showCheckoutErrorFallback('Network error while loading checkout. Please try again.');
+            }
+        });
+    }
+    
+    /**
+     * Show checkout error (fallback)
+     */
+    function showCheckoutErrorFallback(message) {
+        $('#checkout-loading').hide();
+        $('#checkout-form-container').hide();
+        $('#checkout-error-message').text(message);
+        $('#checkout-error').show();
+    }
+    
+    /**
+     * Bind checkout modal events (fallback)
+     */
+    function bindCheckoutModalEventsFallback() {
+        // Close modal events
+        $(document).off('click.checkout-modal');
+        $(document).on('click.checkout-modal', '#close-checkout-modal, #cancel-checkout-btn', function() {
+            closeCheckoutModalFallback();
+        });
+        
+        // Close on overlay click
+        $(document).on('click.checkout-modal', '.checkout-modal-overlay', function(e) {
+            if (e.target === this) {
+                closeCheckoutModalFallback();
+            }
+        });
+        
+        // ESC key to close
+        $(document).on('keydown.checkout-modal', function(e) {
+            if (e.keyCode === 27) {
+                closeCheckoutModalFallback();
+            }
+        });
+        
+        // Success button
+        $(document).on('click.checkout-modal', '#continue-fitting-btn', function() {
+            closeCheckoutModalFallback();
+        });
+        
+        // Retry button
+        $(document).on('click.checkout-modal', '#retry-checkout-btn', function() {
+            resetCheckoutModalFallback();
+            loadCheckoutFormFallback();
+        });
+    }
+    
+    /**
+     * Close checkout modal (fallback)
+     */
+    function closeCheckoutModalFallback() {
+        const modal = $('#checkout-modal');
+        
+        // Hide modal
+        modal.removeClass('active').hide();
+        
+        // Restore body scrolling
+        $('body').removeClass('modal-open').css('overflow', '');
+        
+        // Clear cart
+        $.ajax({
+            url: ai_virtual_fitting_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'ai_virtual_fitting_clear_cart',
+                nonce: ai_virtual_fitting_ajax.nonce
+            }
+        });
+        
+        // Unbind events
+        $(document).off('.checkout-modal');
+    }
+    
+    /**
+     * Legacy purchase credits function (for backward compatibility)
+     */
+    function handlePurchaseCreditsLegacy() {
         showLoading('Adding credits to your cart...', true);
         updateLoadingProgress(0);
         

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout Modal Test</title>
+    <link rel="stylesheet" href="ai-virtual-fitting/public/css/modern-virtual-fitting.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="ai-virtual-fitting-app">
+        <!-- Test Button -->
+        <div style="padding: 50px; text-align: center;">
+            <button id="test-modal-btn" class="btn btn-primary">Test Checkout Modal</button>
+        </div>
+
+        <!-- Checkout Modal -->
+        <div class="checkout-modal-overlay" id="checkout-modal" style="display: none;">
+            <div class="checkout-modal">
+                <div class="checkout-modal-header">
+                    <h3>Purchase Credits</h3>
+                    <button class="checkout-modal-close" id="close-checkout-modal" type="button">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="checkout-modal-content">
+                    <div class="checkout-loading" id="checkout-loading">
+                        <div class="checkout-spinner"></div>
+                        <p>Loading checkout...</p>
+                    </div>
+                    <div class="checkout-form-container" id="checkout-form-container" style="display: none;">
+                        <h4>Test Checkout Form</h4>
+                        <p>This is where the WooCommerce checkout form would be loaded.</p>
+                        <button class="btn btn-primary" id="test-success-btn">Test Success</button>
+                        <button class="btn btn-secondary" id="test-error-btn">Test Error</button>
+                    </div>
+                    <div class="checkout-success" id="checkout-success" style="display: none;">
+                        <div class="success-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
+                            </svg>
+                        </div>
+                        <h4>Purchase Successful!</h4>
+                        <p>Your credits have been added to your account.</p>
+                        <button class="btn btn-primary" id="continue-fitting-btn">Continue Virtual Fitting</button>
+                    </div>
+                    <div class="checkout-error" id="checkout-error" style="display: none;">
+                        <div class="error-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+                            </svg>
+                        </div>
+                        <h4>Payment Failed</h4>
+                        <p id="checkout-error-message">There was an issue processing your payment. Please try again.</p>
+                        <div class="checkout-error-actions">
+                            <button class="btn btn-primary" id="retry-checkout-btn">Try Again</button>
+                            <button class="btn btn-secondary" id="cancel-checkout-btn">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Test modal functionality
+            $('#test-modal-btn').on('click', function() {
+                openModal();
+            });
+
+            $('#close-checkout-modal, #continue-fitting-btn, #cancel-checkout-btn').on('click', function() {
+                closeModal();
+            });
+
+            $('#test-success-btn').on('click', function() {
+                showSuccess();
+            });
+
+            $('#test-error-btn').on('click', function() {
+                showError();
+            });
+
+            $('#retry-checkout-btn').on('click', function() {
+                showLoading();
+            });
+
+            // Close on overlay click
+            $('.checkout-modal-overlay').on('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+
+            // ESC key
+            $(document).on('keydown', function(e) {
+                if (e.keyCode === 27 && $('#checkout-modal').hasClass('active')) {
+                    closeModal();
+                }
+            });
+
+            function openModal() {
+                $('#checkout-modal').addClass('active');
+                $('body').addClass('modal-open');
+                showLoading();
+                
+                // Simulate loading
+                setTimeout(() => {
+                    showForm();
+                }, 2000);
+            }
+
+            function closeModal() {
+                $('#checkout-modal').removeClass('active');
+                $('body').removeClass('modal-open');
+            }
+
+            function showLoading() {
+                $('#checkout-loading').show();
+                $('#checkout-form-container').hide();
+                $('#checkout-success').hide();
+                $('#checkout-error').hide();
+            }
+
+            function showForm() {
+                $('#checkout-loading').hide();
+                $('#checkout-form-container').show();
+                $('#checkout-success').hide();
+                $('#checkout-error').hide();
+            }
+
+            function showSuccess() {
+                $('#checkout-loading').hide();
+                $('#checkout-form-container').hide();
+                $('#checkout-success').show();
+                $('#checkout-error').hide();
+            }
+
+            function showError() {
+                $('#checkout-loading').hide();
+                $('#checkout-form-container').hide();
+                $('#checkout-success').hide();
+                $('#checkout-error').show();
+            }
+        });
+    </script>
+</body>
+</html>

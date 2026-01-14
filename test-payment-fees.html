@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Payment Fees - AI Virtual Fitting</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #005a87;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #007cba;
+            padding-bottom: 10px;
+        }
+        .fee-display {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Payment Fees Testing</h1>
+        <p>This page tests the payment method fee calculation functionality for the AI Virtual Fitting checkout modal.</p>
+
+        <div class="test-section">
+            <h2>1. Test Fee Calculation API</h2>
+            <p>Test the AJAX endpoint that calculates fees for different payment methods.</p>
+            
+            <button class="test-button" onclick="testFeeCalculation('test_credit_card')">
+                Test Credit Card Fee ($0.50)
+            </button>
+            <button class="test-button" onclick="testFeeCalculation('bacs')">
+                Test Bank Transfer (No Fee)
+            </button>
+            <button class="test-button" onclick="testFeeCalculation('paypal')">
+                Test PayPal Fee ($0.25)
+            </button>
+            
+            <div id="fee-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Test Payment Methods API</h2>
+            <p>Test the payment methods endpoint to verify fee information is included.</p>
+            
+            <button class="test-button" onclick="testPaymentMethods()">
+                Get Available Payment Methods
+            </button>
+            
+            <div id="methods-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. Open Checkout Modal</h2>
+            <p>Test the complete checkout flow with fee calculation.</p>
+            
+            <button class="test-button" onclick="openCheckoutModal()">
+                Open Checkout Modal
+            </button>
+            
+            <div class="fee-display">
+                <strong>Expected Behavior:</strong>
+                <ul>
+                    <li>Credit Card (Test) should show "+$0.50 processing fee"</li>
+                    <li>Total should update from $10.00 to $10.50 when credit card is selected</li>
+                    <li>Fee should be displayed in the payment method description</li>
+                    <li>Summary should show itemized breakdown with processing fee</li>
+                </ul>
+            </div>
+            
+            <div id="modal-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Test Cart Fee Integration</h2>
+            <p>Test WooCommerce cart fee integration during checkout.</p>
+            
+            <button class="test-button" onclick="testCartIntegration()">
+                Test Cart Fee Addition
+            </button>
+            
+            <div id="cart-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Include WordPress AJAX setup -->
+    <script>
+        // WordPress AJAX configuration
+        const ai_virtual_fitting_ajax = {
+            ajax_url: 'http://localhost:8080/wp-admin/admin-ajax.php',
+            nonce: 'test-nonce-12345' // This would normally be generated by WordPress
+        };
+
+        async function testFeeCalculation(paymentMethod) {
+            const resultDiv = document.getElementById('fee-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing fee calculation for: ' + paymentMethod + '...';
+
+            try {
+                const response = await fetch(ai_virtual_fitting_ajax.ajax_url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'ai_virtual_fitting_calculate_fees',
+                        nonce: ai_virtual_fitting_ajax.nonce,
+                        payment_method: paymentMethod
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Fee Calculation Success:
+Payment Method: ${result.data.payment_method}
+Fee Amount: $${result.data.fee_amount}
+Fee Display: ${result.data.fee_display}
+New Total: ${result.data.new_total_text}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Fee Calculation Failed:
+Error: ${result.data.message}
+Error Code: ${result.data.error_code}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Network Error:
+${error.message}
+
+Note: Make sure WordPress is running at http://localhost:8080`;
+            }
+        }
+
+        async function testPaymentMethods() {
+            const resultDiv = document.getElementById('methods-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Loading payment methods...';
+
+            try {
+                const response = await fetch(ai_virtual_fitting_ajax.ajax_url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'ai_virtual_fitting_add_credits_to_cart',
+                        nonce: ai_virtual_fitting_ajax.nonce
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success && result.data.payment_methods) {
+                    resultDiv.className = 'result success';
+                    let methodsText = '✅ Payment Methods Retrieved:\n\n';
+                    
+                    result.data.payment_methods.forEach(method => {
+                        methodsText += `Method: ${method.title} (${method.id})
+Has Fields: ${method.has_fields ? 'Yes' : 'No'}
+Fee Amount: $${method.fee_amount || '0.00'}
+Fee Display: ${method.fee_display || 'No fee'}
+Description: ${method.description}
+-------------------\n`;
+                    });
+                    
+                    resultDiv.textContent = methodsText;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Failed to get payment methods:
+${result.data ? result.data.message : 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Network Error:
+${error.message}`;
+            }
+        }
+
+        function openCheckoutModal() {
+            const resultDiv = document.getElementById('modal-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            
+            // Check if the checkout modal is available
+            if (typeof window.CheckoutModal !== 'undefined') {
+                resultDiv.textContent = '✅ Checkout modal is available. Opening modal...';
+                
+                // This would normally be handled by the main application
+                resultDiv.textContent += '\n\nNote: Modal opening requires the main virtual fitting page to be loaded.';
+                resultDiv.textContent += '\nPlease visit: http://localhost:8080/virtual-fitting-2/';
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Checkout modal not available on this page.
+
+To test the modal:
+1. Visit: http://localhost:8080/virtual-fitting-2/
+2. Click "Purchase Credits" button
+3. Observe fee calculation when selecting payment methods`;
+            }
+        }
+
+        async function testCartIntegration() {
+            const resultDiv = document.getElementById('cart-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing WooCommerce cart fee integration...';
+
+            // This test would require a more complex setup with WooCommerce session
+            resultDiv.textContent = `ℹ️ Cart Integration Test:
+
+This test requires:
+1. Active WooCommerce session
+2. Items in cart
+3. Checkout page context
+
+To test manually:
+1. Add credits to cart via the modal
+2. Go to WooCommerce checkout page
+3. Select different payment methods
+4. Observe fee changes in cart totals
+
+The fee integration uses the 'woocommerce_cart_calculate_fees' hook
+to automatically add processing fees based on selected payment method.`;
+        }
+
+        // Auto-run basic connectivity test
+        window.addEventListener('load', function() {
+            console.log('🧪 Payment Fees Test Page Loaded');
+            console.log('WordPress AJAX URL:', ai_virtual_fitting_ajax.ajax_url);
+            
+            // Test basic connectivity
+            fetch(ai_virtual_fitting_ajax.ajax_url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    action: 'heartbeat',
+                    _wpnonce: ai_virtual_fitting_ajax.nonce
+                })
+            }).then(response => {
+                if (response.ok) {
+                    console.log('✅ WordPress connectivity: OK');
+                } else {
+                    console.log('❌ WordPress connectivity: Failed');
+                }
+            }).catch(error => {
+                console.log('❌ WordPress connectivity error:', error.message);
+            });
+        });
+    </script>
+</body>
+</html>

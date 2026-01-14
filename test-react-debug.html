@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-container { max-width: 600px; margin: 0 auto; }
+        .debug-info { background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .error { background: #ffe6e6; border-left: 4px solid #ff0000; }
+        .success { background: #e6ffe6; border-left: 4px solid #00aa00; }
+        .test-button { background: #007cba; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>React Debug Test</h1>
+        
+        <div id="debug-output"></div>
+        
+        <button class="test-button" onclick="testReact()">Test React Loading</button>
+        <button class="test-button" onclick="testCheckoutModal()">Test CheckoutModal Component</button>
+        <button class="test-button" onclick="openWordPressModal()">Open WordPress Modal</button>
+        
+        <div id="react-test-container"></div>
+    </div>
+
+    <!-- Load React from CDN (same as WordPress) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Load the checkout modal component -->
+    <script src="http://localhost:8080/wp-content/plugins/ai-virtual-fitting/public/js/checkout-modal-react.js"></script>
+
+    <script>
+        function addDebugInfo(message, type = 'info') {
+            const output = document.getElementById('debug-output');
+            const div = document.createElement('div');
+            div.className = `debug-info ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            output.appendChild(div);
+        }
+
+        function testReact() {
+            addDebugInfo('Testing React availability...');
+            
+            if (typeof React !== 'undefined') {
+                addDebugInfo(`✅ React loaded: version ${React.version || 'unknown'}`, 'success');
+            } else {
+                addDebugInfo('❌ React not loaded', 'error');
+                return;
+            }
+            
+            if (typeof ReactDOM !== 'undefined') {
+                addDebugInfo('✅ ReactDOM loaded', 'success');
+            } else {
+                addDebugInfo('❌ ReactDOM not loaded', 'error');
+                return;
+            }
+            
+            // Test simple React component
+            try {
+                const testElement = React.createElement('div', {
+                    style: { padding: '10px', background: '#e6f3ff', borderRadius: '4px', margin: '10px 0' }
+                }, 'React is working! This element was created with React.createElement()');
+                
+                const container = document.getElementById('react-test-container');
+                const root = ReactDOM.createRoot(container);
+                root.render(testElement);
+                
+                addDebugInfo('✅ React rendering test successful', 'success');
+            } catch (error) {
+                addDebugInfo(`❌ React rendering failed: ${error.message}`, 'error');
+            }
+        }
+
+        function testCheckoutModal() {
+            addDebugInfo('Testing CheckoutModal component...');
+            
+            if (typeof window.CheckoutModal !== 'undefined') {
+                addDebugInfo('✅ CheckoutModal component loaded', 'success');
+                
+                // Test creating the component
+                try {
+                    const modalElement = React.createElement(window.CheckoutModal, {
+                        isOpen: false,
+                        onClose: () => addDebugInfo('Modal close callback triggered'),
+                        onSuccess: () => addDebugInfo('Modal success callback triggered')
+                    });
+                    addDebugInfo('✅ CheckoutModal component creation successful', 'success');
+                } catch (error) {
+                    addDebugInfo(`❌ CheckoutModal component creation failed: ${error.message}`, 'error');
+                }
+            } else {
+                addDebugInfo('❌ CheckoutModal component not loaded', 'error');
+            }
+        }
+
+        function openWordPressModal() {
+            addDebugInfo('Opening WordPress modal...');
+            window.open('http://localhost:8080/virtual-fitting-2/', '_blank');
+        }
+
+        // Auto-run basic tests on page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                addDebugInfo('Page loaded, running automatic tests...');
+                testReact();
+                setTimeout(() => testCheckoutModal(), 1000);
+            }, 500);
+        });
+    </script>
+</body>
+</html>

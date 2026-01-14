@@ -83,6 +83,25 @@ The AI Virtual Fitting Plugin is a WordPress/WooCommerce plugin that provides cu
 6. WHEN credits are added, THE Virtual_Fitting_System SHALL send confirmation notification to the customer
 7. THE Virtual_Fitting_System SHALL handle WooCommerce order status changes (pending, processing, completed, failed)
 
+### Requirement 13: React-Based Modal Checkout Experience
+
+**User Story:** As a customer, I want to purchase credits through a modern, responsive modal interface without leaving the virtual fitting page, so that I can maintain my session state and have an enhanced checkout experience.
+
+#### Acceptance Criteria
+
+1. WHEN a customer clicks "Get More Credits", THE Virtual_Fitting_System SHALL open a React-powered modal overlay
+2. THE Virtual_Fitting_System SHALL automatically add the credit product to cart when the modal opens
+3. WHEN displaying the checkout form, THE Virtual_Fitting_System SHALL provide real-time form validation with visual feedback
+4. THE Virtual_Fitting_System SHALL implement a multi-step checkout flow: loading → form → processing → success/error
+5. WHEN form validation fails, THE Virtual_Fitting_System SHALL display specific error messages for each field
+6. WHEN payment processing begins, THE Virtual_Fitting_System SHALL show progress indicators and processing steps
+7. WHEN payment succeeds, THE Virtual_Fitting_System SHALL display success confirmation and automatically update credit balance
+8. WHEN payment fails, THE Virtual_Fitting_System SHALL provide retry options and clear error messaging
+9. THE Virtual_Fitting_System SHALL support mobile devices with touch-friendly interactions and responsive design
+10. THE Virtual_Fitting_System SHALL provide accessibility features including keyboard navigation and screen reader support
+11. THE Virtual_Fitting_System SHALL implement graceful fallback to traditional checkout if React is unavailable
+12. WHEN the modal is closed without purchase, THE Virtual_Fitting_System SHALL clear the cart and return to clean state
+
 ### Requirement 6: Image Download and Results Management
 
 **User Story:** As a customer, I want to download my virtual fitting results, so that I can save and share the images showing how dresses look on me.

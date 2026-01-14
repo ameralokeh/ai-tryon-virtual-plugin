@@ -1,0 +1,608 @@
+/* =========================================================
+   Checkout Modal (React) — Premium Look & Feel (UPDATED)
+   Scoped to the app to avoid theme conflicts + hardened for WP themes
+   ========================================================= */
+
+.ai-virtual-fitting-app .checkout-modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    z-index: 2147483647; /* win against most WP theme overlays */
+    background: rgba(10, 12, 16, 0.65);
+    backdrop-filter: blur(10px);
+}
+
+.ai-virtual-fitting-app .checkout-modal-overlay.active {
+    display: flex;
+}
+
+/* Modal container */
+.ai-virtual-fitting-app .checkout-modal.react-modal {
+    width: min(720px, 100%);
+    max-height: min(86vh, 860px);
+    overflow: hidden;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.35);
+    border: 1px solid rgba(225,232,237,0.9);
+    outline: 1px solid rgba(255,255,255,0.35);
+    outline-offset: -1px;
+    position: relative;
+    margin: 0 auto;
+    transform: translateY(6px);
+    animation: avfModalIn 180ms ease-out forwards;
+}
+
+@keyframes avfModalIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Header */
+.ai-virtual-fitting-app .checkout-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 18px;
+    border-bottom: 1px solid #eef2f6;
+    background: linear-gradient(180deg, rgba(248,249,250,0.9), rgba(255,255,255,1));
+}
+
+.ai-virtual-fitting-app .checkout-modal-header h3 {
+    margin: 0;
+    font-size: 14px; /* Reduced from 16px */
+    font-weight: 700; /* Reduced from 800 */
+    color: #1f2d3d;
+    letter-spacing: 0.1px; /* Reduced from 0.2px */
+}
+
+.ai-virtual-fitting-app .checkout-modal-close {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid #e7edf3;
+    background: #ffffff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+}
+
+.ai-virtual-fitting-app .checkout-modal-close:hover {
+    background: #f6f8fa;
+    transform: translateY(-1px);
+}
+
+.ai-virtual-fitting-app .checkout-modal-close svg {
+    width: 18px;
+    height: 18px;
+    fill: #2c3e50;
+}
+
+/* Content */
+.ai-virtual-fitting-app .checkout-modal-content {
+    padding: 16px 18px 18px;
+    overflow: auto;
+    max-height: calc(min(86vh, 860px) - 64px);
+}
+
+/* Steps base */
+.ai-virtual-fitting-app .checkout-step {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Loading / Processing */
+.ai-virtual-fitting-app .checkout-spinner,
+.ai-virtual-fitting-app .processing-spinner {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 4px solid #e9eef4;
+    border-top-color: #4a90e2;
+    animation: avfSpin 1s linear infinite;
+    margin: 6px auto;
+}
+
+@keyframes avfSpin {
+    to { transform: rotate(360deg); }
+}
+
+.ai-virtual-fitting-app .loading-step p,
+.ai-virtual-fitting-app .processing-step p {
+    margin: 0;
+    text-align: center;
+    color: #54606b;
+    font-weight: 600;
+}
+
+/* Summary box */
+.ai-virtual-fitting-app .checkout-summary {
+    border: 1px solid #eef2f6;
+    background: #fbfcfd;
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.ai-virtual-fitting-app .summary-item,
+.ai-virtual-fitting-app .summary-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.ai-virtual-fitting-app .summary-item span,
+.ai-virtual-fitting-app .summary-total span {
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.ai-virtual-fitting-app .summary-item .price {
+    font-weight: 800;
+}
+
+.ai-virtual-fitting-app .summary-total {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #e6ecf2;
+}
+
+.ai-virtual-fitting-app .summary-total .total-price {
+    font-weight: 900;
+    color: #4a90e2;
+}
+
+/* Form */
+.ai-virtual-fitting-app .checkout-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ai-virtual-fitting-app .form-section {
+    border: 1px solid #eef2f6;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.ai-virtual-fitting-app .form-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 13px; /* Reduced from 14px */
+    font-weight: 700; /* Reduced from 800 */
+    color: #1f2d3d;
+}
+
+.ai-virtual-fitting-app .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.ai-virtual-fitting-app .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ai-virtual-fitting-app .form-field label {
+    font-size: 11px; /* Reduced from 12px */
+    font-weight: 600; /* Reduced from 700 */
+    color: #54606b;
+}
+
+/* HARDEN: normalize inputs against theme styles */
+.ai-virtual-fitting-app .checkout-modal.react-modal input,
+.ai-virtual-fitting-app .checkout-modal.react-modal select,
+.ai-virtual-fitting-app .checkout-modal.react-modal textarea {
+    font-family: inherit;
+    box-sizing: border-box;
+    border: 1px solid #e1e8ed;
+    border-radius: 12px;
+    background: #fff;
+    color: #2c3e50;
+    outline: none;
+    box-shadow: none;
+}
+
+.ai-virtual-fitting-app .form-field input {
+    height: 40px; /* Reduced from 44px */
+    padding: 0 12px;
+    font-size: 13px; /* Reduced from 14px */
+    font-weight: 500; /* Reduced from 600 */
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.ai-virtual-fitting-app .form-field input::placeholder {
+    color: #9aa6b2;
+    font-weight: 500;
+}
+
+.ai-virtual-fitting-app .form-field input:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 4px rgba(74,144,226,0.14);
+    background: #fbfdff;
+}
+
+.ai-virtual-fitting-app .form-field input.error {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 4px rgba(231,76,60,0.12);
+}
+
+.ai-virtual-fitting-app .field-error {
+    font-size: 12px;
+    font-weight: 700;
+    color: #b3261e;
+    background: rgba(231,76,60,0.08);
+    border-left: 3px solid #e74c3c;
+    padding: 8px 10px;
+    border-radius: 10px;
+}
+
+/* Payment method cards */
+.ai-virtual-fitting-app .payment-methods {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.ai-virtual-fitting-app .payment-method {
+    border: 1px solid #e7edf3;
+    border-radius: 14px;
+    background: #ffffff;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.ai-virtual-fitting-app .payment-method:hover {
+    border-color: #4a90e2;
+    box-shadow: 0 10px 26px rgba(74,144,226,0.12);
+    transform: translateY(-1px);
+}
+
+.ai-virtual-fitting-app .payment-method .payment-header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.ai-virtual-fitting-app .payment-method input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #4a90e2;
+}
+
+.ai-virtual-fitting-app .payment-method label {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    cursor: pointer;
+    width: 100%;
+}
+
+.ai-virtual-fitting-app .payment-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(74,144,226,0.10);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.ai-virtual-fitting-app .payment-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ai-virtual-fitting-app .payment-name {
+    font-weight: 700; /* Reduced from 900 */
+    font-size: 13px; /* Added explicit size */
+    color: #1f2d3d;
+}
+
+.ai-virtual-fitting-app .payment-desc {
+    font-size: 11px; /* Reduced from 12px */
+    font-weight: 500; /* Reduced from 600 */
+    color: #6b7785;
+}
+
+/* Credit card fields */
+.ai-virtual-fitting-app .credit-card-fields {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.ai-virtual-fitting-app .credit-card-fields .form-field {
+    margin-bottom: 12px;
+}
+
+.ai-virtual-fitting-app .credit-card-fields .form-field:last-child {
+    margin-bottom: 0;
+}
+
+.ai-virtual-fitting-app .credit-card-fields .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Test card note styling */
+.ai-virtual-fitting-app .test-card-note {
+    margin: 12px 0 0 0;
+    padding: 8px 12px;
+    background: rgba(74,144,226,0.08);
+    border: 1px solid rgba(74,144,226,0.2);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #2c3e50;
+    line-height: 1.4;
+}
+
+/* General error */
+.ai-virtual-fitting-app .general-error {
+    border: 1px solid rgba(231,76,60,0.25);
+    background: rgba(231,76,60,0.08);
+    color: #721c24;
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-weight: 700;
+}
+
+/* Actions */
+.ai-virtual-fitting-app .form-actions,
+.ai-virtual-fitting-app .error-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* HARDEN: prevent theme button styles from leaking into modal */
+.ai-virtual-fitting-app .checkout-modal.react-modal .btn,
+.ai-virtual-fitting-app .checkout-modal.react-modal button.btn,
+.ai-virtual-fitting-app .checkout-modal.react-modal a.btn {
+    appearance: none;
+    -webkit-appearance: none;
+    text-decoration: none;
+    line-height: 1;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+    border: none;
+}
+
+.ai-virtual-fitting-app .checkout-modal .btn {
+    height: 44px;
+    border-radius: 14px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.ai-virtual-fitting-app .checkout-modal .btn.btn-secondary {
+    background: #f3f5f7;
+    color: #2c3e50;
+    border: 1px solid #e1e8ed;
+}
+
+.ai-virtual-fitting-app .checkout-modal .btn.btn-secondary:hover {
+    background: #e9eef3;
+}
+
+.ai-virtual-fitting-app .checkout-modal .btn.btn-primary {
+    background: #4a90e2;
+    color: #ffffff;
+    box-shadow: 0 12px 26px rgba(74,144,226,0.22);
+}
+
+.ai-virtual-fitting-app .checkout-modal .btn.btn-primary:hover {
+    background: #357abd;
+}
+
+.ai-virtual-fitting-app .checkout-modal .btn.btn-primary:active,
+.ai-virtual-fitting-app .checkout-modal .btn.btn-secondary:active {
+    transform: translateY(1px);
+}
+
+/* Processing step visuals */
+.ai-virtual-fitting-app .processing-step h4,
+.ai-virtual-fitting-app .success-step h4,
+.ai-virtual-fitting-app .error-step h4 {
+    margin: 0;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 900;
+    color: #1f2d3d;
+}
+
+.ai-virtual-fitting-app .processing-steps {
+    display: grid;
+    gap: 8px;
+    border: 1px solid #eef2f6;
+    background: #fbfcfd;
+    border-radius: 14px;
+    padding: 12px;
+}
+
+.ai-virtual-fitting-app .processing-steps .step {
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7785;
+    padding: 10px 10px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #eef2f6;
+}
+
+.ai-virtual-fitting-app .processing-steps .step.active {
+    border-color: rgba(74,144,226,0.35);
+    background: rgba(74,144,226,0.08);
+    color: #2c3e50;
+}
+
+.ai-virtual-fitting-app .processing-steps .step.completed {
+    border-color: rgba(46,204,113,0.35);
+    background: rgba(46,204,113,0.10);
+    color: #2c3e50;
+}
+
+/* Success step */
+.ai-virtual-fitting-app .success-animation {
+    display: flex;
+    justify-content: center;
+    margin-top: 4px;
+}
+
+.ai-virtual-fitting-app .success-checkmark {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    background: rgba(46,204,113,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(46,204,113,0.25);
+}
+
+.ai-virtual-fitting-app .success-checkmark svg {
+    width: 28px;
+    height: 28px;
+    fill: #2ecc71;
+}
+
+.ai-virtual-fitting-app .success-details {
+    border: 1px solid #eef2f6;
+    background: #fbfcfd;
+    border-radius: 14px;
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+}
+
+.ai-virtual-fitting-app .success-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.ai-virtual-fitting-app .success-item .highlight {
+    color: #2ecc71;
+    font-weight: 900;
+}
+
+.ai-virtual-fitting-app .success-note {
+    margin: 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7785;
+}
+
+/* Error step */
+.ai-virtual-fitting-app .error-icon {
+    display: flex;
+    justify-content: center;
+}
+
+.ai-virtual-fitting-app .error-icon svg {
+    width: 46px;
+    height: 46px;
+    fill: #e74c3c;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .ai-virtual-fitting-app .checkout-modal.react-modal {
+        width: 100%;
+        border-radius: 16px;
+    }
+
+    .ai-virtual-fitting-app .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .ai-virtual-fitting-app .form-actions,
+    .ai-virtual-fitting-app .error-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Prevent iOS zoom on focus */
+@media (max-width: 768px) {
+    .ai-virtual-fitting-app .checkout-modal.react-modal input,
+    .ai-virtual-fitting-app .checkout-modal.react-modal select,
+    .ai-virtual-fitting-app .checkout-modal.react-modal textarea {
+        font-size: 16px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .ai-virtual-fitting-app .checkout-modal.react-modal {
+        animation: none;
+    }
+}
+
+/* Fee Display Styles */
+.summary-item.fee-item {
+    color: #6c757d;
+    font-style: italic;
+    border-top: 1px solid #e9ecef;
+    margin-top: 8px;
+    padding-top: 12px;
+}
+
+.payment-fee {
+    display: block;
+    font-size: 11px;
+    color: #dc3545;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.payment-method.active .payment-fee {
+    color: #28a745;
+}
+
+/* Enhanced payment method styling */
+.payment-method {
+    transition: all 0.2s ease;
+}
+
+.payment-method:hover {
+    background-color: #f8f9fa;
+}
+
+.payment-method.active {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.payment-method.active .payment-name {
+    color: #1976d2;
+    font-weight: 600;
+}
