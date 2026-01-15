@@ -114,6 +114,31 @@ class AI_Virtual_Fitting_Image_Processor {
     }
     
     /**
+     * Get decrypted API key
+     * Retrieves and decrypts the stored API key
+     *
+     * @return string|false Decrypted API key or false on failure
+     */
+    private function get_api_key() {
+        $encrypted_key = AI_Virtual_Fitting_Core::get_option('google_ai_api_key');
+        
+        if (empty($encrypted_key)) {
+            return false;
+        }
+        
+        // Try to decrypt - if it fails, it might be an old unencrypted key
+        $decrypted = AI_Virtual_Fitting_Security_Manager::decrypt($encrypted_key);
+        
+        if ($decrypted === false) {
+            // Might be an old unencrypted key, return as-is for backward compatibility
+            // TODO: Remove this fallback after migration period
+            return $encrypted_key;
+        }
+        
+        return $decrypted;
+    }
+    
+    /**
      * Validate uploaded image file
      *
      * @param array $file WordPress $_FILES array element
@@ -315,7 +340,7 @@ class AI_Virtual_Fitting_Image_Processor {
      */
     private function test_google_ai_studio_connection($api_key = null) {
         if ($api_key === null) {
-            $api_key = AI_Virtual_Fitting_Core::get_option('google_ai_api_key');
+            $api_key = $this->get_api_key();
         }
         
         if (empty($api_key)) {
@@ -549,7 +574,7 @@ class AI_Virtual_Fitting_Image_Processor {
      * @return array API response
      */
     public function call_gemini_api($images_data, $prompt) {
-        $api_key = AI_Virtual_Fitting_Core::get_option('google_ai_api_key');
+        $api_key = $this->get_api_key();
         
         if (empty($api_key)) {
             return array(
@@ -987,6 +1012,16 @@ class AI_Virtual_Fitting_Image_Processor {
      */
     private function download_product_image($image_url, $index = 0) {
         try {
+            // SECURITY: Validate URL to prevent SSRF attacks
+            $url_validation = AI_Virtual_Fitting_Security_Manager::validate_external_url($image_url);
+            if (!$url_validation['valid']) {
+                $this->log_error('URL validation failed for product image', array(
+                    'url' => $image_url,
+                    'error' => $url_validation['error']
+                ));
+                return false;
+            }
+            
             // Create temp directory if it doesn't exist
             $temp_dir = $this->get_temp_directory();
             if (!file_exists($temp_dir)) {
@@ -1000,7 +1035,9 @@ class AI_Virtual_Fitting_Image_Processor {
             // Download image using WordPress HTTP API
             $response = wp_remote_get($image_url, array(
                 'timeout' => 30,
-                'sslverify' => false // For local development
+                'sslverify' => true, // Enable SSL verification for security
+                'redirection' => 3, // Limit redirects
+                'user-agent' => 'AI-Virtual-Fitting-Plugin/' . AI_VIRTUAL_FITTING_VERSION
             ));
             
             if (is_wp_error($response)) {
@@ -1031,6 +1068,18 @@ class AI_Virtual_Fitting_Image_Processor {
                 $this->log_error('Failed to save product image', array(
                     'url' => $image_url,
                     'local_path' => $file_path
+                ));
+                return false;
+            }
+            
+            // SECURITY: Validate downloaded file
+            $file_validation = AI_Virtual_Fitting_Security_Manager::validate_downloaded_file($file_path);
+            if (!$file_validation['valid']) {
+                // Delete invalid file
+                @unlink($file_path);
+                $this->log_error('Downloaded file validation failed', array(
+                    'url' => $image_url,
+                    'error' => $file_validation['error']
                 ));
                 return false;
             }

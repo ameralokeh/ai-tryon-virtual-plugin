@@ -1087,7 +1087,26 @@ class AI_Virtual_Fitting_Admin_Settings {
      * Sanitization callbacks
      */
     public function sanitize_api_key($value) {
-        return sanitize_text_field(trim($value));
+        $value = sanitize_text_field(trim($value));
+        
+        // If empty, return empty
+        if (empty($value)) {
+            return '';
+        }
+        
+        // Encrypt the API key before storing
+        $encrypted = AI_Virtual_Fitting_Security_Manager::encrypt($value);
+        
+        if ($encrypted === false) {
+            add_settings_error(
+                'ai_virtual_fitting_google_ai_api_key',
+                'encryption_failed',
+                __('Failed to encrypt API key. Please try again.', 'ai-virtual-fitting')
+            );
+            return get_option('ai_virtual_fitting_google_ai_api_key', '');
+        }
+        
+        return $encrypted;
     }
     
     public function sanitize_url($value) {

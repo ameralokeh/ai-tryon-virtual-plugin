@@ -399,6 +399,19 @@ class AI_Virtual_Fitting_Public_Interface {
                 ));
             }
             
+            // Check rate limit
+            $user_id = get_current_user_id();
+            if (!AI_Virtual_Fitting_Security_Manager::check_rate_limit('upload_image', $user_id)) {
+                $this->log_error('Rate limit exceeded for image upload', array(
+                    'user_id' => $user_id,
+                    'ip' => $this->get_client_ip()
+                ));
+                wp_send_json_error(array(
+                    'message' => 'Too many requests. Please wait a few minutes and try again.',
+                    'error_code' => 'RATE_LIMIT_EXCEEDED'
+                ));
+            }
+            
             // Check if user is logged in
             if (!is_user_logged_in()) {
                 wp_send_json_error(array(
@@ -514,6 +527,15 @@ class AI_Virtual_Fitting_Public_Interface {
         // Verify nonce
         if (!wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
             wp_send_json_error(array('message' => 'Security check failed'));
+        }
+        
+        // Check rate limit
+        $user_id = get_current_user_id();
+        if (!AI_Virtual_Fitting_Security_Manager::check_rate_limit('process_fitting', $user_id)) {
+            wp_send_json_error(array(
+                'message' => 'Too many requests. Please wait a few minutes and try again.',
+                'error_code' => 'RATE_LIMIT_EXCEEDED'
+            ));
         }
         
         // Check if user is logged in
