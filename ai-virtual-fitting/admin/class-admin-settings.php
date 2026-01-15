@@ -95,6 +95,26 @@ class AI_Virtual_Fitting_Admin_Settings {
         
         register_setting(
             self::SETTINGS_GROUP,
+            'ai_virtual_fitting_gemini_text_api_endpoint',
+            array(
+                'type' => 'string',
+                'sanitize_callback' => array($this, 'sanitize_url'),
+                'default' => ''
+            )
+        );
+        
+        register_setting(
+            self::SETTINGS_GROUP,
+            'ai_virtual_fitting_gemini_image_api_endpoint',
+            array(
+                'type' => 'string',
+                'sanitize_callback' => array($this, 'sanitize_url'),
+                'default' => ''
+            )
+        );
+        
+        register_setting(
+            self::SETTINGS_GROUP,
             'ai_virtual_fitting_vertex_credentials',
             array(
                 'type' => 'string',
@@ -297,6 +317,22 @@ class AI_Virtual_Fitting_Admin_Settings {
             'ai_prompt_template',
             __('AI Prompt Template', 'ai-virtual-fitting'),
             array($this, 'render_ai_prompt_field'),
+            self::PAGE_SLUG,
+            'ai_virtual_fitting_api_section'
+        );
+        
+        add_settings_field(
+            'gemini_text_api_endpoint',
+            __('Gemini Text API Endpoint', 'ai-virtual-fitting'),
+            array($this, 'render_gemini_text_endpoint_field'),
+            self::PAGE_SLUG,
+            'ai_virtual_fitting_api_section'
+        );
+        
+        add_settings_field(
+            'gemini_image_api_endpoint',
+            __('Gemini Image API Endpoint', 'ai-virtual-fitting'),
+            array($this, 'render_gemini_image_endpoint_field'),
             self::PAGE_SLUG,
             'ai_virtual_fitting_api_section'
         );
@@ -762,6 +798,48 @@ class AI_Virtual_Fitting_Admin_Settings {
         return "You are a virtual try-on image generation system.\n\nINPUTS:\n- Image A: a real person (customer photo).\n- Image(s) B: wedding dress product images.\n\nOBJECTIVE:\nGenerate a realistic virtual try-on image showing the person from Image A wearing the wedding dress from Image B.\n\nSTRICT RULES (DO NOT VIOLATE):\n1. The person's body shape, weight, proportions, height, posture, and pose from Image A MUST be preserved exactly.\n   - Do NOT slim, stretch, reshape, beautify, or alter the body.\n   - The dress must adapt to the person's body, not the other way around.\n\n2. The person's face, identity, skin tone, and expression MUST remain unchanged.\n   - No face replacement, no facial enhancement, no smoothing.\n\n3. The wedding dress style MUST match the product images.\n   - Give highest priority to the FIRST product image.\n   - Preserve fabric type, lace patterns, neckline, sleeves, waistline, skirt volume, and silhouette.\n   - Do not invent new design elements.\n\n4. Lighting and perspective MUST match Image A.\n   - Do not change scene lighting or camera angle.\n   - The dress should appear naturally lit in the same environment as the person.\n\n5. The result MUST look like a real-life fitting:\n   - Natural folds, gravity, and fabric behavior.\n   - Proper alignment with shoulders, waist, hips, and legs.\n   - No floating, clipping, or unnatural stretching.\n\nQUALITY REQUIREMENTS:\n- Seamless integration between body and dress.\n- Photorealistic, professional, retail-quality output.\n- No stylization, no artistic filters, no exaggeration.\n\nFAILURE CONDITIONS (AVOID):\n- Altered body size or proportions\n- Changed pose or posture\n- Generic or blended dress styles\n- Over-smoothing or beauty retouching\n- Unrealistic fabric behavior\n\nOUTPUT:\n- One realistic virtual try-on image of the person wearing the selected wedding dress.";
     }
     
+    public function render_gemini_text_endpoint_field() {
+        $value = get_option('ai_virtual_fitting_gemini_text_api_endpoint', '');
+        $default = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+        ?>
+        <input type="url" 
+               id="gemini_text_api_endpoint" 
+               name="ai_virtual_fitting_gemini_text_api_endpoint" 
+               value="<?php echo esc_attr($value); ?>" 
+               class="large-text" 
+               placeholder="<?php echo esc_attr($default); ?>" />
+        <span class="help-tooltip" 
+              title="<?php esc_attr_e('Custom Gemini text API endpoint URL. Leave empty to use the default endpoint. Only change this if you need to use a different Gemini model or API version.', 'ai-virtual-fitting'); ?>"
+              style="display: inline-block; width: 18px; height: 18px; background: #0073aa; color: white; border-radius: 50%; text-align: center; line-height: 18px; font-size: 12px; font-weight: bold; margin-left: 8px; cursor: help; vertical-align: middle;">?</span>
+        <p class="description">
+            <?php _e('Custom Gemini text API endpoint (optional). Leave empty to use default.', 'ai-virtual-fitting'); ?>
+            <br>
+            <strong><?php _e('Default:', 'ai-virtual-fitting'); ?></strong> <code><?php echo esc_html($default); ?></code>
+        </p>
+        <?php
+    }
+    
+    public function render_gemini_image_endpoint_field() {
+        $value = get_option('ai_virtual_fitting_gemini_image_api_endpoint', '');
+        $default = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
+        ?>
+        <input type="url" 
+               id="gemini_image_api_endpoint" 
+               name="ai_virtual_fitting_gemini_image_api_endpoint" 
+               value="<?php echo esc_attr($value); ?>" 
+               class="large-text" 
+               placeholder="<?php echo esc_attr($default); ?>" />
+        <span class="help-tooltip" 
+              title="<?php esc_attr_e('Custom Gemini image generation API endpoint URL. Leave empty to use the default endpoint. Only change this if you need to use a different Gemini model or API version.', 'ai-virtual-fitting'); ?>"
+              style="display: inline-block; width: 18px; height: 18px; background: #0073aa; color: white; border-radius: 50%; text-align: center; line-height: 18px; font-size: 12px; font-weight: bold; margin-left: 8px; cursor: help; vertical-align: middle;">?</span>
+        <p class="description">
+            <?php _e('Custom Gemini image API endpoint (optional). Leave empty to use default.', 'ai-virtual-fitting'); ?>
+            <br>
+            <strong><?php _e('Default:', 'ai-virtual-fitting'); ?></strong> <code><?php echo esc_html($default); ?></code>
+        </p>
+        <?php
+    }
+    
     public function render_initial_credits_field() {
         $value = get_option('ai_virtual_fitting_initial_credits', 2);
         ?>
@@ -1010,6 +1088,30 @@ class AI_Virtual_Fitting_Admin_Settings {
      */
     public function sanitize_api_key($value) {
         return sanitize_text_field(trim($value));
+    }
+    
+    public function sanitize_url($value) {
+        $value = trim($value);
+        
+        // If empty, return empty (will use default)
+        if (empty($value)) {
+            return '';
+        }
+        
+        // Validate URL format
+        $sanitized = esc_url_raw($value);
+        
+        // Ensure it's a valid HTTPS URL
+        if (!filter_var($sanitized, FILTER_VALIDATE_URL) || !preg_match('/^https:\/\//i', $sanitized)) {
+            add_settings_error(
+                'ai_virtual_fitting_api_endpoint',
+                'invalid_url',
+                __('API endpoint must be a valid HTTPS URL.', 'ai-virtual-fitting')
+            );
+            return '';
+        }
+        
+        return $sanitized;
     }
     
     public function sanitize_ai_prompt($value) {

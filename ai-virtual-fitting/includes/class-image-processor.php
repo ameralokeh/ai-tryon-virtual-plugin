@@ -72,10 +72,11 @@ class AI_Virtual_Fitting_Image_Processor {
     );
     
     /**
-     * Google AI Studio API endpoints
+     * Default Google AI Studio API endpoints
+     * These can be overridden in admin settings
      */
-    const GEMINI_TEXT_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
-    const GEMINI_IMAGE_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
+    const DEFAULT_GEMINI_TEXT_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+    const DEFAULT_GEMINI_IMAGE_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
     
     /**
      * Constructor
@@ -90,6 +91,26 @@ class AI_Virtual_Fitting_Image_Processor {
         add_action('wp_ajax_nopriv_ai_virtual_fitting_upload_image', array($this, 'require_login'));
         add_action('wp_ajax_nopriv_ai_virtual_fitting_process_fitting', array($this, 'require_login'));
         add_action('wp_ajax_nopriv_ai_virtual_fitting_download_result', array($this, 'require_login'));
+    }
+    
+    /**
+     * Get configured Gemini text API endpoint
+     *
+     * @return string API endpoint URL
+     */
+    private function get_gemini_text_endpoint() {
+        $custom_endpoint = AI_Virtual_Fitting_Core::get_option('gemini_text_api_endpoint', '');
+        return !empty($custom_endpoint) ? $custom_endpoint : self::DEFAULT_GEMINI_TEXT_API_ENDPOINT;
+    }
+    
+    /**
+     * Get configured Gemini image API endpoint
+     *
+     * @return string API endpoint URL
+     */
+    private function get_gemini_image_endpoint() {
+        $custom_endpoint = AI_Virtual_Fitting_Core::get_option('gemini_image_api_endpoint', '');
+        return !empty($custom_endpoint) ? $custom_endpoint : self::DEFAULT_GEMINI_IMAGE_API_ENDPOINT;
     }
     
     /**
@@ -322,7 +343,7 @@ class AI_Virtual_Fitting_Image_Processor {
             
             // Make test API request
             $response = wp_remote_post(
-                self::GEMINI_TEXT_API_ENDPOINT . '?key=' . $api_key,
+                $this->get_gemini_text_endpoint() . '?key=' . $api_key,
                 array(
                     'headers' => array(
                         'Content-Type' => 'application/json',
@@ -576,7 +597,7 @@ class AI_Virtual_Fitting_Image_Processor {
                 if (AI_Virtual_Fitting_Core::get_option('enable_logging', true)) {
                     error_log("AI Virtual Fitting - API Request Attempt $attempt: " . json_encode(array(
                         'model' => 'gemini-3-pro-image-preview',
-                        'endpoint' => self::GEMINI_IMAGE_API_ENDPOINT,
+                        'endpoint' => $this->get_gemini_image_endpoint(),
                         'parts_count' => count($parts),
                         'has_text' => !empty($prompt),
                         'images_count' => count($images_data)
@@ -585,7 +606,7 @@ class AI_Virtual_Fitting_Image_Processor {
                 
                 // Make API request to image generation endpoint
                 $response = wp_remote_post(
-                    self::GEMINI_IMAGE_API_ENDPOINT . '?key=' . $api_key,
+                    $this->get_gemini_image_endpoint() . '?key=' . $api_key,
                     array(
                         'headers' => array(
                             'Content-Type' => 'application/json',
