@@ -156,7 +156,7 @@ class AI_Virtual_Fitting_Public_Interface {
                 'ai-virtual-fitting-modern-style',
                 plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
                 array(),
-                '1.7.4'  // Updated: Added rotating wedding dress facts to loading screen
+                '1.7.8'  // Updated: Reduced zero credits modal height to fit without scrolling
             );
             
             // Enqueue React checkout modal CSS
@@ -198,7 +198,7 @@ class AI_Virtual_Fitting_Public_Interface {
                 'ai-virtual-fitting-modern-script',
                 plugin_dir_url(__FILE__) . 'js/modern-virtual-fitting.js',
                 array('jquery', 'ai-virtual-fitting-checkout-modal-react'),
-                '1.5.0',  // Updated: Added rotating wedding dress facts
+                '1.5.3',  // Updated: Added debugging for zero credits modal
                 true
             );
             

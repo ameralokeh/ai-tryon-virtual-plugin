@@ -38,11 +38,11 @@
             // Refresh analytics button
             $('#refresh-analytics').on('click', this.loadAnalytics);
             
-            // User credit management
-            $('#refresh-user-credits').on('click', this.loadUserCredits);
-            $('#search-users').on('click', this.searchUsers);
-            $('#clear-search').on('click', this.clearUserSearch);
-            $('#user-search').on('keypress', function(e) {
+            // User credit management - support both original and -tab suffixed IDs
+            $('#refresh-user-credits, #refresh-user-credits-tab').on('click', this.loadUserCredits);
+            $('#search-users, #search-users-tab').on('click', this.searchUsers);
+            $('#clear-search, #clear-search-tab').on('click', this.clearUserSearch);
+            $('#user-search, #user-search-tab').on('keypress', function(e) {
                 if (e.which === 13) {
                     AIVirtualFittingAdmin.searchUsers();
                 }
@@ -311,9 +311,11 @@
          */
         loadUserCredits: function(page) {
             page = page || 1;
-            var search = $('#user-search').val();
+            // Support both original and -tab suffixed IDs
+            var search = $('#user-search').val() || $('#user-search-tab').val() || '';
             
-            $('#user-credits-tbody').html('<tr><td colspan="7" style="text-align: center; padding: 20px;">Loading...</td></tr>');
+            // Update both tbody elements if they exist
+            $('#user-credits-tbody, #user-credits-tbody-tab').html('<tr><td colspan="7" style="text-align: center; padding: 20px;">Loading...</td></tr>');
             
             $.ajax({
                 url: ai_virtual_fitting_admin.ajax_url,
@@ -342,12 +344,16 @@
          * Render user credits table
          */
         renderUserCreditsTable: function(data) {
+            // Support both original and -tab suffixed IDs
             var tbody = $('#user-credits-tbody');
+            if (tbody.length === 0) {
+                tbody = $('#user-credits-tbody-tab');
+            }
             tbody.empty();
             
             if (data.users.length === 0) {
                 tbody.html('<tr><td colspan="7" style="text-align: center; padding: 20px;">No users found</td></tr>');
-                $('#user-credits-pagination').empty();
+                $('#user-credits-pagination, #user-credits-pagination-tab').empty();
                 return;
             }
             
@@ -378,7 +384,11 @@
          * Render pagination for user credits
          */
         renderUserCreditsPagination: function(pagination) {
+            // Support both original and -tab suffixed IDs
             var container = $('#user-credits-pagination');
+            if (container.length === 0) {
+                container = $('#user-credits-pagination-tab');
+            }
             container.empty();
             
             if (pagination.total_pages <= 1) {
@@ -422,7 +432,8 @@
          * Clear user search
          */
         clearUserSearch: function() {
-            $('#user-search').val('');
+            // Clear both search inputs if they exist
+            $('#user-search, #user-search-tab').val('');
             AIVirtualFittingAdmin.loadUserCredits(1);
         },
         

@@ -1,6 +1,7 @@
 /**
  * Modern Virtual Fitting Interface - Exact Design Match
  * Three-panel layout: Upload/Result | Main Preview | Product Selection
+ * Version: 1.7.7
  */
 
 /* Reset and Base Styles */
@@ -13,6 +14,120 @@
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
+}
+
+/* Consent Box Styles */
+.consent-box {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 2px solid #e8ecef;
+    margin-bottom: 20px;
+}
+
+.consent-content {
+    text-align: center;
+}
+
+.consent-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.consent-icon svg {
+    width: 36px;
+    height: 36px;
+    fill: white;
+}
+
+.consent-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 20px 0;
+}
+
+.consent-terms {
+    text-align: left;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.consent-terms p {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 12px 0;
+}
+
+.consent-terms ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.consent-terms li {
+    font-size: 14px;
+    color: #5a6c7d;
+    padding: 8px 0;
+    padding-left: 28px;
+    position: relative;
+    line-height: 1.5;
+}
+
+.consent-terms li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #4a90e2;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.consent-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 16px;
+    background: white;
+    border: 2px solid #e8ecef;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.consent-checkbox:hover {
+    border-color: #4a90e2;
+    background: #f8f9fa;
+}
+
+.consent-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #4a90e2;
+}
+
+.checkbox-label {
+    font-size: 15px;
+    font-weight: 500;
+    color: #2c3e50;
+    cursor: pointer;
+    user-select: none;
+}
+
+.consent-checkbox input[type="checkbox"]:checked + .checkbox-label {
+    color: #4a90e2;
 }
 
 /* Credits Banner */
@@ -337,7 +452,7 @@
 .image-preview {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;  /* Changed from 'cover' to show full image without cropping */
     border-radius: 8px;
     position: absolute;
     top: 0;
@@ -1779,5 +1894,286 @@ body.modal-open {
             height: 100vh;
             height: -webkit-fill-available;
         }
+    }
+}
+
+
+/* Zero Credits Modal Styles */
+.zero-credits-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    animation: fadeIn 0.3s ease;
+}
+
+.fitting-container {
+    position: relative;
+}
+
+.zero-credits-modal {
+    background: #f5f5f0;
+    border-radius: 24px;
+    padding: 20px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+    position: relative;
+    animation: slideUp 0.4s ease;
+}
+
+.zero-credits-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.zero-credits-close:hover {
+    background: rgba(0, 0, 0, 0.2);
+    transform: rotate(90deg);
+}
+
+.zero-credits-close svg {
+    width: 18px;
+    height: 18px;
+    fill: #5a5a5a;
+}
+
+.zero-credits-content {
+    text-align: center;
+}
+
+.zero-credits-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 16px;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
+}
+
+.zero-credits-icon svg {
+    width: 36px;
+    height: 36px;
+    fill: white;
+}
+
+.zero-credits-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c2c2c;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.5px;
+}
+
+.zero-credits-subtitle {
+    font-size: 15px;
+    color: #7a7a7a;
+    margin: 0 0 20px 0;
+    line-height: 1.4;
+}
+
+.zero-credits-package {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.package-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.package-name {
+    font-size: 17px;
+    font-weight: 600;
+    color: #2c2c2c;
+}
+
+.package-price {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c2c2c;
+}
+
+.package-credits {
+    font-size: 14px;
+    color: #7a7a7a;
+    font-weight: 500;
+}
+
+.zero-credits-security {
+    background: #e8f5e9;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 12px;
+    text-align: left;
+}
+
+.security-icon {
+    width: 28px;
+    height: 28px;
+    fill: #4caf50;
+    flex-shrink: 0;
+}
+
+.security-text strong {
+    display: block;
+    font-size: 14px;
+    color: #2e7d32;
+    margin-bottom: 4px;
+}
+
+.security-text p {
+    font-size: 12px;
+    color: #558b2f;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.zero-credits-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+    text-align: left;
+}
+
+.zero-credits-features li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 14px;
+    color: #5a5a5a;
+    font-weight: 500;
+}
+
+.zero-credits-features li svg {
+    width: 18px;
+    height: 18px;
+    fill: #4caf50;
+    flex-shrink: 0;
+}
+
+.btn-large {
+    width: 100%;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(233, 30, 99, 0.3);
+}
+
+.btn-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(233, 30, 99, 0.4);
+}
+
+.btn-large .btn-icon {
+    width: 20px;
+    height: 20px;
+    fill: white;
+}
+
+.zero-credits-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+    font-size: 11px;
+    color: #9a9a9a;
+}
+
+.footer-icon {
+    width: 12px;
+    height: 12px;
+    fill: #9a9a9a;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments for zero credits modal */
+@media (max-width: 768px) {
+    .zero-credits-modal {
+        padding: 16px;
+        max-width: 90%;
+    }
+    
+    .zero-credits-title {
+        font-size: 20px;
+    }
+    
+    .zero-credits-subtitle {
+        font-size: 13px;
+    }
+    
+    .package-price {
+        font-size: 20px;
+    }
+    
+    .zero-credits-security {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .security-text {
+        text-align: center;
     }
 }

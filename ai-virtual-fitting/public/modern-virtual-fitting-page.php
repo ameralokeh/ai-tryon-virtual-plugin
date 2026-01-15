@@ -60,7 +60,32 @@ if (!defined('ABSPATH')) {
         <div class="fitting-panel">
             <!-- Upload Section -->
             <div class="upload-section">
-                <div class="upload-area" id="upload-area">
+                <!-- Terms Consent Box -->
+                <div class="consent-box" id="consent-box">
+                    <div class="consent-content">
+                        <div class="consent-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M17.13,17C15.92,18.85 14.11,20.24 12,20.92C9.89,20.24 8.08,18.85 6.87,17C6.53,16.5 6.24,16 6,15.47C6,13.82 8.71,12.47 12,12.47C15.29,12.47 18,13.79 18,15.47C17.76,16 17.47,16.5 17.13,17Z"/>
+                            </svg>
+                        </div>
+                        <h4 class="consent-title">Image Upload Guidelines</h4>
+                        <div class="consent-terms">
+                            <p>By uploading an image, you agree to the following:</p>
+                            <ul>
+                                <li>I will only upload personal photos of myself</li>
+                                <li>Images will not contain nudity or inappropriate content</li>
+                                <li>I have the right to use and upload this image</li>
+                                <li>Images are processed securely and not stored permanently</li>
+                            </ul>
+                        </div>
+                        <label class="consent-checkbox">
+                            <input type="checkbox" id="consent-checkbox">
+                            <span class="checkbox-label">I agree to these terms and conditions</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="upload-area" id="upload-area" style="display: none;">
                     <div class="upload-icon">
                         <svg viewBox="0 0 24 24">
                             <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
@@ -204,6 +229,93 @@ if (!defined('ABSPATH')) {
         <div class="loading-spinner"></div>
         <div class="loading-text">Processing your virtual fitting...</div>
         <div class="loading-fact" id="loading-fact"></div>
+    </div>
+
+    <!-- Zero Credits Modal -->
+    <div class="zero-credits-overlay" id="zero-credits-modal" style="display: none;">
+        <div class="zero-credits-modal">
+            <button class="zero-credits-close" id="close-zero-credits" type="button">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                </svg>
+            </button>
+            
+            <div class="zero-credits-content">
+                <div class="zero-credits-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6Z"/>
+                    </svg>
+                </div>
+                
+                <h2 class="zero-credits-title">Get More Try-Ons</h2>
+                <p class="zero-credits-subtitle">Get <?php echo esc_html(get_option('ai_virtual_fitting_credits_per_purchase', 20)); ?> Virtual Fittings for <?php 
+                    $product_id = get_option('ai_virtual_fitting_credit_product_id');
+                    if ($product_id) {
+                        $product = wc_get_product($product_id);
+                        if ($product) {
+                            echo $product->get_price_html();
+                        } else {
+                            echo '$19.00';
+                        }
+                    } else {
+                        echo '$19.00';
+                    }
+                ?> only.</p>
+                
+                <div class="zero-credits-package">
+                    <div class="package-header">
+                        <span class="package-name">Premium Pack</span>
+                        <span class="package-price"><?php 
+                            if ($product_id && $product) {
+                                echo $product->get_price_html();
+                            } else {
+                                echo '$19.00';
+                            }
+                        ?></span>
+                    </div>
+                    <div class="package-credits"><?php echo esc_html(get_option('ai_virtual_fitting_credits_per_purchase', 20)); ?> Credits</div>
+                </div>
+                
+                <div class="zero-credits-security">
+                    <svg viewBox="0 0 24 24" class="security-icon">
+                        <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M17.13,17C15.92,18.85 14.11,20.24 12,20.92C9.89,20.24 8.08,18.85 6.87,17C6.53,16.5 6.24,16 6,15.47C6,13.82 8.71,12.47 12,12.47C15.29,12.47 18,13.79 18,15.47C17.76,16 17.47,16.5 17.13,17Z"/>
+                    </svg>
+                    <div class="security-text">
+                        <strong>100% Secure Payment</strong>
+                        <p>Your card details never touch Brides & Tailor. All payments are processed securely by Stripe with bank-level encryption.</p>
+                    </div>
+                </div>
+                
+                <ul class="zero-credits-features">
+                    <li>
+                        <svg viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+                        <?php echo esc_html(get_option('ai_virtual_fitting_credits_per_purchase', 20)); ?> AI-powered virtual try-ons
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+                        Download and share your looks
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+                        Credits never expire
+                    </li>
+                </ul>
+                
+                <button class="btn btn-primary btn-large" id="purchase-credits-btn">
+                    <svg viewBox="0 0 24 24" class="btn-icon">
+                        <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                    </svg>
+                    Get Credits Now
+                </button>
+                
+                <p class="zero-credits-footer">
+                    <svg viewBox="0 0 24 24" class="footer-icon">
+                        <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z"/>
+                    </svg>
+                    PCI-DSS compliant • SSL encrypted • No card data stored
+                </p>
+            </div>
+        </div>
     </div>
 
     <!-- Messages Container -->

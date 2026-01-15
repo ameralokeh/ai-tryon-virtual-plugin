@@ -1,6 +1,7 @@
 /**
  * Modern Virtual Fitting JavaScript
  * Handles the trending-style split-screen interface
+ * Version: 1.5.3
  *
  * @package AI_Virtual_Fitting
  */
@@ -14,6 +15,7 @@
     let isProcessing = false;
     let currentProductGallery = [];
     let factRotationInterval = null;
+    let consentGiven = false;
 
     // Wedding dress facts for loading screen
     const weddingDressFacts = [
@@ -74,6 +76,9 @@
      * Bind all event handlers
      */
     function bindEvents() {
+        // Consent checkbox
+        $('#consent-checkbox').on('change', handleConsentChange);
+        
         // Product selection
         $(document).on('click', '.product-card', handleProductSelection);
         
@@ -151,6 +156,31 @@
             if (e.target === this) {
                 $(this).fadeOut(300);
             }
+        });
+        
+        // Zero Credits Modal
+        $('#close-zero-credits').on('click', function() {
+            $('#zero-credits-modal').fadeOut(300);
+        });
+        
+        $('#purchase-credits-btn').on('click', function(e) {
+            e.preventDefault();
+            // Close zero credits modal
+            $('#zero-credits-modal').fadeOut(300);
+            // Open checkout modal
+            openCheckoutModal();
+        });
+        
+        // Close zero credits modal on overlay click
+        $('#zero-credits-modal').on('click', function(e) {
+            if (e.target === this) {
+                $(this).fadeOut(300);
+            }
+        });
+        
+        // Prevent modal close when clicking inside modal content
+        $('.zero-credits-modal').on('click', function(e) {
+            e.stopPropagation();
         });
         
         // Checkout modal events
@@ -381,9 +411,31 @@
     }
 
     /**
+     * Handle consent checkbox change
+     */
+    function handleConsentChange() {
+        consentGiven = $('#consent-checkbox').is(':checked');
+        
+        if (consentGiven) {
+            // Hide consent box and show upload area with animation
+            $('#consent-box').fadeOut(300, function() {
+                $('#upload-area').fadeIn(300);
+            });
+        }
+    }
+
+    /**
      * Handle file selection from input
      */
     function handleFileSelection(e) {
+        // Check if consent was given
+        if (!consentGiven) {
+            showMessage('Please agree to the terms before uploading an image.', 'error');
+            // Reset file input
+            e.target.value = '';
+            return;
+        }
+        
         const file = e.target.files[0];
         if (file) {
             handleFileUpload(file);
@@ -395,6 +447,12 @@
      */
     function handleFileUpload(file) {
         if (!file) return;
+        
+        // Check if consent was given
+        if (!consentGiven) {
+            showMessage('Please agree to the terms before uploading an image.', 'error');
+            return;
+        }
 
         // Reset temp upload state
         tempFileName = null;
@@ -965,15 +1023,10 @@
      * Show insufficient credits message
      */
     function showInsufficientCreditsMessage() {
-        const message = `
-            <div class="insufficient-credits-message">
-                <h4>No Credits Remaining</h4>
-                <p>You need credits to use virtual fitting. Purchase a credit package to continue.</p>
-                <button class="btn btn-primary" id="purchase-credits-btn">Buy 20 Credits - $10</button>
-            </div>
-        `;
-        
-        showMessage(message, 'info', false, true);
+        console.log('showInsufficientCreditsMessage called');
+        console.log('Modal element exists:', $('#zero-credits-modal').length);
+        // Show the zero credits modal
+        $('#zero-credits-modal').fadeIn(300);
     }
 
     /**

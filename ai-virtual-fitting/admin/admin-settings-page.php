@@ -29,7 +29,20 @@ $system_status = $admin_settings->get_system_status();
     
     <?php settings_errors(); ?>
     
+    <!-- Tab Navigation -->
+    <h2 class="nav-tab-wrapper">
+        <a href="#settings" class="nav-tab nav-tab-active" data-tab="settings">
+            <?php _e('Settings', 'ai-virtual-fitting'); ?>
+        </a>
+        <a href="#users" class="nav-tab" data-tab="users">
+            <?php _e('User Management', 'ai-virtual-fitting'); ?>
+        </a>
+    </h2>
+    
     <div class="ai-virtual-fitting-admin-content">
+        
+        <!-- Settings Tab Content -->
+        <div id="tab-settings" class="tab-content active">
         
         <!-- System Status Dashboard -->
         <div class="ai-virtual-fitting-section">
@@ -64,6 +77,40 @@ $system_status = $admin_settings->get_system_status();
                 <?php endforeach; ?>
             </div>
         </div>
+        
+        <!-- Settings Form -->
+        <form method="post" action="options.php">
+            <?php
+            settings_fields(AI_Virtual_Fitting_Admin_Settings::SETTINGS_GROUP);
+            do_settings_sections(AI_Virtual_Fitting_Admin_Settings::PAGE_SLUG);
+            submit_button();
+            ?>
+        </form>
+        
+        <!-- Help Section -->
+        <div class="ai-virtual-fitting-help">
+            <h4><?php _e('Setup Guide', 'ai-virtual-fitting'); ?></h4>
+            <ol>
+                <li><?php _e('Get your Google AI Studio API key from the link above and enter it in the API Key field.', 'ai-virtual-fitting'); ?></li>
+                <li><?php _e('Test the API connection to ensure it\'s working correctly.', 'ai-virtual-fitting'); ?></li>
+                <li><?php _e('Configure your credit system settings based on your business model.', 'ai-virtual-fitting'); ?></li>
+                <li><?php _e('Adjust system settings like maximum image size based on your server capabilities.', 'ai-virtual-fitting'); ?></li>
+                <li><?php _e('Monitor the analytics dashboard to track usage and performance.', 'ai-virtual-fitting'); ?></li>
+            </ol>
+            
+            <h4><?php _e('Troubleshooting', 'ai-virtual-fitting'); ?></h4>
+            <ul>
+                <li><?php _e('If API tests fail, verify your API key and check that Google AI Studio is accessible from your server.', 'ai-virtual-fitting'); ?></li>
+                <li><?php _e('Enable logging to debug issues with virtual fitting processing.', 'ai-virtual-fitting'); ?></li>
+                <li><?php _e('Check the system status indicators above for any configuration issues.', 'ai-virtual-fitting'); ?></li>
+                <li><?php _e('Ensure WooCommerce is properly configured for credit purchases to work.', 'ai-virtual-fitting'); ?></li>
+            </ul>
+        </div>
+        
+        </div><!-- End Settings Tab -->
+        
+        <!-- Users Tab Content -->
+        <div id="tab-users" class="tab-content" style="display: none;">
         
         <!-- Analytics Dashboard -->
         <div class="ai-virtual-fitting-section">
@@ -114,21 +161,21 @@ $system_status = $admin_settings->get_system_status();
         <div class="ai-virtual-fitting-section">
             <h3>
                 <?php _e('User Credit Management', 'ai-virtual-fitting'); ?>
-                <button type="button" id="refresh-user-credits" class="button button-secondary" style="margin-left: 10px;">
+                <button type="button" id="refresh-user-credits-tab" class="button button-secondary" style="margin-left: 10px;">
                     <?php _e('Refresh', 'ai-virtual-fitting'); ?>
                 </button>
             </h3>
             
             <!-- Search and Filters -->
             <div class="user-credits-controls" style="margin-bottom: 20px;">
-                <input type="text" id="user-search" placeholder="<?php esc_attr_e('Search users...', 'ai-virtual-fitting'); ?>" style="width: 300px;" />
-                <button type="button" id="search-users" class="button"><?php _e('Search', 'ai-virtual-fitting'); ?></button>
-                <button type="button" id="clear-search" class="button"><?php _e('Clear', 'ai-virtual-fitting'); ?></button>
+                <input type="text" id="user-search-tab" placeholder="<?php esc_attr_e('Search users...', 'ai-virtual-fitting'); ?>" style="width: 300px;" />
+                <button type="button" id="search-users-tab" class="button"><?php _e('Search', 'ai-virtual-fitting'); ?></button>
+                <button type="button" id="clear-search-tab" class="button"><?php _e('Clear', 'ai-virtual-fitting'); ?></button>
             </div>
             
             <!-- User Credits Table -->
-            <div id="user-credits-table-container">
-                <table class="wp-list-table widefat fixed striped" id="user-credits-table">
+            <div id="user-credits-table-container-tab">
+                <table class="wp-list-table widefat fixed striped" id="user-credits-table-tab">
                     <thead>
                         <tr>
                             <th><?php _e('User', 'ai-virtual-fitting'); ?></th>
@@ -140,7 +187,7 @@ $system_status = $admin_settings->get_system_status();
                             <th><?php _e('Actions', 'ai-virtual-fitting'); ?></th>
                         </tr>
                     </thead>
-                    <tbody id="user-credits-tbody">
+                    <tbody id="user-credits-tbody-tab">
                         <tr>
                             <td colspan="7" style="text-align: center; padding: 20px;">
                                 <?php _e('Loading user data...', 'ai-virtual-fitting'); ?>
@@ -151,39 +198,12 @@ $system_status = $admin_settings->get_system_status();
             </div>
             
             <!-- Pagination -->
-            <div id="user-credits-pagination" style="margin-top: 20px; text-align: center;">
+            <div id="user-credits-pagination-tab" style="margin-top: 20px; text-align: center;">
                 <!-- Pagination will be inserted here by JavaScript -->
             </div>
         </div>
         
-        <!-- Settings Form -->
-        <form method="post" action="options.php">
-            <?php
-            settings_fields(AI_Virtual_Fitting_Admin_Settings::SETTINGS_GROUP);
-            do_settings_sections(AI_Virtual_Fitting_Admin_Settings::PAGE_SLUG);
-            submit_button();
-            ?>
-        </form>
-        
-        <!-- Help Section -->
-        <div class="ai-virtual-fitting-help">
-            <h4><?php _e('Setup Guide', 'ai-virtual-fitting'); ?></h4>
-            <ol>
-                <li><?php _e('Get your Google AI Studio API key from the link above and enter it in the API Key field.', 'ai-virtual-fitting'); ?></li>
-                <li><?php _e('Test the API connection to ensure it\'s working correctly.', 'ai-virtual-fitting'); ?></li>
-                <li><?php _e('Configure your credit system settings based on your business model.', 'ai-virtual-fitting'); ?></li>
-                <li><?php _e('Adjust system settings like maximum image size based on your server capabilities.', 'ai-virtual-fitting'); ?></li>
-                <li><?php _e('Monitor the analytics dashboard to track usage and performance.', 'ai-virtual-fitting'); ?></li>
-            </ol>
-            
-            <h4><?php _e('Troubleshooting', 'ai-virtual-fitting'); ?></h4>
-            <ul>
-                <li><?php _e('If API tests fail, verify your API key and check that Google AI Studio is accessible from your server.', 'ai-virtual-fitting'); ?></li>
-                <li><?php _e('Enable logging to debug issues with virtual fitting processing.', 'ai-virtual-fitting'); ?></li>
-                <li><?php _e('Check the system status indicators above for any configuration issues.', 'ai-virtual-fitting'); ?></li>
-                <li><?php _e('Ensure WooCommerce is properly configured for credit purchases to work.', 'ai-virtual-fitting'); ?></li>
-            </ul>
-        </div>
+        </div><!-- End Users Tab -->
         
         <!-- Credit Management Modal -->
         <div id="credit-management-modal" style="display: none; position: fixed; z-index: 100000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
@@ -235,5 +255,45 @@ $system_status = $admin_settings->get_system_status();
 jQuery(document).ready(function($) {
     // Update image size display on page load
     $('#max_image_size').trigger('input');
+    
+    // Tab switching functionality
+    $('.nav-tab').on('click', function(e) {
+        e.preventDefault();
+        
+        var targetTab = $(this).data('tab');
+        
+        // Update nav tabs
+        $('.nav-tab').removeClass('nav-tab-active');
+        $(this).addClass('nav-tab-active');
+        
+        // Update tab content
+        $('.tab-content').hide().removeClass('active');
+        $('#tab-' + targetTab).show().addClass('active');
+        
+        // Update URL hash without scrolling
+        if (history.pushState) {
+            history.pushState(null, null, '#' + targetTab);
+        } else {
+            location.hash = '#' + targetTab;
+        }
+        
+        // Load data for users tab if switching to it
+        if (targetTab === 'users') {
+            // Trigger analytics refresh if not already loaded
+            if ($('#metric-total-users .metric').text() === '0') {
+                $('#refresh-analytics').trigger('click');
+            }
+            // Trigger user credits refresh if not already loaded - use -tab suffix
+            if ($('#user-credits-tbody-tab tr').length === 1) {
+                $('#refresh-user-credits-tab').trigger('click');
+            }
+        }
+    });
+    
+    // Handle initial hash on page load
+    var hash = window.location.hash.substring(1);
+    if (hash && (hash === 'settings' || hash === 'users')) {
+        $('.nav-tab[data-tab="' + hash + '"]').trigger('click');
+    }
 });
 </script>
