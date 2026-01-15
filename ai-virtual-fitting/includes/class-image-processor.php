@@ -52,6 +52,26 @@ class AI_Virtual_Fitting_Image_Processor {
     );
     
     /**
+     * Magic byte signatures for file validation
+     * First few bytes that identify real image files
+     */
+    const MAGIC_BYTES = array(
+        'jpeg' => array(
+            array(0xFF, 0xD8, 0xFF, 0xE0), // JPEG JFIF
+            array(0xFF, 0xD8, 0xFF, 0xE1), // JPEG Exif
+            array(0xFF, 0xD8, 0xFF, 0xE2), // JPEG
+            array(0xFF, 0xD8, 0xFF, 0xE3), // JPEG
+            array(0xFF, 0xD8, 0xFF, 0xE8), // JPEG SPIFF
+        ),
+        'png' => array(
+            array(0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A), // PNG
+        ),
+        'webp' => array(
+            array(0x52, 0x49, 0x46, 0x46), // RIFF (WebP starts with RIFF)
+        ),
+    );
+    
+    /**
      * Google AI Studio API endpoints
      */
     const GEMINI_TEXT_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
@@ -104,6 +124,12 @@ class AI_Virtual_Fitting_Image_Processor {
                     size_format(self::MAX_FILE_SIZE)
                 )
             );
+        }
+        
+        // SECURITY: Validate magic bytes first (prevents file type spoofing)
+        $magic_byte_validation = $this->validate_magic_bytes($file['tmp_name']);
+        if (!$magic_byte_validation['valid']) {
+            return $magic_byte_validation;
         }
         
         // Check MIME type
@@ -170,6 +196,81 @@ class AI_Virtual_Fitting_Image_Processor {
             'mime_type' => $mime_type,
             'file_size' => $file['size']
         );
+    }
+    
+    /**
+     * Validate file magic bytes to ensure it's a real image file
+     * This prevents file type spoofing attacks
+     *
+     * @param string $file_path Path to the uploaded file
+     * @return array Validation result
+     */
+    private function validate_magic_bytes($file_path) {
+        // Read first 12 bytes (enough for all our image types)
+        $handle = fopen($file_path, 'rb');
+        if (!$handle) {
+            return array(
+                'valid' => false,
+                'error' => __('Unable to read uploaded file.', 'ai-virtual-fitting')
+            );
+        }
+        
+        $bytes = fread($handle, 12);
+        fclose($handle);
+        
+        if ($bytes === false || strlen($bytes) < 4) {
+            return array(
+                'valid' => false,
+                'error' => __('Uploaded file is too small or corrupted.', 'ai-virtual-fitting')
+            );
+        }
+        
+        // Convert bytes to array of integers
+        $byte_array = array_values(unpack('C*', $bytes));
+        
+        // Check against known magic bytes
+        $is_valid = false;
+        foreach (self::MAGIC_BYTES as $type => $signatures) {
+            foreach ($signatures as $signature) {
+                $matches = true;
+                for ($i = 0; $i < count($signature); $i++) {
+                    if (!isset($byte_array[$i]) || $byte_array[$i] !== $signature[$i]) {
+                        $matches = false;
+                        break;
+                    }
+                }
+                
+                if ($matches) {
+                    // Special check for WebP - must have "WEBP" after RIFF
+                    if ($type === 'webp') {
+                        if (strlen($bytes) >= 12) {
+                            $webp_check = substr($bytes, 8, 4);
+                            if ($webp_check === 'WEBP') {
+                                $is_valid = true;
+                                break 2;
+                            }
+                        }
+                    } else {
+                        $is_valid = true;
+                        break 2;
+                    }
+                }
+            }
+        }
+        
+        if (!$is_valid) {
+            // Log suspicious upload attempt
+            if (AI_Virtual_Fitting_Core::get_option('enable_logging', true)) {
+                error_log('AI Virtual Fitting: Suspicious file upload blocked - invalid magic bytes');
+            }
+            
+            return array(
+                'valid' => false,
+                'error' => __('File type validation failed. The file may be corrupted or not a valid image.', 'ai-virtual-fitting')
+            );
+        }
+        
+        return array('valid' => true);
     }
     
     /**

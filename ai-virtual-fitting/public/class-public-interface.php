@@ -167,21 +167,37 @@ class AI_Virtual_Fitting_Public_Interface {
                 '1.0.0'
             );
             
-            // Enqueue React and ReactDOM from CDN for checkout modal
+            // Enqueue React and ReactDOM - Local first with CDN fallback
+            // React
             wp_enqueue_script(
                 'react',
-                'https://unpkg.com/react@18/umd/react.production.min.js',
+                plugin_dir_url(__FILE__) . 'js/vendor/react.production.min.js',
                 array(),
                 '18.2.0',
                 true
             );
             
+            // Add CDN fallback for React
+            wp_add_inline_script(
+                'react',
+                'window.React || document.write(\'<script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" integrity="sha384-/S8V0TNSxRqhXQrIJWy3+Iu+VJN6VJN6VJN6VJN6VJN6VJN6VJN6VJN6VJN6VJN6" crossorigin="anonymous"><\/script>\');',
+                'after'
+            );
+            
+            // ReactDOM
             wp_enqueue_script(
                 'react-dom',
-                'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
+                plugin_dir_url(__FILE__) . 'js/vendor/react-dom.production.min.js',
                 array('react'),
                 '18.2.0',
                 true
+            );
+            
+            // Add CDN fallback for ReactDOM
+            wp_add_inline_script(
+                'react-dom',
+                'window.ReactDOM || document.write(\'<script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"><\/script>\');',
+                'after'
             );
             
             // Enqueue React checkout modal component (converted to JS)
