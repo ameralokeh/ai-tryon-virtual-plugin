@@ -22,6 +22,7 @@
             this.bindEvents();
             // Don't load analytics or user credits on init - only when tabs are clicked
             this.initSystemStatus();
+            this.initTabSwitching();
         },
         
         /**
@@ -57,6 +58,55 @@
             
             // Image size slider
             $('#max_image_size').on('input', this.updateImageSizeDisplay);
+            
+            // Tab switching
+            $('.nav-tab').on('click', this.handleTabSwitch);
+        },
+        
+        /**
+         * Initialize tab switching functionality
+         */
+        initTabSwitching: function() {
+            // Update image size display on page load
+            $('#max_image_size').trigger('input');
+            
+            // Handle initial hash on page load
+            var hash = window.location.hash.substring(1);
+            if (hash && (hash === 'settings' || hash === 'users')) {
+                $('.nav-tab[data-tab="' + hash + '"]').trigger('click');
+            }
+        },
+        
+        /**
+         * Handle tab switching
+         */
+        handleTabSwitch: function(e) {
+            e.preventDefault();
+            
+            var targetTab = $(this).data('tab');
+            
+            // Update nav tabs
+            $('.nav-tab').removeClass('nav-tab-active');
+            $(this).addClass('nav-tab-active');
+            
+            // Update tab content
+            $('.tab-content').hide().removeClass('active');
+            $('#tab-' + targetTab).show().addClass('active');
+            
+            // Update URL hash without scrolling
+            if (history.pushState) {
+                history.pushState(null, null, '#' + targetTab);
+            } else {
+                location.hash = '#' + targetTab;
+            }
+            
+            // Load data for users tab if switching to it
+            if (targetTab === 'users') {
+                // Always trigger analytics refresh when switching to users tab
+                $('#refresh-analytics').trigger('click');
+                // Always trigger user credits refresh when switching to users tab
+                $('#refresh-user-credits-tab').trigger('click');
+            }
         },
         
         /**
