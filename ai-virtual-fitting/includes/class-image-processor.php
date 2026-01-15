@@ -435,12 +435,13 @@ class AI_Virtual_Fitting_Image_Processor {
             $local_product_images = array();
             foreach ($product_images as $index => $product_image) {
                 if (filter_var($product_image, FILTER_VALIDATE_URL)) {
-                    // Check if it's a localhost URL - convert to local path
-                    if (strpos($product_image, 'localhost:8080') !== false || strpos($product_image, '127.0.0.1') !== false) {
-                        $local_path = $this->convert_localhost_url_to_path($product_image);
+                    // Check if it's a local WordPress URL - convert to local path
+                    $site_url = get_site_url();
+                    if (strpos($product_image, $site_url) === 0) {
+                        $local_path = $this->convert_site_url_to_path($product_image);
                         if ($local_path && file_exists($local_path)) {
                             $local_product_images[] = $local_path;
-                            $this->log_info('Converted localhost URL to local path', array(
+                            $this->log_info('Converted site URL to local path', array(
                                 'url' => $product_image,
                                 'local_path' => $local_path
                             ));
@@ -959,17 +960,20 @@ class AI_Virtual_Fitting_Image_Processor {
     }
     
     /**
-     * Convert localhost URL to local file path
+     * Convert site URL to local file path
+     * Works with any WordPress installation (localhost or production)
      *
-     * @param string $url Localhost URL
+     * @param string $url Site URL
      * @return string|false Local file path or false on failure
      */
-    private function convert_localhost_url_to_path($url) {
-        // Remove localhost:8080 and convert to WordPress file path
-        $path = str_replace(array('http://localhost:8080', 'https://localhost:8080'), '', $url);
+    private function convert_site_url_to_path($url) {
+        // Get WordPress site URL and remove it from the image URL
+        $site_url = get_site_url();
+        $path = str_replace($site_url, '', $url);
         
-        // Convert to absolute file system path
-        $local_path = '/var/www/html' . $path;
+        // Convert to absolute file system path using WordPress constants
+        // ABSPATH points to the WordPress root directory
+        $local_path = ABSPATH . ltrim($path, '/');
         
         return $local_path;
     }

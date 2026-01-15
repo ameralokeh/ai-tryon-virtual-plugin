@@ -14,13 +14,24 @@
 class Test_Checkout_Integration {
     
     private $test_results = [];
-    private $ajax_url = 'http://localhost:8080/wp-admin/admin-ajax.php';
+    private $ajax_url; // Will be set dynamically in setUp()
     private $test_nonce = 'test_nonce_12345';
+    
+    /**
+     * Set up test environment
+     */
+    public function setUp() {
+        // Use WordPress admin_url() function to get the correct AJAX URL
+        $this->ajax_url = admin_url('admin-ajax.php');
+    }
     
     /**
      * Run integration tests
      */
     public function run_integration_tests() {
+        // Initialize test environment
+        $this->setUp();
+        
         echo "=== Testing Embedded Checkout Integration ===\n\n";
         
         // Test AJAX endpoint availability

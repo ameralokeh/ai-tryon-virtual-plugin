@@ -4,15 +4,8 @@
  * Tests individual cases without complex framework
  */
 
-// Load WordPress
-require_once('/var/www/html/wp-load.php');
-
-// Load plugin classes
-require_once('/var/www/html/wp-content/plugins/ai-virtual-fitting/includes/class-database-manager.php');
-require_once('/var/www/html/wp-content/plugins/ai-virtual-fitting/includes/class-credit-manager.php');
-require_once('/var/www/html/wp-content/plugins/ai-virtual-fitting/includes/class-image-processor.php');
-require_once('/var/www/html/wp-content/plugins/ai-virtual-fitting/includes/class-woocommerce-integration.php');
-require_once('/var/www/html/wp-content/plugins/ai-virtual-fitting/public/class-public-interface.php');
+// Load test helper (handles WordPress and plugin loading dynamically)
+require_once(dirname(__FILE__) . '/test-helper.php');
 
 echo "=== Authentication Flow Property Test ===\n";
 echo "Feature: ai-virtual-fitting, Property 1: Authentication Flow Integrity\n";
