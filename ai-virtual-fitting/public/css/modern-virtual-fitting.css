@@ -658,12 +658,12 @@
     font-weight: 500;
 }
 
-/* Thumbnail bar container: horizontal scroll */
+/* Thumbnail bar container: horizontal scroll with fixed width */
 .product-thumbnails,
 #product-thumbnails {
     margin-top: 16px;
     width: 100%;
-    max-width: none;              /* Remove max-width constraint to allow full space */
+    max-width: 100%;              /* Fixed to container width */
     display: flex;
     gap: 12px;                    /* Adequate gap between thumbnails */
     overflow-x: auto;
@@ -672,6 +672,7 @@
     scroll-snap-type: x mandatory; /* snap to each tile */
     scroll-padding-left: 8px;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;       /* Smooth scrolling */
     box-sizing: border-box;
     min-height: 120px;            /* Ensure container has enough height */
 }
@@ -749,7 +750,64 @@
     display: none;
 }
 
-/* Responsive tuning */
+/* Thumbnail Navigation Arrows */
+.thumbnail-nav-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.thumbnail-nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.thumbnail-nav-arrow:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.thumbnail-nav-arrow.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.thumbnail-nav-arrow.left {
+    left: -18px;
+}
+
+.thumbnail-nav-arrow.right {
+    right: -18px;
+}
+
+.thumbnail-nav-arrow svg {
+    width: 20px;
+    height: 20px;
+    fill: #333;
+}
+
+/* Hide arrows on mobile */
+@media (max-width: 768px) {
+    .thumbnail-nav-arrow {
+        display: none;
+    }
+}
+
+/* Placeholder state if no thumbnails */
 @media (max-width: 968px) {
     .product-thumbnails,
     #product-thumbnails {

@@ -350,6 +350,8 @@
         
         if (!productData.images || productData.images.length <= 1) {
             thumbnailsContainer.hide();
+            // Hide navigation arrows if they exist
+            $('.thumbnail-nav-arrow').remove();
             return;
         }
         
@@ -377,6 +379,98 @@
         
         // Show thumbnails if we have multiple images
         thumbnailsContainer.show();
+        
+        // Add navigation arrows if more than 3 images
+        if (productData.images.length > 3) {
+            addThumbnailNavigationArrows();
+        }
+    }
+    
+    /**
+     * Add navigation arrows for thumbnail scrolling
+     */
+    function addThumbnailNavigationArrows() {
+        const thumbnailsContainer = $('#product-thumbnails');
+        
+        // Remove existing arrows if any
+        $('.thumbnail-nav-arrow').remove();
+        
+        // Create left arrow
+        const leftArrow = $(`
+            <div class="thumbnail-nav-arrow left disabled">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                </svg>
+            </div>
+        `);
+        
+        // Create right arrow
+        const rightArrow = $(`
+            <div class="thumbnail-nav-arrow right">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+            </div>
+        `);
+        
+        // Insert arrows before and after thumbnails container
+        thumbnailsContainer.before(leftArrow);
+        thumbnailsContainer.after(rightArrow);
+        
+        // Bind click events
+        leftArrow.on('click', function() {
+            scrollThumbnails('left');
+        });
+        
+        rightArrow.on('click', function() {
+            scrollThumbnails('right');
+        });
+        
+        // Update arrow states on scroll
+        thumbnailsContainer.on('scroll', updateArrowStates);
+        
+        // Initial arrow state
+        updateArrowStates();
+    }
+    
+    /**
+     * Scroll thumbnails left or right
+     */
+    function scrollThumbnails(direction) {
+        const thumbnailsContainer = $('#product-thumbnails')[0];
+        const scrollAmount = 250; // Scroll by ~2 thumbnails
+        
+        if (direction === 'left') {
+            thumbnailsContainer.scrollLeft -= scrollAmount;
+        } else {
+            thumbnailsContainer.scrollLeft += scrollAmount;
+        }
+    }
+    
+    /**
+     * Update navigation arrow states based on scroll position
+     */
+    function updateArrowStates() {
+        const thumbnailsContainer = $('#product-thumbnails')[0];
+        if (!thumbnailsContainer) return;
+        
+        const leftArrow = $('.thumbnail-nav-arrow.left');
+        const rightArrow = $('.thumbnail-nav-arrow.right');
+        
+        // Check if at start
+        if (thumbnailsContainer.scrollLeft <= 0) {
+            leftArrow.addClass('disabled');
+        } else {
+            leftArrow.removeClass('disabled');
+        }
+        
+        // Check if at end
+        const maxScroll = thumbnailsContainer.scrollWidth - thumbnailsContainer.clientWidth;
+        if (thumbnailsContainer.scrollLeft >= maxScroll - 5) { // 5px tolerance
+            rightArrow.addClass('disabled');
+        } else {
+            rightArrow.removeClass('disabled');
+        }
     }
 
     /**
