@@ -1,7 +1,7 @@
 /**
  * Modern Virtual Fitting JavaScript
  * Handles the trending-style split-screen interface
- * Version: 1.5.3
+ * Version: 1.5.4
  *
  * @package AI_Virtual_Fitting
  */

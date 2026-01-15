@@ -156,7 +156,7 @@ class AI_Virtual_Fitting_Public_Interface {
                 'ai-virtual-fitting-modern-style',
                 plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
                 array(),
-                '1.7.8'  // Updated: Reduced zero credits modal height to fit without scrolling
+                '1.7.9'  // Updated: Fixed product gallery overflow with horizontal scroll and navigation arrows
             );
             
             // Enqueue React checkout modal CSS
@@ -214,7 +214,7 @@ class AI_Virtual_Fitting_Public_Interface {
                 'ai-virtual-fitting-modern-script',
                 plugin_dir_url(__FILE__) . 'js/modern-virtual-fitting.js',
                 array('jquery', 'ai-virtual-fitting-checkout-modal-react'),
-                '1.5.3',  // Updated: Added debugging for zero credits modal
+                '1.5.4',  // Updated: Added thumbnail navigation arrows for product galleries
                 true
             );
             
