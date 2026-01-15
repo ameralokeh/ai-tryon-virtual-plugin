@@ -20,8 +20,7 @@
          */
         init: function() {
             this.bindEvents();
-            this.loadAnalytics();
-            this.loadUserCredits();
+            // Don't load analytics or user credits on init - only when tabs are clicked
             this.initSystemStatus();
         },
         

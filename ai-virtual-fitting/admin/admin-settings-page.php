@@ -279,14 +279,10 @@ jQuery(document).ready(function($) {
         
         // Load data for users tab if switching to it
         if (targetTab === 'users') {
-            // Trigger analytics refresh if not already loaded
-            if ($('#metric-total-users .metric').text() === '0') {
-                $('#refresh-analytics').trigger('click');
-            }
-            // Trigger user credits refresh if not already loaded - use -tab suffix
-            if ($('#user-credits-tbody-tab tr').length === 1) {
-                $('#refresh-user-credits-tab').trigger('click');
-            }
+            // Always trigger analytics refresh when switching to users tab
+            $('#refresh-analytics').trigger('click');
+            // Always trigger user credits refresh when switching to users tab
+            $('#refresh-user-credits-tab').trigger('click');
         }
     });
     
