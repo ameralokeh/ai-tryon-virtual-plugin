@@ -87,9 +87,18 @@ class AI_Virtual_Fitting_WooCommerce_Integration {
                     }
                     
                     return $product_id;
-                    error_log('AI Virtual Fitting: Restored credits product from trash with ID: ' . $product_id);
-                    return $product_id;
                 } else {
+                    // Product exists - verify it's private and hidden
+                    if ($post->post_status !== 'private') {
+                        error_log('AI Virtual Fitting: Credits product (ID: ' . $product_id . ') is not private, fixing status');
+                        $product = wc_get_product($product_id);
+                        if ($product) {
+                            $product->set_status('private');
+                            $product->set_catalog_visibility('hidden');
+                            $product->save();
+                            error_log('AI Virtual Fitting: Updated credits product to private status');
+                        }
+                    }
                     error_log('AI Virtual Fitting: Credits product already exists with ID: ' . $product_id);
                     return $product_id;
                 }

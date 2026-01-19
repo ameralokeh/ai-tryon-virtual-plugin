@@ -9,7 +9,7 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     margin: 0;
     padding: 0;
-    background: #f8f9fa;
+    background: #ffffff; /* Changed from #f8f9fa to white to blend with page */
     position: relative;
     width: 100%;
     max-width: 100%;
@@ -24,6 +24,8 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     border: 2px solid #e8ecef;
     margin-bottom: 20px;
+    width: 100%; /* Take full width of parent */
+    max-width: 100%; /* Ensure it doesn't overflow */
 }
 
 .consent-content {
@@ -321,16 +323,17 @@
 
 /* Main Layout - Custom Column Widths */
 .fitting-container {
-    display: grid;
-    grid-template-columns: 1fr 1.2fr 0.8fr; /* Left standard, Center larger, Right smaller */
-    gap: 20px;
-    width: 100%;
-    max-width: 100%;
-    height: min(90vh, 900px); /* Fixed height to prevent overflow */
-    padding: 20px;
-    box-sizing: border-box;
-    align-items: stretch; /* Fix grid overlap when header grows */
-    overflow: hidden; /* Prevent horizontal overflow */
+    display: grid !important;
+    grid-template-columns: 1fr 1.2fr 0.8fr !important; /* Left standard, Center larger, Right smaller */
+    grid-template-rows: minmax(0, 1fr) !important; /* Single row that fills container height */
+    gap: 20px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 85vh !important; /* Use viewport height - responsive to screen size */
+    max-height: 800px !important; /* Cap at 800px for very large screens */
+    padding: 20px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important; /* Prevent horizontal overflow */
 }
 
 /* Left Panel - Upload & Result */
@@ -375,6 +378,7 @@
     flex-direction: column;
     overflow: hidden;
     min-height: 0; /* critical for grid + flex children */
+    height: 100%; /* Fill the grid track height (85vh/800px from container) */
     width: 100%; /* Use full grid track width */
     box-sizing: border-box; /* Include padding in width calculation */
 }
@@ -394,29 +398,37 @@
     flex-direction: column;
     gap: 20px;
     flex: 1;
+    width: 100%; /* Take full width */
+}
+
+/* Center consent box when it's visible */
+.upload-section:has(.consent-box) {
+    align-items: center;
+    justify-content: center;
 }
 
 .upload-area {
     border: 2px dashed #e1e8ed;
     border-radius: 12px;
-    padding: 30px 20px;
+    padding: 40px 20px;
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
-    background: #fafbfc;
-    min-height: 180px;
+    background: transparent; /* Remove gray background */
+    min-height: 200px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
-    flex: 1;
+    width: 100%; /* Fill full width */
+    max-width: 100%; /* Ensure it doesn't overflow */
 }
 
 .upload-area:hover,
 .upload-area.dragover {
     border-color: #4a90e2;
-    background: #f0f7ff;
+    background: #f8f9fa; /* Subtle hover background */
 }
 
 .upload-icon {
@@ -924,6 +936,7 @@
 .products-header {
     margin-bottom: 20px;
     padding: 0 24px;  /* Match original panel padding for consistent spacing */
+    flex-shrink: 0; /* Don't let header shrink */
 }
 
 /* DEBUG: Test if CSS is working - REMOVED */
@@ -1036,15 +1049,19 @@
 
 /* Products Grid - Instagram Style Single Column */
 .products-grid {
-    flex: 1;
-    overflow-y: auto;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
-    padding: 0 24px 20px 24px;  /* Match header padding for alignment */
-    max-height: 500px;  /* Fixed reasonable height instead of viewport-based */
-    scrollbar-gutter: stable;   /* prevents visual shift */
-    box-sizing: border-box;
+    flex: 0 0 auto !important; /* Don't grow - stay fixed */
+    min-height: 0 !important; /* Allow flex shrinking */
+    max-height: 100% !important; /* Don't exceed panel height */
+    overflow-y: auto !important;
+    overflow-x: hidden !important; /* Prevent horizontal scroll */
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-auto-rows: 280px !important; /* Fixed row height matching card height */
+    gap: 20px !important;
+    padding: 0 24px 20px 24px !important;
+    scrollbar-gutter: stable !important;
+    box-sizing: border-box !important;
+    align-content: start !important; /* Align grid items to top, preventing stretching */
 }
 
 .products-grid::-webkit-scrollbar {
@@ -1075,24 +1092,23 @@
     transition: all 0.3s ease;
     position: relative;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    aspect-ratio: 1;
     width: 100%;
-    height: auto;
-    min-height: 280px;
-    isolation: isolate; /* Create stacking context to prevent overlap issues */
+    height: 280px; /* Fixed height for consistent sizing */
+    isolation: isolate;
+    z-index: 1;
 }
 
 .product-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-    z-index: 10; /* Lift hovered card above others */
+    z-index: 10;
 }
 
 .product-card.selected {
     border-color: #4a90e2;
     box-shadow: 0 12px 32px rgba(74, 144, 226, 0.25);
     transform: translateY(-2px);
-    z-index: 5; /* Keep selected card above non-selected */
+    z-index: 5;
 }
 
 .product-image {
@@ -1322,7 +1338,7 @@
         grid-template-columns: 1fr 1.2fr 0.8fr;
         gap: 16px;
         padding: 16px;
-        max-height: 85vh;
+        /* max-height: 85vh; */ /* REMOVED: Allow natural height */
     }
 }
 
@@ -1331,7 +1347,7 @@
         grid-template-columns: 1fr 1.2fr 0.8fr;
         gap: 16px;
         padding: 16px;
-        max-height: 80vh;
+        /* max-height: 80vh; */ /* REMOVED: Allow natural height */
     }
 }
 
@@ -1340,7 +1356,7 @@
         grid-template-columns: 1fr 1.2fr 0.8fr;
         gap: 12px;
         padding: 12px;
-        max-height: 75vh;
+        /* max-height: 75vh; */ /* REMOVED: Allow natural height */
     }
     
     .product-card {
@@ -2235,5 +2251,118 @@ body.modal-open {
     
     .security-text {
         text-align: center;
+    }
+}
+
+/* =========================================================
+   LAYOUT FIX: Constrained Height for Proper Grid Scrolling
+   ========================================================= */
+
+/* Make the app container use viewport height */
+.ai-virtual-fitting-app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Left Panel: Make result area grow to fill available space */
+.fitting-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.virtual-result.active {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.result-preview {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.result-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Changed from cover to show full image */
+}
+
+/* Center Panel: Make preview gallery grow and image scale properly */
+.main-preview {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.main-preview-gallery {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Increase main preview image size significantly */
+.main-preview-image {
+    max-height: 90%; /* Increased from 70% to use more vertical space */
+    max-width: 95%; /* Slightly increased horizontal space */
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+/* Ensure action buttons don't shrink the gallery */
+.action-buttons {
+    flex-shrink: 0;
+    margin-top: 20px;
+}
+
+/* Upload area: allow it to grow but keep buttons visible */
+.upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+}
+
+.upload-area {
+    flex: 1;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Mobile: Restore original constraints to prevent overly tall images */
+@media (max-width: 968px) {
+    .main-preview-image {
+        max-height: 60%; /* Smaller on mobile to fit thumbnails */
+    }
+    
+    .upload-area {
+        min-height: 200px;
+        max-height: 400px; /* Prevent excessive height on mobile */
+    }
+}
+
+@media (max-width: 640px) {
+    .main-preview-image {
+        max-height: 55%;
+    }
+    
+    .upload-area {
+        min-height: 180px;
+        max-height: 350px;
     }
 }
