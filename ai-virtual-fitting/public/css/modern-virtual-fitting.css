@@ -415,7 +415,7 @@
     transition: all 0.3s ease;
     cursor: pointer;
     background: transparent; /* Remove gray background */
-    min-height: 200px;
+    min-height: 300px; /* Increased from 200px */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -464,12 +464,13 @@
 .image-preview {
     width: 100%;
     height: 100%;
-    object-fit: contain;  /* Changed from 'cover' to show full image without cropping */
+    object-fit: scale-down; /* Scale to fit without cropping - middle ground */
     border-radius: 8px;
     position: absolute;
     top: 0;
     left: 0;
     z-index: 1; /* Ensure it stays below floating buttons */
+    transform: scale(1.15); /* Zoom in 15% to remove buffer space */
 }
 
 /* Floating Buttons */
@@ -570,8 +571,9 @@
 .result-image {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: scale-down; /* Scale to fit without cropping - middle ground */
     border-radius: 12px;
+    transform: scale(1.15); /* Zoom in 15% to remove buffer space */
 }
 
 /* Result floating buttons */
@@ -2290,7 +2292,8 @@ body.modal-open {
 .result-image {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* Changed from cover to show full image */
+    object-fit: scale-down; /* Scale to fit without cropping - middle ground */
+    transform: scale(1.15); /* Zoom in 15% to remove buffer space */
 }
 
 /* Center Panel: Make preview gallery grow and image scale properly */
@@ -2336,7 +2339,7 @@ body.modal-open {
 
 .upload-area {
     flex: 1;
-    min-height: 180px;
+    min-height: 300px; /* Increased from 180px */
     display: flex;
     flex-direction: column;
     align-items: center;

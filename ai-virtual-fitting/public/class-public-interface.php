@@ -160,7 +160,7 @@ class AI_Virtual_Fitting_Public_Interface {
                 'ai-virtual-fitting-modern-style',
                 plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
                 array(),
-                '1.7.12'  // Updated: Removed conflicting layout fix that was overriding height constraints
+                '1.7.15'  // Updated: Added 15% zoom to customer images to remove buffer space
             );
             
             // Enqueue React checkout modal CSS (Simplified version)
