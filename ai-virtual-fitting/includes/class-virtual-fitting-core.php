@@ -272,6 +272,9 @@ class AI_Virtual_Fitting_Core {
             $woocommerce_integration = new AI_Virtual_Fitting_WooCommerce_Integration();
             $product_created = $woocommerce_integration->create_credits_product();
             
+            // Fix existing credit products missing required meta (migration)
+            self::fix_existing_credit_products();
+            
             // Set default options
             self::set_default_options();
             
@@ -299,6 +302,39 @@ class AI_Virtual_Fitting_Core {
                 wp_die('AI Virtual Fitting Plugin Activation Failed: ' . $e->getMessage());
             } else {
                 wp_die('AI Virtual Fitting Plugin activation failed. Please check error logs and try again.');
+            }
+        }
+    }
+    
+    /**
+     * Fix existing credit products missing required meta
+     * Migration function to add _virtual_fitting_product meta to existing products
+     */
+    private static function fix_existing_credit_products() {
+        // Get all products with _ai_virtual_fitting_credits meta
+        $args = array(
+            'post_type' => 'product',
+            'posts_per_page' => -1,
+            'meta_query' => array(
+                array(
+                    'key' => '_ai_virtual_fitting_credits',
+                    'compare' => 'EXISTS'
+                )
+            )
+        );
+        
+        $products = get_posts($args);
+        
+        foreach ($products as $product_post) {
+            $product_id = $product_post->ID;
+            
+            // Check if _virtual_fitting_product meta exists
+            $has_meta = get_post_meta($product_id, '_virtual_fitting_product', true);
+            
+            if ($has_meta !== 'yes') {
+                // Add the missing meta
+                update_post_meta($product_id, '_virtual_fitting_product', 'yes');
+                error_log('AI Virtual Fitting: Added missing _virtual_fitting_product meta to product ID: ' . $product_id);
             }
         }
     }

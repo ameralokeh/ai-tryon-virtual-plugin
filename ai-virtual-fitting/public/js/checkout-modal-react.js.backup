@@ -26,11 +26,7 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [cartTotal, setCartTotal] = useState('$10.00');
     const [stripeConfig, setStripeConfig] = useState(null);
-    const [paymentRequest, setPaymentRequest] = useState(null);
-    const [canMakePayment, setCanMakePayment] = useState(false);
-    const [stripe, setStripe] = useState(null);
     const modalRef = useRef(null);
-    const paymentRequestButtonRef = useRef(null);
 
     // Initialize checkout when modal opens
     useEffect(() => {
@@ -63,39 +59,6 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
             document.body.style.overflow = '';
         };
     }, [isOpen]);
-    
-    // Mount Payment Request Button when available
-    useEffect(() => {
-        if (paymentRequest && canMakePayment && step === 'form' && stripe) {
-            const mountButton = async () => {
-                try {
-                    const elements = stripe.elements();
-                    const prButton = elements.create('paymentRequestButton', {
-                        paymentRequest: paymentRequest,
-                    });
-                    
-                    // Check if button can be mounted
-                    const container = document.getElementById('payment-request-button');
-                    if (container && !paymentRequestButtonRef.current) {
-                        await prButton.mount('#payment-request-button');
-                        paymentRequestButtonRef.current = prButton;
-                        console.log('Payment Request Button mounted successfully');
-                    }
-                } catch (error) {
-                    console.error('Error mounting payment request button:', error);
-                }
-            };
-            
-            mountButton();
-            
-            return () => {
-                if (paymentRequestButtonRef.current) {
-                    paymentRequestButtonRef.current.unmount();
-                    paymentRequestButtonRef.current = null;
-                }
-            };
-        }
-    }, [paymentRequest, canMakePayment, step, stripe]);
 
     const initializeCheckout = async () => {
         try {
@@ -131,20 +94,13 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
                     // Stripe is available - proceed to form
                     setStripeConfig({
                         available: true,
-                        payment_method: paymentMethods.payment_method,
-                        publishable_key: paymentMethods.stripe_publishable_key
+                        payment_method: paymentMethods.payment_method
                     });
                     // Set the correct Stripe gateway ID from backend
                     setFormData(prev => ({
                         ...prev,
                         payment_method: paymentMethods.payment_method.id
                     }));
-                    
-                    // Initialize Stripe and Payment Request for Apple Pay/Google Pay
-                    if (paymentMethods.stripe_publishable_key) {
-                        await initializeStripePaymentRequest(paymentMethods.stripe_publishable_key, cartResult.data.cart_total);
-                    }
-                    
                     setStep('form');
                 }
             } else {
@@ -154,98 +110,6 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
             console.error('Checkout initialization error:', error);
             setStep('error');
             setErrors({ general: error.message });
-        }
-    };
-    
-    const initializeStripePaymentRequest = async (publishableKey, totalAmount) => {
-        try {
-            // Check if Stripe.js is loaded
-            if (!window.Stripe) {
-                console.warn('Stripe.js not loaded, express checkout unavailable');
-                return;
-            }
-            
-            // Initialize Stripe
-            const stripeInstance = window.Stripe(publishableKey);
-            setStripe(stripeInstance);
-            
-            // Parse total amount (remove $ and convert to cents)
-            const amountInCents = Math.round(parseFloat(totalAmount) * 100);
-            
-            // Create payment request
-            const pr = stripeInstance.paymentRequest({
-                country: 'US',
-                currency: 'usd',
-                total: {
-                    label: '20 Virtual Fitting Credits',
-                    amount: amountInCents,
-                },
-                requestPayerName: true,
-                requestPayerEmail: true,
-            });
-            
-            // Check if browser supports Apple Pay or Google Pay
-            const result = await pr.canMakePayment();
-            if (result) {
-                console.log('Express checkout available:', result);
-                setPaymentRequest(pr);
-                setCanMakePayment(true);
-                
-                // Handle payment method event
-                pr.on('paymentmethod', async (ev) => {
-                    console.log('Payment method received:', ev.paymentMethod.id);
-                    setStep('processing');
-                    
-                    try {
-                        // Process payment on backend
-                        const response = await fetch(ai_virtual_fitting_ajax.ajax_url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                            },
-                            body: new URLSearchParams({
-                                action: 'ai_virtual_fitting_process_express_checkout',
-                                nonce: ai_virtual_fitting_ajax.nonce,
-                                payment_method_id: ev.paymentMethod.id,
-                                payer_email: ev.payerEmail || '',
-                                payer_name: ev.payerName || ''
-                            })
-                        });
-                        
-                        const result = await response.json();
-                        
-                        if (result.success) {
-                            ev.complete('success');
-                            setStep('success');
-                            setTimeout(() => {
-                                onSuccess(result.data);
-                            }, 2000);
-                        } else {
-                            ev.complete('fail');
-                            setStep('error');
-                            setErrors({ 
-                                general: result.data.message || 'Payment failed',
-                                error_type: result.data.error_code || 'payment_failed',
-                                retry_allowed: true
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Express checkout error:', error);
-                        ev.complete('fail');
-                        setStep('error');
-                        setErrors({ 
-                            general: 'Payment processing failed. Please try again.',
-                            error_type: 'network_error',
-                            retry_allowed: true
-                        });
-                    }
-                });
-            } else {
-                console.log('Express checkout not available on this device/browser');
-            }
-        } catch (error) {
-            console.error('Error initializing payment request:', error);
-            // Don't show error to user, just disable express checkout
         }
     };
 
@@ -504,25 +368,6 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
                                     <span className="total-price">{cartTotal}</span>
                                 </div>
                             </div>
-
-                            {/* Express Checkout Section - Apple Pay / Google Pay */}
-                            {canMakePayment && paymentRequest && (
-                                <div className="express-checkout-section">
-                                    <div className="express-checkout-header">
-                                        <span className="divider-line"></span>
-                                        <span className="divider-text">Express Checkout</span>
-                                        <span className="divider-line"></span>
-                                    </div>
-                                    <div id="payment-request-button" className="payment-request-button-container">
-                                        {/* Stripe Payment Request Button will be mounted here */}
-                                    </div>
-                                    <div className="express-checkout-footer">
-                                        <span className="divider-line"></span>
-                                        <span className="divider-text">Or pay with card</span>
-                                        <span className="divider-line"></span>
-                                    </div>
-                                </div>
-                            )}
 
                             <form onSubmit={handleSubmit} className="checkout-form">
                                 <div className="form-section">

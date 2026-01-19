@@ -1,0 +1,13 @@
+# Workflow Diagrams
+
+Place workflow diagrams and process screenshots in this directory.
+
+## Naming Convention
+- `{workflow-name}-diagram.png`
+- Example: `virtual-fitting-workflow.png`, `credit-purchase-flow.png`
+
+## Guidelines
+- Use consistent diagram style
+- Include legend if needed
+- Export at high resolution
+- Use clear labels and arrows

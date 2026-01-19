@@ -51,45 +51,91 @@ class AI_Virtual_Fitting_WooCommerce_Integration {
      * @return int|false Product ID on success, false on failure
      */
     public function create_credits_product() {
+        // Enhanced logging
+        error_log('AI Virtual Fitting: create_credits_product() called');
+        
+        // Check if WooCommerce is active
+        if (!class_exists('WooCommerce')) {
+            error_log('AI Virtual Fitting: WooCommerce not active during product creation');
+            return false;
+        }
+        
         // Check if product already exists
-        if ($this->credits_product_id && get_post($this->credits_product_id)) {
-            return $this->credits_product_id;
-        }
-        
-        // Create the product
-        $product = new WC_Product_Simple();
-        $product->set_name('Virtual Fitting Credits - 20 Pack');
-        $product->set_description('Purchase 20 virtual fitting credits to try on wedding dresses with AI technology.');
-        $product->set_short_description('20 virtual fitting credits for AI-powered dress try-on experience.');
-        $product->set_regular_price('10.00');
-        $product->set_price('10.00');
-        $product->set_virtual(true);
-        $product->set_downloadable(false);
-        $product->set_catalog_visibility('hidden'); // Hidden from catalog
-        $product->set_status('publish');
-        $product->set_manage_stock(false);
-        $product->set_stock_status('instock');
-        
-        // Set custom meta to identify this as credits product
-        $product->add_meta_data('_virtual_fitting_credits', '20', true);
-        $product->add_meta_data('_virtual_fitting_product', 'yes', true);
-        
-        // Save the product
-        $product_id = $product->save();
-        
+        $product_id = get_option('ai_virtual_fitting_credits_product_id');
         if ($product_id) {
-            // Store product ID in options
-            update_option('ai_virtual_fitting_credits_product_id', $product_id);
-            $this->credits_product_id = $product_id;
-            
-            // Log the creation
-            error_log("AI Virtual Fitting: Created credits product with ID: {$product_id}");
-            
-            return $product_id;
+            $post = get_post($product_id);
+            if ($post) {
+                // Check if product is trashed
+                if ($post->post_status === 'trash') {
+                    error_log('AI Virtual Fitting: Credits product (ID: ' . $product_id . ') is in trash, restoring it');
+                    
+                    // Restore from trash using WooCommerce
+                    $product = wc_get_product($product_id);
+                    if ($product) {
+                        $product->set_status('private'); // Set to private instead of publish
+                        $product->set_catalog_visibility('hidden');
+                        $product->save();
+                        error_log('AI Virtual Fitting: Restored credits product from trash with ID: ' . $product_id);
+                    } else {
+                        // Fallback to WordPress method
+                        wp_untrash_post($product_id);
+                        wp_update_post(array(
+                            'ID' => $product_id,
+                            'post_status' => 'private' // Set to private instead of publish
+                        ));
+                        error_log('AI Virtual Fitting: Restored credits product using wp_untrash_post with ID: ' . $product_id);
+                    }
+                    
+                    return $product_id;
+                    error_log('AI Virtual Fitting: Restored credits product from trash with ID: ' . $product_id);
+                    return $product_id;
+                } else {
+                    error_log('AI Virtual Fitting: Credits product already exists with ID: ' . $product_id);
+                    return $product_id;
+                }
+            }
         }
-        
-        error_log("AI Virtual Fitting: Failed to create credits product");
-        return false;
+
+        try {
+            // Create the product
+            $product = new WC_Product_Simple();
+            $product->set_name('Virtual Fitting Credits - 20 Pack');
+            $product->set_description('Purchase 20 virtual fitting credits to try on wedding dresses with AI technology.');
+            $product->set_short_description('20 virtual fitting credits for AI-powered dress try-on experience.');
+            $product->set_regular_price('10.00');
+            $product->set_price('10.00');
+            $product->set_virtual(true);
+            $product->set_downloadable(false);
+            $product->set_catalog_visibility('hidden'); // Hidden from catalog
+            $product->set_status('private'); // Private - not visible in catalog or search
+            $product->set_manage_stock(false);
+            $product->set_stock_status('instock');
+            
+            // Set custom meta to identify this as credits product
+            $product->add_meta_data('_virtual_fitting_credits', '20', true);
+            $product->add_meta_data('_virtual_fitting_product', 'yes', true);
+            
+            // Save the product
+            $product_id = $product->save();
+            
+            if ($product_id) {
+                // Store product ID in options
+                update_option('ai_virtual_fitting_credits_product_id', $product_id);
+                update_post_meta($product_id, '_ai_virtual_fitting_credits', 20);
+                $this->credits_product_id = $product_id;
+                
+                // Log the creation
+                error_log('AI Virtual Fitting: Created credits product with ID: ' . $product_id);
+                
+                return $product_id;
+            }
+            
+            error_log('AI Virtual Fitting: Failed to create credits product - save returned false');
+            return false;
+        } catch (Exception $e) {
+            error_log('AI Virtual Fitting: Exception creating credits product: ' . $e->getMessage());
+            return false;
+        }
     }
     
     /**
@@ -147,7 +193,11 @@ class AI_Virtual_Fitting_WooCommerce_Integration {
             
             // Check if this is our credits product
             if ($this->is_credits_product($product_id)) {
-                $credits_per_product = get_post_meta($product_id, '_virtual_fitting_credits', true);
+                // Try both meta keys for backwards compatibility
+                $credits_per_product = get_post_meta($product_id, '_ai_virtual_fitting_credits', true);
+                if (empty($credits_per_product)) {
+                    $credits_per_product = get_post_meta($product_id, '_virtual_fitting_credits', true);
+                }
                 $credits_per_product = intval($credits_per_product);
                 
                 if ($credits_per_product > 0) {

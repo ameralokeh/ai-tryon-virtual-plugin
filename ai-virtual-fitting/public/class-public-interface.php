@@ -80,6 +80,10 @@ class AI_Virtual_Fitting_Public_Interface {
         add_action('wp_ajax_ai_virtual_fitting_process_checkout', array($this, 'handle_process_checkout'));
         add_action('wp_ajax_nopriv_ai_virtual_fitting_process_checkout', array($this, 'handle_process_checkout'));
         
+        // Express checkout (Apple Pay / Google Pay) AJAX endpoint
+        add_action('wp_ajax_ai_virtual_fitting_process_express_checkout', array($this, 'handle_process_express_checkout'));
+        add_action('wp_ajax_nopriv_ai_virtual_fitting_process_express_checkout', array($this, 'handle_process_express_checkout'));
+        
         // Real-time credit updates AJAX endpoint
         add_action('wp_ajax_ai_virtual_fitting_refresh_credits', array($this, 'handle_refresh_credits'));
         add_action('wp_ajax_nopriv_ai_virtual_fitting_refresh_credits', array($this, 'handle_refresh_credits'));
@@ -156,15 +160,31 @@ class AI_Virtual_Fitting_Public_Interface {
                 'ai-virtual-fitting-modern-style',
                 plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
                 array(),
-                '1.7.9'  // Updated: Fixed product gallery overflow with horizontal scroll and navigation arrows
+                '1.7.10'  // Updated: Fixed gallery container overflow by constraining parent containers
             );
             
-            // Enqueue React checkout modal CSS
+            // Enqueue React checkout modal CSS (Simplified version)
             wp_enqueue_style(
                 'ai-virtual-fitting-checkout-modal-react',
                 plugin_dir_url(__FILE__) . 'css/checkout-modal-react.css',
                 array(),
                 '1.0.0'
+            );
+            
+            wp_enqueue_style(
+                'ai-virtual-fitting-checkout-modal-simple',
+                plugin_dir_url(__FILE__) . 'css/checkout-modal-simple.css',
+                array('ai-virtual-fitting-checkout-modal-react'),
+                '1.0.0'
+            );
+            
+            // Enqueue Stripe.js for Apple Pay / Google Pay support
+            wp_enqueue_script(
+                'stripe-js',
+                'https://js.stripe.com/v3/',
+                array(),
+                '3.0',
+                true
             );
             
             // Enqueue React and ReactDOM - Local first with CDN fallback
@@ -200,14 +220,31 @@ class AI_Virtual_Fitting_Public_Interface {
                 'after'
             );
             
-            // Enqueue React checkout modal component (converted to JS)
+            // Enqueue Babel standalone for JSX transformation
             wp_enqueue_script(
-                'ai-virtual-fitting-checkout-modal-react',
-                plugin_dir_url(__FILE__) . 'js/checkout-modal-react.js',
-                array('react', 'react-dom'),
-                '1.0.0',
+                'babel-standalone',
+                'https://unpkg.com/@babel/standalone/babel.min.js',
+                array(),
+                '7.23.0',
                 true
             );
+            
+            // Enqueue React checkout modal component (Simplified JSX version)
+            wp_enqueue_script(
+                'ai-virtual-fitting-checkout-modal-react',
+                plugin_dir_url(__FILE__) . 'js/checkout-modal-simple.jsx',
+                array('react', 'react-dom', 'babel-standalone'),
+                '1.3.0',  // Updated to simplified version
+                true
+            );
+            
+            // Add script type for Babel transformation
+            add_filter('script_loader_tag', function($tag, $handle) {
+                if ('ai-virtual-fitting-checkout-modal-react' === $handle) {
+                    return str_replace('<script', '<script type="text/babel"', $tag);
+                }
+                return $tag;
+            }, 10, 2);
             
             // Enqueue modern JavaScript
             wp_enqueue_script(
@@ -711,6 +748,8 @@ class AI_Virtual_Fitting_Public_Interface {
      * Handle add credits to cart AJAX request for embedded checkout
      */
     public function handle_add_credits_to_cart() {
+        error_log('AI Virtual Fitting: handle_add_credits_to_cart() called - User ID: ' . get_current_user_id());
+        
         try {
             // Verify nonce
             if (!wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
@@ -764,6 +803,23 @@ class AI_Virtual_Fitting_Public_Interface {
                 ));
             }
             
+            // Validate Stripe configuration before proceeding
+            $payment_methods = $this->get_available_payment_methods();
+            if (!$payment_methods['stripe_available']) {
+                $this->log_error('Checkout blocked - Stripe not configured', array(
+                    'user_id' => get_current_user_id(),
+                    'error' => $payment_methods['error']
+                ));
+                
+                wp_send_json_success(array(
+                    'message' => 'Stripe configuration required',
+                    'cart_total_text' => '$10.00',
+                    'credits_per_package' => get_option('ai_virtual_fitting_credits_per_package', 20), // Add credits amount
+                    'payment_methods' => $payment_methods,
+                    'stripe_configuration_required' => true
+                ));
+            }
+            
             // Validate product before adding to cart
             $product_validation = $this->validate_credits_product($product_id);
             if (is_wp_error($product_validation)) {
@@ -778,6 +834,10 @@ class AI_Virtual_Fitting_Public_Interface {
             $existing_cart_item = $this->find_credits_product_in_cart($product_id);
             if ($existing_cart_item) {
                 // Credits already in cart - return success with existing data
+                error_log('AI Virtual Fitting: Credits already in cart - returning existing cart data');
+                error_log('AI Virtual Fitting: Cart item key: ' . $existing_cart_item['key']);
+                error_log('AI Virtual Fitting: Cart quantity: ' . $existing_cart_item['item']['quantity']);
+                
                 WC()->cart->calculate_totals();
                 
                 wp_send_json_success(array(
@@ -787,12 +847,14 @@ class AI_Virtual_Fitting_Public_Interface {
                     'cart_total_text' => html_entity_decode(wp_strip_all_tags(WC()->cart->get_total()), ENT_QUOTES, 'UTF-8'), // Plain text version for React
                     'cart_count' => WC()->cart->get_cart_contents_count(),
                     'product_id' => $product_id,
+                    'credits_per_package' => get_option('ai_virtual_fitting_credits_per_package', 20), // Add credits amount
                     'payment_methods' => $this->get_available_payment_methods(), // Add available payment methods
                     'already_in_cart' => true
                 ));
             }
             
             // Add credits product to cart
+            error_log('AI Virtual Fitting: Adding credits to cart - Product ID: ' . $product_id);
             $cart_item_key = WC()->cart->add_to_cart($product_id, 1);
             
             if (!$cart_item_key) {
@@ -809,6 +871,8 @@ class AI_Virtual_Fitting_Public_Interface {
                     wc_clear_notices();
                 }
                 
+                error_log('AI Virtual Fitting: Failed to add to cart - ' . $error_message);
+                
                 $this->log_error('Failed to add credits to cart', array(
                     'user_id' => get_current_user_id(),
                     'product_id' => $product_id,
@@ -822,6 +886,8 @@ class AI_Virtual_Fitting_Public_Interface {
                     'retry_allowed' => true
                 ));
             }
+            
+            error_log('AI Virtual Fitting: Successfully added to cart - Cart item key: ' . $cart_item_key);
             
             // Calculate cart totals and validate
             WC()->cart->calculate_totals();
@@ -860,6 +926,7 @@ class AI_Virtual_Fitting_Public_Interface {
                 'cart_total_text' => html_entity_decode(wp_strip_all_tags($cart_total), ENT_QUOTES, 'UTF-8'), // Plain text version for React
                 'cart_count' => $cart_count,
                 'product_id' => $product_id,
+                'credits_per_package' => get_option('ai_virtual_fitting_credits_per_package', 20), // Add credits amount
                 'payment_methods' => $this->get_available_payment_methods(), // Add available payment methods
                 'already_in_cart' => false
             ));
@@ -1863,6 +1930,374 @@ class AI_Virtual_Fitting_Public_Interface {
     }
     
     /**
+     * Handle express checkout (Apple Pay / Google Pay) AJAX request
+     */
+    public function handle_process_express_checkout() {
+        try {
+            // Verify nonce
+            if (!wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
+                $this->log_error('Security check failed for express checkout', array(
+                    'user_id' => get_current_user_id(),
+                    'ip' => $this->get_client_ip()
+                ));
+                wp_send_json_error(array(
+                    'message' => 'Security check failed',
+                    'error_code' => 'SECURITY_FAILED',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Check if WooCommerce is active
+            if (!class_exists('WooCommerce')) {
+                wp_send_json_error(array(
+                    'message' => 'WooCommerce is not active',
+                    'error_code' => 'WOOCOMMERCE_INACTIVE',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Ensure cart has items
+            if (WC()->cart->is_empty()) {
+                wp_send_json_error(array(
+                    'message' => 'Cart is empty. Please refresh and try again.',
+                    'error_code' => 'EMPTY_CART',
+                    'retry_allowed' => true
+                ));
+            }
+            
+            // Get payment method ID from Stripe
+            $payment_method_id = sanitize_text_field($_POST['payment_method_id']);
+            $payer_email = sanitize_email($_POST['payer_email']);
+            $payer_name = sanitize_text_field($_POST['payer_name']);
+            $payer_phone = sanitize_text_field($_POST['payer_phone']);
+            $shipping_address_json = isset($_POST['shipping_address']) ? $_POST['shipping_address'] : '';
+            
+            if (empty($payment_method_id)) {
+                wp_send_json_error(array(
+                    'message' => 'Payment method ID is required',
+                    'error_code' => 'MISSING_PAYMENT_METHOD',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            // Parse shipping address
+            $shipping_address = null;
+            if (!empty($shipping_address_json)) {
+                $shipping_address = json_decode(stripslashes($shipping_address_json), true);
+            }
+            
+            // Split name into first and last
+            $name_parts = explode(' ', $payer_name, 2);
+            $first_name = $name_parts[0];
+            $last_name = isset($name_parts[1]) ? $name_parts[1] : '';
+            
+            // Create WooCommerce order
+            $order = wc_create_order();
+            
+            if (is_wp_error($order)) {
+                $this->log_error('Express checkout order creation failed', array(
+                    'user_id' => get_current_user_id(),
+                    'error' => $order->get_error_message()
+                ));
+                
+                wp_send_json_error(array(
+                    'message' => 'Failed to create order: ' . $order->get_error_message(),
+                    'error_code' => 'ORDER_CREATION_FAILED',
+                    'retry_allowed' => true
+                ));
+            }
+            
+            // CRITICAL: Set customer ID on order so credits can be added
+            $user_id = get_current_user_id();
+            if ($user_id) {
+                $order->set_customer_id($user_id);
+            }
+            
+            // Add credit product to order
+            $credit_product_id = get_option('ai_virtual_fitting_credit_product_id');
+            if (!$credit_product_id) {
+                wp_send_json_error(array(
+                    'message' => 'Credits product not found',
+                    'error_code' => 'PRODUCT_NOT_FOUND',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            $product = wc_get_product($credit_product_id);
+            if (!$product) {
+                wp_send_json_error(array(
+                    'message' => 'Credits product not found',
+                    'error_code' => 'PRODUCT_NOT_FOUND',
+                    'retry_allowed' => false
+                ));
+            }
+            
+            $order->add_product($product, 1);
+            
+            // Set billing details
+            $order->set_billing_first_name($first_name);
+            $order->set_billing_last_name($last_name);
+            $order->set_billing_email($payer_email);
+            
+            // Set billing phone if provided
+            if (!empty($payer_phone)) {
+                $order->set_billing_phone($payer_phone);
+            }
+            
+            // Set billing/shipping address if provided
+            if ($shipping_address && is_array($shipping_address)) {
+                // Billing address
+                if (isset($shipping_address['addressLine']) && is_array($shipping_address['addressLine'])) {
+                    $order->set_billing_address_1($shipping_address['addressLine'][0] ?? '');
+                    $order->set_billing_address_2($shipping_address['addressLine'][1] ?? '');
+                }
+                if (isset($shipping_address['city'])) {
+                    $order->set_billing_city($shipping_address['city']);
+                }
+                if (isset($shipping_address['region'])) {
+                    $order->set_billing_state($shipping_address['region']);
+                }
+                if (isset($shipping_address['postalCode'])) {
+                    $order->set_billing_postcode($shipping_address['postalCode']);
+                }
+                if (isset($shipping_address['country'])) {
+                    $order->set_billing_country($shipping_address['country']);
+                }
+                
+                // Shipping address (same as billing for digital products)
+                $order->set_shipping_first_name($first_name);
+                $order->set_shipping_last_name($last_name);
+                if (isset($shipping_address['addressLine']) && is_array($shipping_address['addressLine'])) {
+                    $order->set_shipping_address_1($shipping_address['addressLine'][0] ?? '');
+                    $order->set_shipping_address_2($shipping_address['addressLine'][1] ?? '');
+                }
+                if (isset($shipping_address['city'])) {
+                    $order->set_shipping_city($shipping_address['city']);
+                }
+                if (isset($shipping_address['region'])) {
+                    $order->set_shipping_state($shipping_address['region']);
+                }
+                if (isset($shipping_address['postalCode'])) {
+                    $order->set_shipping_postcode($shipping_address['postalCode']);
+                }
+                if (isset($shipping_address['country'])) {
+                    $order->set_shipping_country($shipping_address['country']);
+                }
+            }
+            
+            // Set payment method to Stripe
+            $order->set_payment_method('stripe');
+            
+            // Calculate totals
+            $order->calculate_totals();
+            $order->save();
+            
+            // Process payment with Stripe using the payment method ID
+            try {
+                // Get Stripe API key from gateway settings
+                $stripe_settings = get_option('woocommerce_stripe_settings', array());
+                $test_mode = isset($stripe_settings['testmode']) && $stripe_settings['testmode'] === 'yes';
+                $secret_key = $test_mode 
+                    ? (isset($stripe_settings['test_secret_key']) ? $stripe_settings['test_secret_key'] : '')
+                    : (isset($stripe_settings['secret_key']) ? $stripe_settings['secret_key'] : '');
+                
+                if (empty($secret_key)) {
+                    wp_send_json_error(array(
+                        'message' => 'Stripe is not properly configured',
+                        'error_code' => 'STRIPE_NOT_CONFIGURED',
+                        'retry_allowed' => false
+                    ));
+                }
+                
+                // Create payment intent using Stripe API
+                $amount = $order->get_total() * 100; // Convert to cents
+                $currency = strtolower($order->get_currency());
+                
+                $response = wp_remote_post('https://api.stripe.com/v1/payment_intents', array(
+                    'headers' => array(
+                        'Authorization' => 'Bearer ' . $secret_key,
+                        'Content-Type' => 'application/x-www-form-urlencoded',
+                    ),
+                    'body' => array(
+                        'amount' => $amount,
+                        'currency' => $currency,
+                        'payment_method' => $payment_method_id,
+                        'confirm' => 'true',
+                        'description' => 'Virtual Fitting Credits - Order #' . $order->get_id(),
+                        'metadata' => array(
+                            'order_id' => $order->get_id(),
+                            'customer_email' => $payer_email,
+                            'customer_name' => $payer_name,
+                        ),
+                    ),
+                    'timeout' => 30,
+                ));
+                
+                if (is_wp_error($response)) {
+                    $this->log_error('Stripe API request failed', array(
+                        'user_id' => get_current_user_id(),
+                        'order_id' => $order->get_id(),
+                        'error' => $response->get_error_message()
+                    ));
+                    
+                    $order->update_status('failed', 'Stripe API error: ' . $response->get_error_message());
+                    
+                    wp_send_json_error(array(
+                        'message' => 'Payment processing failed. Please try again.',
+                        'error_code' => 'STRIPE_API_ERROR',
+                        'retry_allowed' => true
+                    ));
+                }
+                
+                $body = json_decode(wp_remote_retrieve_body($response), true);
+                $status_code = wp_remote_retrieve_response_code($response);
+                
+                if ($status_code !== 200 || !isset($body['id'])) {
+                    $error_message = isset($body['error']['message']) ? $body['error']['message'] : 'Unknown error';
+                    
+                    $this->log_error('Stripe payment intent failed', array(
+                        'user_id' => get_current_user_id(),
+                        'order_id' => $order->get_id(),
+                        'status_code' => $status_code,
+                        'error' => $error_message,
+                        'body' => $body
+                    ));
+                    
+                    $order->update_status('failed', 'Stripe payment failed: ' . $error_message);
+                    
+                    wp_send_json_error(array(
+                        'message' => $error_message,
+                        'error_code' => 'PAYMENT_FAILED',
+                        'retry_allowed' => true
+                    ));
+                }
+                
+                // Check payment intent status
+                if ($body['status'] === 'succeeded') {
+                    // Payment successful
+                    $order->update_meta_data('_stripe_payment_intent_id', $body['id']);
+                    $order->update_meta_data('_stripe_payment_method_id', $payment_method_id);
+                    $order->set_transaction_id($body['id']);
+                    $order->payment_complete($body['id']);
+                    $order->add_order_note('Payment completed via Google Pay/Apple Pay. Payment Intent: ' . $body['id']);
+                    
+                    // CRITICAL: Add credits directly (don't rely on hooks for express checkout)
+                    $user_id = get_current_user_id();
+                    error_log('EXPRESS CHECKOUT - User ID: ' . $user_id);
+                    
+                    if ($user_id) {
+                        // Get credits amount from product
+                        $credit_product_id = get_option('ai_virtual_fitting_credit_product_id');
+                        error_log('EXPRESS CHECKOUT - Credit Product ID: ' . $credit_product_id);
+                        
+                        $credits_to_add = get_post_meta($credit_product_id, '_virtual_fitting_credits', true);
+                        $credits_to_add = intval($credits_to_add);
+                        error_log('EXPRESS CHECKOUT - Credits to add: ' . $credits_to_add);
+                        
+                        if ($credits_to_add > 0) {
+                            // Add credits to user account
+                            $success = $this->credit_manager->add_credits($user_id, $credits_to_add);
+                            error_log('EXPRESS CHECKOUT - Add credits result: ' . ($success ? 'SUCCESS' : 'FAILED'));
+                            
+                            if ($success) {
+                                $order->add_order_note(
+                                    sprintf('Virtual Fitting Credits: Added %d credits to customer account.', $credits_to_add)
+                                );
+                                $order->update_meta_data('_virtual_fitting_credits_processed', 'yes');
+                                $order->save();
+                                
+                                $this->log_info('Credits added via express checkout', array(
+                                    'user_id' => $user_id,
+                                    'order_id' => $order->get_id(),
+                                    'credits_added' => $credits_to_add
+                                ));
+                            } else {
+                                $this->log_error('Failed to add credits via express checkout', array(
+                                    'user_id' => $user_id,
+                                    'order_id' => $order->get_id(),
+                                    'credits_to_add' => $credits_to_add
+                                ));
+                            }
+                        } else {
+                            error_log('EXPRESS CHECKOUT - No credits to add (credits_to_add = 0)');
+                        }
+                    } else {
+                        error_log('EXPRESS CHECKOUT - No user ID (user not logged in?)');
+                    }
+                    
+                    // Get updated credits for user
+                    $updated_credits = $user_id ? $this->credit_manager->get_customer_credits($user_id) : 0;
+                    
+                    // Get credits amount from settings
+                    $credits_added = get_option('ai_virtual_fitting_credits_per_package', 20);
+                    
+                    // Clear cart
+                    WC()->cart->empty_cart();
+                    
+                    $this->log_info('Express checkout processed successfully', array(
+                        'user_id' => $user_id,
+                        'order_id' => $order->get_id(),
+                        'payment_intent_id' => $body['id'],
+                        'payment_method' => 'stripe_express',
+                        'updated_credits' => $updated_credits
+                    ));
+                    
+                    wp_send_json_success(array(
+                        'message' => 'Payment processed successfully',
+                        'order_id' => $order->get_id(),
+                        'credits' => $updated_credits,
+                        'credits_added' => $credits_added
+                    ));
+                } else {
+                    // Payment requires additional action or failed
+                    $this->log_error('Payment intent not succeeded', array(
+                        'user_id' => get_current_user_id(),
+                        'order_id' => $order->get_id(),
+                        'status' => $body['status'],
+                        'payment_intent_id' => $body['id']
+                    ));
+                    
+                    $order->update_status('failed', 'Payment status: ' . $body['status']);
+                    
+                    wp_send_json_error(array(
+                        'message' => 'Payment could not be completed. Status: ' . $body['status'],
+                        'error_code' => 'PAYMENT_NOT_SUCCEEDED',
+                        'retry_allowed' => true
+                    ));
+                }
+                
+            } catch (Exception $e) {
+                $this->log_error('Express checkout exception', array(
+                    'user_id' => get_current_user_id(),
+                    'order_id' => $order->get_id(),
+                    'exception' => $e->getMessage()
+                ));
+                
+                $order->update_status('failed', 'Express checkout exception: ' . $e->getMessage());
+                
+                wp_send_json_error(array(
+                    'message' => 'Payment processing failed. Please try again.',
+                    'error_code' => 'PAYMENT_EXCEPTION',
+                    'retry_allowed' => true
+                ));
+            }
+            
+        } catch (Exception $e) {
+            $this->log_error('Exception in express checkout', array(
+                'user_id' => get_current_user_id(),
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ));
+            
+            wp_send_json_error(array(
+                'message' => 'An unexpected error occurred. Please try again.',
+                'error_code' => 'EXPRESS_CHECKOUT_EXCEPTION',
+                'retry_allowed' => true
+            ));
+        }
+    }
+    
+    /**
      * Handle refresh credits AJAX request for real-time credit updates
      */
     public function handle_refresh_credits() {
@@ -2020,50 +2455,161 @@ class AI_Virtual_Fitting_Public_Interface {
      */
     private function get_available_payment_methods() {
         if (!class_exists('WC_Payment_Gateways')) {
-            return array();
+            $this->log_error('WooCommerce Payment Gateways class not available', array(
+                'user_id' => get_current_user_id(),
+                'context' => 'get_available_payment_methods'
+            ));
+            
+            return array(
+                'stripe_available' => false,
+                'error' => 'WooCommerce is not active'
+            );
         }
 
         $payment_gateways = WC()->payment_gateways->get_available_payment_gateways();
-        $available_methods = array();
-
+        
+        // Check for Stripe gateway specifically (Stripe-only approach)
+        $stripe_gateway = null;
+        $stripe_gateway_id = null;
+        
+        // Look for Stripe gateway (could be 'stripe', 'stripe_cc', etc.)
         foreach ($payment_gateways as $gateway_id => $gateway) {
-            if ($gateway->is_available()) {
-                // Check if gateway has form fields (like credit card fields)
-                $has_fields = false;
-                
-                // Specifically check for credit card payment methods that need form fields
-                if ($gateway_id === 'test_credit_card' ||
-                    strpos(strtolower($gateway_id), 'stripe') !== false ||
-                    strpos(strtolower($gateway_id), 'paypal_pro') !== false ||
-                    strpos(strtolower($gateway_id), 'square') !== false ||
-                    (strpos(strtolower($gateway_id), 'credit') !== false && strpos(strtolower($gateway_id), 'card') !== false)) {
-                    $has_fields = true;
-                }
-                
-                // Calculate fee for this payment method
-                $fee_amount = $this->calculate_payment_method_fee($gateway_id);
-                
-                $available_methods[] = array(
-                    'id' => $gateway_id,
-                    'title' => $gateway->get_title(),
-                    'description' => $gateway->get_description(),
-                    'icon' => $gateway->get_icon(),
-                    'method_title' => $gateway->get_method_title(),
-                    'method_description' => $gateway->get_method_description(),
-                    'has_fields' => $has_fields, // Add this property for React component
-                    'fee_amount' => $fee_amount, // Add fee amount
-                    'fee_display' => $fee_amount > 0 ? '+$' . number_format($fee_amount, 2) . ' processing fee' : '',
-                    'supports' => array(
-                        'products' => $gateway->supports('products'),
-                        'refunds' => $gateway->supports('refunds'),
-                        'subscriptions' => $gateway->supports('subscriptions'),
-                        'tokenization' => $gateway->supports('tokenization')
-                    )
-                );
+            if (strpos(strtolower($gateway_id), 'stripe') !== false && $gateway->is_available()) {
+                $stripe_gateway = $gateway;
+                $stripe_gateway_id = $gateway_id;
+                break;
             }
         }
-
-        return $available_methods;
+        
+        // If Stripe is not available, log and return configuration instructions
+        if (!$stripe_gateway) {
+            $this->log_error('Stripe payment gateway not configured', array(
+                'user_id' => get_current_user_id(),
+                'available_gateways' => array_keys($payment_gateways),
+                'context' => 'checkout_initialization'
+            ));
+            
+            return array(
+                'stripe_available' => false,
+                'error' => 'Stripe payment gateway is not configured',
+                'setup_instructions' => array(
+                    'Install the WooCommerce Stripe Payment Gateway plugin',
+                    'Go to WooCommerce → Settings → Payments',
+                    'Enable and configure Stripe with your API keys',
+                    'Save changes and refresh this page'
+                )
+            );
+        }
+        
+        // Validate Stripe configuration
+        $stripe_config_valid = $this->validate_stripe_configuration($stripe_gateway);
+        
+        if (!$stripe_config_valid) {
+            $this->log_error('Stripe configuration validation failed', array(
+                'user_id' => get_current_user_id(),
+                'gateway_id' => $stripe_gateway_id,
+                'context' => 'checkout_initialization'
+            ));
+            
+            return array(
+                'stripe_available' => false,
+                'error' => 'Stripe is installed but not properly configured',
+                'setup_instructions' => array(
+                    'Go to WooCommerce → Settings → Payments → Stripe',
+                    'Enter your Stripe API keys (Publishable and Secret keys)',
+                    'Enable Test Mode for testing or Live Mode for production',
+                    'Save changes and refresh this page'
+                )
+            );
+        }
+        
+        // Stripe is available and configured - log success and return Stripe details
+        $this->log_info('Stripe payment gateway available', array(
+            'user_id' => get_current_user_id(),
+            'gateway_id' => $stripe_gateway_id,
+            'gateway_title' => $stripe_gateway->get_title()
+        ));
+        
+        // Get Stripe publishable key for frontend
+        $publishable_key = '';
+        $test_mode = false;
+        if (method_exists($stripe_gateway, 'get_option')) {
+            // Check if test mode is enabled
+            $test_mode = $stripe_gateway->get_option('testmode') === 'yes';
+            
+            // Try different possible option names for publishable key
+            $publishable_key = $stripe_gateway->get_option('publishable_key') 
+                            ?: $stripe_gateway->get_option('stripe_publishable_key')
+                            ?: $stripe_gateway->get_option('test_publishable_key')
+                            ?: $stripe_gateway->get_option('live_publishable_key')
+                            ?: '';
+        }
+        
+        return array(
+            'stripe_available' => true,
+            'stripe_publishable_key' => $publishable_key, // Add publishable key for frontend
+            'test_mode' => $test_mode, // Add test mode flag
+            'payment_method' => array(
+                'id' => $stripe_gateway_id,
+                'title' => $stripe_gateway->get_title(),
+                'description' => $stripe_gateway->get_description(),
+                'icon' => $stripe_gateway->get_icon(),
+                'method_title' => $stripe_gateway->get_method_title(),
+                'method_description' => $stripe_gateway->get_method_description(),
+                'has_fields' => true, // Stripe always has card input fields
+                'supports' => array(
+                    'products' => $stripe_gateway->supports('products'),
+                    'refunds' => $stripe_gateway->supports('refunds'),
+                    'tokenization' => $stripe_gateway->supports('tokenization')
+                )
+            )
+        );
+    }
+    
+    /**
+     * Validate Stripe gateway configuration
+     * 
+     * @param WC_Payment_Gateway $gateway Stripe gateway instance
+     * @return bool True if configuration is valid
+     */
+    private function validate_stripe_configuration($gateway) {
+        // Check if gateway has required settings
+        if (!method_exists($gateway, 'get_option')) {
+            return false;
+        }
+        
+        // Check for API keys (different Stripe plugins may use different option names)
+        $has_publishable_key = false;
+        $has_secret_key = false;
+        
+        // Common Stripe option names
+        $publishable_key_options = array('publishable_key', 'stripe_publishable_key', 'test_publishable_key', 'live_publishable_key');
+        $secret_key_options = array('secret_key', 'stripe_secret_key', 'test_secret_key', 'live_secret_key');
+        
+        foreach ($publishable_key_options as $option) {
+            if (!empty($gateway->get_option($option))) {
+                $has_publishable_key = true;
+                break;
+            }
+        }
+        
+        foreach ($secret_key_options as $option) {
+            if (!empty($gateway->get_option($option))) {
+                $has_secret_key = true;
+                break;
+            }
+        }
+        
+        // Log configuration status
+        if (!$has_publishable_key || !$has_secret_key) {
+            $this->log_error('Stripe API keys not configured', array(
+                'has_publishable_key' => $has_publishable_key,
+                'has_secret_key' => $has_secret_key,
+                'gateway_id' => $gateway->id
+            ));
+        }
+        
+        return $has_publishable_key && $has_secret_key;
     }
     
     /**

@@ -1,0 +1,13 @@
+# User Interface Screenshots
+
+Place user-facing interface screenshots in this directory.
+
+## Naming Convention
+- `{component}-{state}-{number}.png`
+- Example: `upload-form-empty.png`, `result-display-success.png`
+
+## Guidelines
+- Capture at 1920x1080 resolution
+- Use PNG format
+- Show realistic user scenarios
+- Include context (browser, page layout)

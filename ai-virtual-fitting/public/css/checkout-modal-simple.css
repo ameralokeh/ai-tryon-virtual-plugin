@@ -1,0 +1,149 @@
+/**
+ * Simplified Checkout Modal Styles
+ * Clean payment method selection interface
+ */
+
+/* Payment Options Container */
+.payment-options-container {
+    padding: 20px 0;
+}
+
+.payment-options-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 24px 0;
+    text-align: center;
+}
+
+/* Express Checkout Section */
+.express-checkout-section {
+    margin-bottom: 16px;
+}
+
+.payment-request-button-container {
+    min-height: 48px;
+}
+
+/* Divider with Text */
+.divider-with-text {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+    gap: 12px;
+}
+
+.divider-line {
+    flex: 1;
+    height: 1px;
+    background: #e0e0e0;
+}
+
+.divider-text {
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: lowercase;
+}
+
+/* Credit Card Checkout Button */
+.credit-card-checkout-section {
+    margin-top: 16px;
+}
+
+.btn-checkout-card {
+    width: 100%;
+    padding: 14px 24px;
+    background: #fff;
+    border: 2px solid #635bff;
+    border-radius: 8px;
+    color: #635bff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-checkout-card:hover {
+    background: #635bff;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 91, 255, 0.2);
+}
+
+.btn-checkout-card:active {
+    transform: translateY(0);
+}
+
+.btn-checkout-card .card-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Selection Step Specific */
+.selection-step {
+    padding: 0;
+}
+
+.selection-step .checkout-summary {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .payment-options-title {
+        font-size: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .btn-checkout-card {
+        padding: 12px 20px;
+        font-size: 15px;
+    }
+    
+    .divider-with-text {
+        margin: 16px 0;
+    }
+}
+
+/* Simple Modal Variant */
+.simple-modal .checkout-modal-content {
+    padding: 24px;
+}
+
+.simple-modal .checkout-summary {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.simple-modal .summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 15px;
+    color: #666;
+}
+
+.simple-modal .summary-total {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 12px;
+    margin-top: 12px;
+    border-top: 1px solid #e0e0e0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.simple-modal .price,
+.simple-modal .total-price {
+    font-weight: 600;
+    color: #635bff;
+}

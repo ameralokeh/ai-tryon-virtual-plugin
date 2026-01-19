@@ -49,12 +49,24 @@ class AI_Virtual_Fitting_Admin_Settings {
      * Add admin menu
      */
     public function add_admin_menu() {
-        add_options_page(
-            __('AI Virtual Fitting Settings', 'ai-virtual-fitting'),
-            __('AI Virtual Fitting', 'ai-virtual-fitting'),
-            'manage_options',
-            self::PAGE_SLUG,
-            array($this, 'render_settings_page')
+        add_menu_page(
+            __('AI Virtual Fitting', 'ai-virtual-fitting'),           // Page title
+            __('Virtual Fitting', 'ai-virtual-fitting'),              // Menu title
+            'manage_options',                                          // Capability
+            self::PAGE_SLUG,                                          // Menu slug
+            array($this, 'render_settings_page'),                     // Callback function
+            'dashicons-camera',                                        // Icon (camera icon)
+            30                                                         // Position (after Comments)
+        );
+        
+        // Add submenu for settings (makes the first item say "Settings" instead of repeating the plugin name)
+        add_submenu_page(
+            self::PAGE_SLUG,                                          // Parent slug
+            __('Settings', 'ai-virtual-fitting'),                     // Page title
+            __('Settings', 'ai-virtual-fitting'),                     // Menu title
+            'manage_options',                                          // Capability
+            self::PAGE_SLUG,                                          // Menu slug (same as parent)
+            array($this, 'render_settings_page')                     // Callback function
         );
     }
     

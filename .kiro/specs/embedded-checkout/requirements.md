@@ -26,17 +26,31 @@ This specification defines an embedded checkout system for the AI Virtual Fittin
 4. WHEN the user clicks outside the modal, THE Modal_Interface SHALL close and clear the cart
 5. THE Modal_Interface SHALL maintain the virtual fitting page in the background
 
-### Requirement 2: Seamless Payment Processing
+### Requirement 2: Stripe Payment Processing
 
-**User Story:** As a user, I want to complete my credit purchase quickly and securely, so that I can return to virtual fitting immediately.
+**User Story:** As a user, I want to complete my credit purchase quickly and securely using Stripe, so that I can return to virtual fitting immediately.
 
 #### Acceptance Criteria
 
-1. THE Embedded_Checkout SHALL support all WooCommerce payment methods
-2. WHEN payment is successful, THE System SHALL process the order automatically
-3. WHEN order is completed, THE Credit_Manager SHALL add credits to user account immediately
-4. THE Embedded_Checkout SHALL handle payment errors gracefully with clear messaging
-5. WHEN checkout is cancelled, THE System SHALL clear the cart and return to virtual fitting
+1. THE Embedded_Checkout SHALL use Stripe as the exclusive payment method
+2. WHEN modal opens, THE System SHALL verify Stripe is enabled in WooCommerce
+3. WHEN payment is successful, THE System SHALL process the order automatically
+4. WHEN order is completed, THE Credit_Manager SHALL add credits to user account immediately
+5. THE Embedded_Checkout SHALL handle Stripe payment errors gracefully with clear messaging
+6. WHEN checkout is cancelled, THE System SHALL clear the cart and return to virtual fitting
+
+### Requirement 6: Stripe Gateway Integration
+
+**User Story:** As a user, I want to pay with my credit card through Stripe, so that my payment is processed securely and quickly.
+
+#### Acceptance Criteria
+
+1. THE System SHALL require WooCommerce Stripe Payment Gateway plugin to be installed and active
+2. THE Embedded_Checkout SHALL display Stripe card payment fields exclusively
+3. THE System SHALL use WooCommerce Stripe Payment Gateway plugin for all transactions
+4. WHEN Stripe processes payment, THE System SHALL handle 3D Secure authentication if required
+5. THE System SHALL display Stripe-specific error messages for card validation failures
+6. WHEN Stripe is not configured, THE System SHALL display setup instructions to administrators
 
 ### Requirement 3: Real-time Credit Updates
 

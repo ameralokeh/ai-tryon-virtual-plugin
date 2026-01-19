@@ -1,0 +1,13 @@
+# Configuration Screenshots
+
+Place settings and configuration screenshots in this directory.
+
+## Naming Convention
+- `{page}-{section}-{description}.png`
+- Example: `admin-settings-api-key.png`
+
+## Guidelines
+- Capture at 1920x1080 resolution
+- Use PNG format
+- Show complete settings panels
+- Highlight important fields

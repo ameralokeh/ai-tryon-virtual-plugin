@@ -1,24 +1,31 @@
 # Product Overview
 
-This is a **WooCommerce Product Migration System** designed to migrate products from a production e-commerce site (bridesandtailor.com) to a local WordPress development environment.
+This is an **AI Virtual Fitting WordPress Plugin** that provides AI-powered virtual try-on experiences for wedding dresses using Google AI Studio's Gemini 2.5 Flash Image model, integrated with WooCommerce for e-commerce functionality.
 
 ## Core Purpose
-- Migrate 50 products with complete data integrity
-- Transfer product images (4 per product: featured + gallery)
-- Preserve categories, tags, and metadata
-- Provide comprehensive logging and error handling
+- Provide realistic AI-powered virtual try-on for wedding dresses
+- Manage credit-based usage system with WooCommerce integration
+- Process customer photos with AI to generate virtual fitting results
+- Enable seamless purchase flow for virtual fitting credits
 
 ## Key Features
-- **Multi-environment support**: Production, local, and staging configurations
-- **Batch processing**: Scalable migration from single products to full batches
-- **MCP integration**: Uses Model Context Protocol for WooCommerce API interactions
-- **Docker-based local environment**: Containerized WordPress with MySQL and phpMyAdmin
-- **Comprehensive reporting**: Detailed migration logs and progress tracking
+- **AI-Powered Virtual Fitting**: Google AI Studio Gemini 2.5 Flash Image integration
+- **Credit System**: Initial free credits (2) with purchasable credit packages (20 credits/$10)
+- **WooCommerce Integration**: Automated product creation and order processing
+- **User Authentication**: WordPress user system with secure access control
+- **Image Processing**: Upload validation, optimization, and AI processing
+- **Download Functionality**: High-quality result image downloads
+- **Admin Dashboard**: Comprehensive monitoring and configuration
+- **Performance Optimization**: Asynchronous processing, caching, and queue management
+- **Analytics**: Usage tracking and performance metrics
 
-## Migration Workflow
-1. **Preparation**: Clear local store and test single product
-2. **Validation**: Test with 5 and 10 product batches  
-3. **Full Migration**: Complete 50-product migration
-4. **Verification**: Review results and validate data integrity
+## User Workflow
+1. **Account Creation**: User creates WordPress account or logs in
+2. **Initial Credits**: Receives 2 free virtual fitting credits
+3. **Product Selection**: Browses and selects wedding dress from product slider
+4. **Photo Upload**: Uploads personal photo (JPEG/PNG/WebP, max 10MB)
+5. **AI Processing**: System processes virtual fitting (30-60 seconds)
+6. **Result Download**: Downloads virtual fitting result image
+7. **Credit Purchase**: Purchases additional credits via WooCommerce checkout
 
-The system emphasizes data integrity, error recovery, and thorough documentation throughout the migration process.
+The plugin emphasizes user experience, data security, and seamless integration with WordPress and WooCommerce ecosystems.

@@ -8,36 +8,51 @@ The embedded checkout system provides a seamless credit purchase experience with
 
 ### High-Level Flow
 1. User clicks "Get More Credits" button
-2. Modal opens with WooCommerce checkout form
-3. Credit product automatically added to cart
-4. User completes payment within modal
-5. Order processed, credits added to account
-6. Modal closes, credits banner updates
-7. User continues virtual fitting
+2. System verifies Stripe is configured in WooCommerce
+3. Modal opens with Stripe checkout form
+4. Credit product automatically added to cart
+5. User enters card details in Stripe payment fields
+6. Stripe processes payment (with 3D Secure if required)
+7. Order processed through WooCommerce
+8. Credits added to account via existing Credit Manager
+9. Modal closes, credits banner updates
+10. User continues virtual fitting
 
 ### Component Integration
-- **Frontend Modal**: JavaScript-powered overlay with WooCommerce checkout
+- **Frontend Modal**: React-powered overlay with Stripe payment form
 - **WooCommerce API**: Existing cart and checkout functionality
+- **Stripe Gateway**: WooCommerce Stripe Payment Gateway plugin (exclusive)
 - **Credit Manager**: Existing credit processing system
-- **AJAX Handlers**: New endpoints for modal checkout operations
+- **AJAX Handlers**: Endpoints for modal checkout operations
 
 ## Components and Interfaces
 
 ### Modal Interface Component
-- **Checkout Modal**: Responsive overlay containing WooCommerce checkout form
+- **Checkout Modal**: Responsive React overlay with Stripe payment form
+- **Stripe Payment Fields**: WooCommerce Stripe card input integration
 - **Loading States**: Progress indicators during cart operations and payment
 - **Success/Error Messages**: User feedback for purchase outcomes
 - **Mobile Optimization**: Touch-friendly interface for mobile devices
 
+### Stripe Payment Integration
+- **Stripe Verification**: Check WooCommerce Stripe Payment Gateway is active
+- **Stripe Form Fields**: Leverage WooCommerce Stripe's built-in card fields
+- **3D Secure Handling**: Support for Strong Customer Authentication (SCA)
+- **Stripe Error Messages**: Display Stripe-specific validation and payment errors
+- **Configuration Check**: Verify Stripe API keys are configured
+
 ### Backend Integration
 - **Cart Management**: Automatic credit product addition/removal
 - **Checkout Processing**: WooCommerce order handling within modal context
+- **Stripe Integration**: Exclusive use of WooCommerce Stripe Payment Gateway plugin
 - **Credit Processing**: Integration with existing Credit Manager system
 - **Session Management**: Maintain user state throughout purchase flow
 
 ### JavaScript Handlers
 - **Modal Control**: Open/close modal, manage overlay behavior
 - **Cart Operations**: Add/remove credit products via AJAX
+- **Stripe Verification**: Check Stripe availability on modal open
+- **Stripe Payment Handling**: Process payments through WooCommerce Stripe
 - **Payment Processing**: Handle WooCommerce checkout submission
 - **Credit Updates**: Real-time banner refresh after successful purchase
 
@@ -64,8 +79,16 @@ The embedded checkout system provides a seamless credit purchase experience with
 **Validates: Requirements 1.2, 1.4**
 
 ### Property 2: Payment Processing Integrity  
-*For any* successful payment, the system should create exactly one order and add exactly 20 credits to the user's account
-**Validates: Requirements 2.2, 2.3**
+*For any* successful Stripe payment, the system should create exactly one order and add exactly 20 credits to the user's account
+**Validates: Requirements 2.3, 2.4, 6.3**
+
+### Property 6: Stripe Gateway Requirement
+*For any* checkout initialization, the system should verify WooCommerce Stripe Payment Gateway is active before displaying the checkout modal
+**Validates: Requirements 6.1, 6.6**
+
+### Property 7: Stripe Configuration Validation
+*For any* checkout attempt, if Stripe is not properly configured, the system should display clear setup instructions without attempting payment
+**Validates: Requirements 6.6**
 
 ### Property 3: Credit Balance Consistency
 *For any* completed purchase, the displayed credit balance should immediately reflect the newly added credits
@@ -81,11 +104,25 @@ The embedded checkout system provides a seamless credit purchase experience with
 
 ## Error Handling
 
-### Payment Failures
-- Display specific error messages from payment gateway
+### Stripe Payment Failures
+- Display specific Stripe error messages (card declined, insufficient funds, etc.)
+- Show card validation errors (invalid number, expired card, incorrect CVC)
 - Provide retry options for temporary failures
 - Clear cart state on permanent failures
 - Log errors for administrator review
+
+### Stripe 3D Secure Handling
+- Handle 3D Secure authentication challenges
+- Display authentication modal when required
+- Manage authentication failures gracefully
+- Provide clear messaging during authentication process
+
+### Stripe Configuration Issues
+- Detect when Stripe plugin is not installed
+- Detect when Stripe is not configured (missing API keys)
+- Display administrator-friendly setup instructions
+- Prevent checkout attempts when Stripe unavailable
+- Guide administrators to WooCommerce Stripe settings
 
 ### Network Issues
 - Handle AJAX timeouts gracefully

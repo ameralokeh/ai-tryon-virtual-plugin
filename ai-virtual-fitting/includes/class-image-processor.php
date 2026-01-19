@@ -1138,6 +1138,11 @@ class AI_Virtual_Fitting_Image_Processor {
         $temp_dir = $upload_dir['basedir'] . '/ai-virtual-fitting-temp';
         $temp_url = $upload_dir['baseurl'] . '/ai-virtual-fitting-temp';
         
+        // Ensure HTTPS protocol if site is accessed via HTTPS
+        if (is_ssl()) {
+            $temp_url = str_replace('http://', 'https://', $temp_url);
+        }
+        
         return str_replace($temp_dir, $temp_url, $file_path);
     }
     

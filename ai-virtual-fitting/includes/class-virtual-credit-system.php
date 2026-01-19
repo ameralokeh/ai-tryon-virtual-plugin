@@ -101,7 +101,7 @@ class AI_Virtual_Fitting_Virtual_Credit_System {
         $product->set_name(sprintf(__('%d Virtual Fitting Credits', 'ai-virtual-fitting'), $credits_per_package));
         $product->set_description(__('Virtual fitting credits for AI-powered try-on experiences. Credits are automatically added to your account after purchase.', 'ai-virtual-fitting'));
         $product->set_short_description(__('Purchase credits to use the virtual fitting feature.', 'ai-virtual-fitting'));
-        $product->set_status('publish');
+        $product->set_status('private'); // Private - not visible in catalog or search
         $product->set_catalog_visibility('hidden');
         $product->set_featured(false);
         $product->set_virtual(true);
@@ -118,6 +118,7 @@ class AI_Virtual_Fitting_Virtual_Credit_System {
             // Add custom meta
             update_post_meta($product_id, '_ai_virtual_fitting_credits', $credits_per_package);
             update_post_meta($product_id, '_ai_virtual_fitting_hidden_product', 'yes');
+            update_post_meta($product_id, '_virtual_fitting_product', 'yes'); // CRITICAL: Required for order processing
             
             // Set visibility terms
             wp_set_post_terms($product_id, array('exclude-from-catalog', 'exclude-from-search'), 'product_visibility', false);
@@ -141,12 +142,40 @@ class AI_Virtual_Fitting_Virtual_Credit_System {
     public function get_or_create_credit_product() {
         $product_id = get_option('ai_virtual_fitting_credit_product_id');
         
-        // Check if product exists
-        if ($product_id && get_post($product_id)) {
-            return $product_id;
+        // Check if product exists and is published
+        if ($product_id) {
+            $post = get_post($product_id);
+            if ($post) {
+                // If product is in trash, restore it
+                if ($post->post_status === 'trash') {
+                    error_log('AI Virtual Fitting: Credit product (ID: ' . $product_id . ') is in trash, restoring it');
+                    
+                    // Restore using WooCommerce
+                    $product = wc_get_product($product_id);
+                    if ($product) {
+                        $product->set_status('private'); // Set to private instead of publish
+                        $product->set_catalog_visibility('hidden');
+                        $product->save();
+                        error_log('AI Virtual Fitting: Restored credit product from trash with ID: ' . $product_id);
+                        return $product_id;
+                    } else {
+                        // Fallback to WordPress method
+                        wp_untrash_post($product_id);
+                        wp_update_post(array(
+                            'ID' => $product_id,
+                            'post_status' => 'private' // Set to private instead of publish
+                        ));
+                        error_log('AI Virtual Fitting: Restored credit product using wp_untrash_post with ID: ' . $product_id);
+                        return $product_id;
+                    }
+                } elseif ($post->post_status === 'publish' || $post->post_status === 'private') {
+                    // Product exists and is published or private
+                    return $product_id;
+                }
+            }
         }
         
-        // Product doesn't exist - recreate it
+        // Product doesn't exist or is not usable - recreate it
         return $this->create_hidden_credit_product();
     }
     

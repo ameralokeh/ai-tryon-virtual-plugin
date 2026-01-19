@@ -523,15 +523,137 @@
 }
 
 /* Error step */
+.ai-virtual-fitting-app .error-step {
+    text-align: center;
+    padding: 20px 0;
+}
+
 .ai-virtual-fitting-app .error-icon {
     display: flex;
     justify-content: center;
+    margin-bottom: 20px;
 }
 
 .ai-virtual-fitting-app .error-icon svg {
-    width: 46px;
-    height: 46px;
+    width: 64px;
+    height: 64px;
     fill: #e74c3c;
+    opacity: 0.9;
+}
+
+.ai-virtual-fitting-app .error-step h4 {
+    color: #2c3e50;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+}
+
+.ai-virtual-fitting-app .error-step .error-message {
+    color: #5a6c7d;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 24px 0;
+    font-weight: 500;
+}
+
+.ai-virtual-fitting-app .error-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+/* Cart conflict step */
+.ai-virtual-fitting-app .cart-conflict-step {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.ai-virtual-fitting-app .conflict-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.ai-virtual-fitting-app .conflict-icon svg {
+    width: 64px;
+    height: 64px;
+    fill: #f39c12;
+    opacity: 0.9;
+}
+
+.ai-virtual-fitting-app .cart-conflict-step h4 {
+    color: #2c3e50;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+}
+
+.ai-virtual-fitting-app .cart-conflict-step .conflict-message {
+    color: #5a6c7d;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 24px 0;
+    font-weight: 500;
+}
+
+.ai-virtual-fitting-app .conflict-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+/* Error guidance styling */
+.ai-virtual-fitting-app .error-guidance {
+    margin: 16px 0;
+    padding: 12px 16px;
+    background: rgba(74,144,226,0.08);
+    border: 1px solid rgba(74,144,226,0.2);
+    border-radius: 12px;
+    text-align: left;
+}
+
+.ai-virtual-fitting-app .error-tip {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: #2c3e50;
+    line-height: 1.6;
+}
+
+/* Setup Instructions for Stripe Unavailable */
+.ai-virtual-fitting-app .setup-instructions {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px 0;
+    text-align: left;
+}
+
+.ai-virtual-fitting-app .setup-instructions h5 {
+    color: #495057;
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.ai-virtual-fitting-app .setup-instructions ol {
+    margin: 0;
+    padding-left: 20px;
+    color: #6c757d;
+}
+
+.ai-virtual-fitting-app .setup-instructions li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.ai-virtual-fitting-app .setup-instructions li:last-child {
+    margin-bottom: 0;
 }
 
 /* Mobile */
@@ -605,4 +727,64 @@
 .payment-method.active .payment-name {
     color: #1976d2;
     font-weight: 600;
+}
+
+
+/* =========================================================
+   Express Checkout Section (Apple Pay / Google Pay)
+   ========================================================= */
+
+.ai-virtual-fitting-app .express-checkout-section {
+    margin: 20px 0;
+    padding: 0;
+}
+
+.ai-virtual-fitting-app .express-checkout-header,
+.ai-virtual-fitting-app .express-checkout-footer {
+    display: flex;
+    align-items: center;
+    margin: 16px 0;
+    gap: 12px;
+}
+
+.ai-virtual-fitting-app .divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e0e0e0 20%, #e0e0e0 80%, transparent);
+}
+
+.ai-virtual-fitting-app .divider-text {
+    padding: 0 12px;
+    color: #6b7785;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ai-virtual-fitting-app .payment-request-button-container {
+    margin: 12px 0;
+    min-height: 40px;
+}
+
+/* Stripe Payment Request Button styling (Stripe handles most of this) */
+.ai-virtual-fitting-app #payment-request-button {
+    margin: 0;
+}
+
+/* Ensure Stripe button fits nicely */
+.ai-virtual-fitting-app #payment-request-button > div {
+    max-width: 100%;
+}
+
+/* Mobile adjustments for express checkout */
+@media (max-width: 640px) {
+    .ai-virtual-fitting-app .express-checkout-section {
+        margin: 16px 0;
+    }
+    
+    .ai-virtual-fitting-app .divider-text {
+        font-size: 11px;
+        padding: 0 8px;
+    }
 }

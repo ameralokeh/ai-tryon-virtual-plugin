@@ -1,0 +1,13 @@
+# Installation Screenshots
+
+Place installation process screenshots in this directory.
+
+## Naming Convention
+- `step-{number}-{description}.png`
+- Example: `step-1-upload-plugin.png`
+
+## Guidelines
+- Capture at 1920x1080 resolution
+- Use PNG format
+- Include browser chrome if relevant
+- Annotate important elements

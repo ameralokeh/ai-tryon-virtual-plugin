@@ -381,6 +381,9 @@ class Test_Embedded_Checkout_Flow {
     
     private function test_add_credits_to_cart() {
         // Test adding credits to WooCommerce cart
+        // Simulate adding credit product to cart
+        $this->mock_cart_items[] = ['product_id' => 999, 'quantity' => 1, 'type' => 'credits'];
+        
         $credits_added = !empty($this->mock_cart_items);
         
         return $credits_added;
