@@ -95,6 +95,9 @@ class AI_Virtual_Fitting_Public_Interface {
         // WooCommerce hooks for fee calculation
         add_action('woocommerce_cart_calculate_fees', array($this, 'add_payment_method_fees'));
         
+        // AJAX login handler
+        add_action('wp_ajax_nopriv_ai_vf_ajax_login', array($this, 'handle_ajax_login'));
+        
         // Enqueue scripts and styles
         add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
         
@@ -154,13 +157,23 @@ class AI_Virtual_Fitting_Public_Interface {
             }
         }
         
+        // Method 8: FORCE ENQUEUE - Always enqueue on frontend pages (temporary fix)
+        // This ensures CSS loads even if detection fails
+        if (!$should_enqueue && !is_admin()) {
+            // Check if page ID matches known virtual fitting page
+            $virtual_fitting_page_id = get_option('ai_virtual_fitting_page_id', 0);
+            if ($virtual_fitting_page_id && is_page($virtual_fitting_page_id)) {
+                $should_enqueue = true;
+            }
+        }
+        
         if ($should_enqueue) {
             // Enqueue modern CSS
             wp_enqueue_style(
                 'ai-virtual-fitting-modern-style',
                 plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
                 array(),
-                '1.7.15'  // Updated: Added 15% zoom to customer images to remove buffer space
+                '1.7.16'  // Updated: Force cache refresh after deployment
             );
             
             // Enqueue React checkout modal CSS (Simplified version)
@@ -246,12 +259,29 @@ class AI_Virtual_Fitting_Public_Interface {
                 return $tag;
             }, 10, 2);
             
+            // Enqueue login modal CSS
+            wp_enqueue_style(
+                'ai-virtual-fitting-login-modal',
+                plugin_dir_url(__FILE__) . 'css/login-modal.css',
+                array(),
+                '1.0.0'
+            );
+            
+            // Enqueue login modal JavaScript
+            wp_enqueue_script(
+                'ai-virtual-fitting-login-modal',
+                plugin_dir_url(__FILE__) . 'js/login-modal.js',
+                array('jquery'),
+                '1.0.0',
+                true
+            );
+            
             // Enqueue modern JavaScript
             wp_enqueue_script(
                 'ai-virtual-fitting-modern-script',
                 plugin_dir_url(__FILE__) . 'js/modern-virtual-fitting.js',
                 array('jquery', 'ai-virtual-fitting-checkout-modal-react'),
-                '1.5.4',  // Updated: Added thumbnail navigation arrows for product galleries
+                '1.5.5',  // Updated: Force cache refresh after deployment
                 true
             );
             
@@ -261,6 +291,8 @@ class AI_Virtual_Fitting_Public_Interface {
                 'nonce' => wp_create_nonce('ai_virtual_fitting_nonce'),
                 'user_logged_in' => is_user_logged_in(),
                 'checkout_url' => wc_get_checkout_url(),
+                'register_url' => wp_registration_url(),
+                'lost_password_url' => wp_lostpassword_url(),
                 'messages' => array(
                     'login_required' => __('Please log in to use virtual fitting.', 'ai-virtual-fitting'),
                     'insufficient_credits' => __('You have insufficient credits. Please purchase more.', 'ai-virtual-fitting'),
@@ -279,9 +311,138 @@ class AI_Virtual_Fitting_Public_Interface {
      * Render virtual fitting page shortcode
      */
     public function render_virtual_fitting_shortcode($atts) {
+        // Force enqueue assets when shortcode is rendered
+        $this->force_enqueue_assets();
+        
         ob_start();
         $this->render_virtual_fitting_page();
         return ob_get_clean();
+    }
+    
+    /**
+     * Force enqueue assets (called from shortcode)
+     */
+    private function force_enqueue_assets() {
+        // Enqueue modern CSS
+        wp_enqueue_style(
+            'ai-virtual-fitting-modern-style',
+            plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
+            array(),
+            '1.7.16'  // Updated: Force cache refresh after deployment
+        );
+        
+        // Enqueue login modal CSS
+        wp_enqueue_style(
+            'ai-virtual-fitting-login-modal',
+            plugin_dir_url(__FILE__) . 'css/login-modal.css',
+            array(),
+            '1.0.0'
+        );
+        
+        // Enqueue React checkout modal CSS (Simplified version)
+        wp_enqueue_style(
+            'ai-virtual-fitting-checkout-modal-react',
+            plugin_dir_url(__FILE__) . 'css/checkout-modal-react.css',
+            array(),
+            '1.0.0'
+        );
+        
+        wp_enqueue_style(
+            'ai-virtual-fitting-checkout-modal-simple',
+            plugin_dir_url(__FILE__) . 'css/checkout-modal-simple.css',
+            array('ai-virtual-fitting-checkout-modal-react'),
+            '1.0.0'
+        );
+        
+        // Enqueue Stripe.js for Apple Pay / Google Pay support
+        wp_enqueue_script(
+            'stripe-js',
+            'https://js.stripe.com/v3/',
+            array(),
+            '3.0',
+            true
+        );
+        
+        // Enqueue React and ReactDOM
+        wp_enqueue_script(
+            'react',
+            plugin_dir_url(__FILE__) . 'js/vendor/react.production.min.js',
+            array(),
+            '18.2.0',
+            true
+        );
+        
+        wp_enqueue_script(
+            'react-dom',
+            plugin_dir_url(__FILE__) . 'js/vendor/react-dom.production.min.js',
+            array('react'),
+            '18.2.0',
+            true
+        );
+        
+        // Enqueue Babel standalone for JSX transformation
+        wp_enqueue_script(
+            'babel-standalone',
+            'https://unpkg.com/@babel/standalone/babel.min.js',
+            array(),
+            '7.23.0',
+            true
+        );
+        
+        // Enqueue React checkout modal component
+        wp_enqueue_script(
+            'ai-virtual-fitting-checkout-modal-react',
+            plugin_dir_url(__FILE__) . 'js/checkout-modal-simple.jsx',
+            array('react', 'react-dom', 'babel-standalone'),
+            '1.3.0',
+            true
+        );
+        
+        // Add script type for Babel transformation
+        add_filter('script_loader_tag', function($tag, $handle) {
+            if ('ai-virtual-fitting-checkout-modal-react' === $handle) {
+                return str_replace('<script', '<script type="text/babel"', $tag);
+            }
+            return $tag;
+        }, 10, 2);
+        
+        // Enqueue modern JavaScript
+        wp_enqueue_script(
+            'ai-virtual-fitting-modern-script',
+            plugin_dir_url(__FILE__) . 'js/modern-virtual-fitting.js',
+            array('jquery', 'ai-virtual-fitting-checkout-modal-react'),
+            '1.5.5',
+            true
+        );
+        
+        // Enqueue login modal JavaScript
+        wp_enqueue_script(
+            'ai-virtual-fitting-login-modal',
+            plugin_dir_url(__FILE__) . 'js/login-modal.js',
+            array('jquery'),
+            '1.0.0',
+            true
+        );
+        
+        // Localize script for AJAX
+        wp_localize_script('ai-virtual-fitting-modern-script', 'ai_virtual_fitting_ajax', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('ai_virtual_fitting_nonce'),
+            'user_logged_in' => is_user_logged_in(),
+            'checkout_url' => wc_get_checkout_url(),
+            'register_url' => wp_registration_url(),
+            'lost_password_url' => wp_lostpassword_url(),
+            'messages' => array(
+                'login_required' => __('Please log in to use virtual fitting.', 'ai-virtual-fitting'),
+                'insufficient_credits' => __('You have insufficient credits. Please purchase more.', 'ai-virtual-fitting'),
+                'upload_error' => __('Error uploading image. Please try again.', 'ai-virtual-fitting'),
+                'processing_error' => __('Error processing virtual fitting. Please try again.', 'ai-virtual-fitting'),
+                'select_product' => __('Please select a product to try on.', 'ai-virtual-fitting'),
+                'upload_image' => __('Please upload your image first.', 'ai-virtual-fitting'),
+                'cart_add_error' => __('Error adding credits to cart. Please try again.', 'ai-virtual-fitting'),
+                'cart_clear_error' => __('Error clearing cart. Please try again.', 'ai-virtual-fitting')
+            )
+        ));
     }
     
     /**
@@ -2720,6 +2881,36 @@ class AI_Virtual_Fitting_Public_Interface {
         
         if ($fee_amount > 0) {
             WC()->cart->add_fee('Processing Fee', $fee_amount);
+        }
+    }
+    
+    /**
+     * Handle AJAX login
+     */
+    public function handle_ajax_login() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
+            wp_send_json_error(array('message' => 'Security check failed'));
+            return;
+        }
+        
+        $username = sanitize_text_field($_POST['username']);
+        $password = $_POST['password'];
+        $remember = isset($_POST['remember']) && $_POST['remember'] === 'true';
+        
+        // Attempt login
+        $creds = array(
+            'user_login'    => $username,
+            'user_password' => $password,
+            'remember'      => $remember
+        );
+        
+        $user = wp_signon($creds, false);
+        
+        if (is_wp_error($user)) {
+            wp_send_json_error(array('message' => $user->get_error_message()));
+        } else {
+            wp_send_json_success(array('message' => 'Login successful'));
         }
     }
 }

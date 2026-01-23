@@ -86,6 +86,13 @@ class AI_Virtual_Fitting_Core {
     private $virtual_credit_system;
     
     /**
+     * Try-On Button instance
+     *
+     * @var AI_Virtual_Fitting_TryOn_Button
+     */
+    private $tryon_button;
+    
+    /**
      * Get core instance
      *
      * @return AI_Virtual_Fitting_Core
@@ -164,6 +171,11 @@ class AI_Virtual_Fitting_Core {
         
         // Initialize Analytics Manager
         $this->analytics_manager = new AI_Virtual_Fitting_Analytics_Manager();
+        
+        // Initialize Try-On Button (frontend only)
+        if (!is_admin()) {
+            $this->tryon_button = new AI_Virtual_Fitting_TryOn_Button();
+        }
     }
     
     /**
@@ -244,8 +256,63 @@ class AI_Virtual_Fitting_Core {
      */
     public function handle_virtual_fitting_page() {
         if (get_query_var('virtual_fitting_page')) {
-            // Load virtual fitting page template
-            include AI_VIRTUAL_FITTING_PLUGIN_DIR . 'public/virtual-fitting-page.php';
+            // Manually enqueue styles and scripts
+            wp_enqueue_style(
+                'ai-virtual-fitting-modern-style',
+                plugins_url('ai-virtual-fitting/public/css/modern-virtual-fitting.css'),
+                array(),
+                '1.7.16'
+            );
+            
+            wp_enqueue_style(
+                'ai-virtual-fitting-checkout-modal-react-style',
+                plugins_url('ai-virtual-fitting/public/css/checkout-modal-react.css'),
+                array(),
+                '1.0.3'
+            );
+            
+            wp_enqueue_script('jquery');
+            
+            wp_enqueue_script(
+                'ai-virtual-fitting-checkout-modal-react',
+                plugins_url('ai-virtual-fitting/public/js/checkout-modal-simple.jsx'),
+                array('jquery'),
+                '1.0.3',
+                true
+            );
+            
+            wp_enqueue_script(
+                'ai-virtual-fitting-modern-script',
+                plugins_url('ai-virtual-fitting/public/js/modern-virtual-fitting.js'),
+                array('jquery', 'ai-virtual-fitting-checkout-modal-react'),
+                '1.5.5',
+                true
+            );
+            
+            // Localize script with AJAX data
+            wp_localize_script('ai-virtual-fitting-modern-script', 'ai_virtual_fitting_ajax', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('ai_virtual_fitting_nonce'),
+                'user_logged_in' => is_user_logged_in(),
+                'checkout_url' => wc_get_checkout_url(),
+                'messages' => array(
+                    'login_required' => __('Please log in to use virtual fitting.', 'ai-virtual-fitting'),
+                    'insufficient_credits' => __('You have insufficient credits. Please purchase more.', 'ai-virtual-fitting'),
+                    'upload_error' => __('Error uploading image. Please try again.', 'ai-virtual-fitting'),
+                    'processing_error' => __('Error processing virtual fitting. Please try again.', 'ai-virtual-fitting'),
+                    'select_product' => __('Please select a product to try on.', 'ai-virtual-fitting'),
+                    'upload_image' => __('Please upload your image first.', 'ai-virtual-fitting')
+                )
+            ));
+            
+            // Load WordPress header
+            get_header();
+            
+            // Use the public interface's render method which properly loads products
+            $this->public_interface->render_virtual_fitting_page();
+            
+            // Load WordPress footer
+            get_footer();
             exit;
         }
     }
