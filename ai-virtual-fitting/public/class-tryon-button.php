@@ -598,7 +598,7 @@ class AI_Virtual_Fitting_TryOn_Button {
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('ai_virtual_fitting_nonce'),
                 'user_logged_in' => false,
-                'register_url' => wp_registration_url(),
+                'register_url' => wc_get_page_permalink('myaccount'),
                 'lost_password_url' => wp_lostpassword_url()
             ));
         }

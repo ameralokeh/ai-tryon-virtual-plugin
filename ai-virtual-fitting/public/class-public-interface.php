@@ -295,7 +295,7 @@ class AI_Virtual_Fitting_Public_Interface {
                 'nonce' => wp_create_nonce('ai_virtual_fitting_nonce'),
                 'user_logged_in' => is_user_logged_in(),
                 'checkout_url' => wc_get_checkout_url(),
-                'register_url' => wp_registration_url(),
+                'register_url' => wc_get_page_permalink('myaccount'),
                 'lost_password_url' => wp_lostpassword_url(),
                 'messages' => array(
                     'login_required' => __('Please log in to use virtual fitting.', 'ai-virtual-fitting'),
