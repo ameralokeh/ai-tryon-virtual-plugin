@@ -177,7 +177,7 @@ class AI_Virtual_Fitting_Public_Interface {
                 'ai-virtual-fitting-modern-style',
                 plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
                 array(),
-                '1.7.17'  // Updated: Added "See More" pagination functionality
+                '1.7.19'  // Updated: Image fills container edge-to-edge
             );
             
             // Enqueue React checkout modal CSS (Simplified version)
@@ -332,7 +332,7 @@ class AI_Virtual_Fitting_Public_Interface {
             'ai-virtual-fitting-modern-style',
             plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
             array(),
-            '1.7.17'  // Updated: Added "See More" pagination functionality
+            '1.7.18'  // Updated: Floating thumbnail overlay with stretched preview
         );
         
         // Enqueue login modal CSS

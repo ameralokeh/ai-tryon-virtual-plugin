@@ -641,24 +641,27 @@
 /* Wrapper for main image + thumbnails */
 .main-preview-gallery {
     width: 100%;
-    max-width: 100%;              /* Prevent gallery from exceeding container */
+    max-width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    overflow: hidden;             /* Prevent horizontal overflow */
-    box-sizing: border-box;       /* Include padding in width calculation */
+    position: relative;              /* For absolute positioning of thumbnails */
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
-/* Large main product image */
+/* Large main product image - FILL CONTAINER COMPLETELY */
 .main-preview-image {
-    max-width: 90%;
-    max-height: 70%;
-    object-fit: contain;
-    border-radius: 18px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    width: 100%;                     /* Fill full width */
+    height: 100%;                    /* Fill full height */
+    max-width: 100%;                 /* No restriction */
+    max-height: 100%;                /* No restriction */
+    object-fit: contain;             /* Show entire image without cropping */
+    border-radius: 0;                /* Remove border radius for full coverage */
+    box-shadow: none;                /* Remove shadow for cleaner look */
+    transition: opacity 0.3s ease;
     background: #fff;
 }
 
@@ -674,29 +677,37 @@
     font-weight: 500;
 }
 
-/* Thumbnail bar container: horizontal scroll with fixed width */
+/* Thumbnail bar container: FLOATING OVERLAY AT BOTTOM */
 .product-thumbnails,
 #product-thumbnails {
-    margin-top: 16px;
-    width: 100%;
-    max-width: 100%;              /* Fixed to container width */
+    position: absolute;              /* Float over the image */
+    bottom: 20px;                    /* Position from bottom */
+    left: 50%;                       /* Center horizontally */
+    transform: translateX(-50%);    /* Center alignment */
+    width: calc(100% - 40px);       /* Leave margins on sides */
+    max-width: 800px;               /* Max width for large screens */
     display: flex;
-    gap: 12px;                    /* Adequate gap between thumbnails */
+    gap: 12px;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 10px 8px 14px 8px;   /* Adequate padding for spacing */
-    scroll-snap-type: x mandatory; /* snap to each tile */
-    scroll-padding-left: 8px;
+    padding: 12px 16px;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 16px;
     -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;       /* Smooth scrolling */
+    scroll-behavior: smooth;
     box-sizing: border-box;
-    min-height: 120px;            /* Ensure container has enough height */
+    background: transparent;                 /* Fully transparent - no background */
+    backdrop-filter: blur(0px);              /* No blur - completely see-through */
+    -webkit-backdrop-filter: blur(0px);      /* Safari support */
+    border-radius: 16px;
+    box-shadow: none;                        /* No shadow */
+    z-index: 10;                             /* Above the main image */
 }
 
 /* Premium scrollbar (keeps usability) */
 .product-thumbnails::-webkit-scrollbar,
 #product-thumbnails::-webkit-scrollbar {
-    height: 7px;
+    height: 6px;
 }
 .product-thumbnails::-webkit-scrollbar-track,
 #product-thumbnails::-webkit-scrollbar-track {
@@ -716,8 +727,8 @@
 /* Individual thumbnail - proper sizing with adequate space */
 .product-thumbnail {
     flex: 0 0 auto;
-    width: 120px;                  /* Balanced size for visibility */
-    height: 90px;                  /* Proportional height */
+    width: 100px;                  /* Slightly smaller for overlay */
+    height: 75px;                  /* Proportional height */
     border-radius: 10px;
     overflow: hidden;
     cursor: pointer;
@@ -725,9 +736,9 @@
     background: #f3f4f6;
     position: relative;
     scroll-snap-align: start;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
     transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-    margin-right: 0;              /* No extra margin - gap handles spacing */
+    margin-right: 0;
 }
 
 .product-thumbnail img {
@@ -740,15 +751,15 @@
 /* Hover lift */
 .product-thumbnail:hover {
     transform: translateY(-2px);
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
 }
 
 /* Active / selected thumbnail */
 .product-thumbnail.active {
     border-color: #4a90e2;
     box-shadow: 
-        0 14px 34px rgba(0, 0, 0, 0.16),
-        0 0 0 4px rgba(74, 144, 226, 0.20);
+        0 8px 20px rgba(0, 0, 0, 0.16),
+        0 0 0 3px rgba(74, 144, 226, 0.30);
 }
 
 /* Subtle tint overlay for active */
@@ -756,7 +767,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(74, 144, 226, 0.06);
+    background: rgba(74, 144, 226, 0.08);
     pointer-events: none;
 }
 
@@ -827,8 +838,21 @@
 @media (max-width: 968px) {
     .product-thumbnails,
     #product-thumbnails {
-        max-width: 100%;
+        width: calc(100% - 20px);    /* Smaller margins on mobile */
+        bottom: 10px;                 /* Closer to bottom on mobile */
+        padding: 10px 12px;           /* Smaller padding */
+        gap: 8px;                     /* Smaller gap */
     }
+    
+    .product-thumbnail {
+        width: 80px;                  /* Smaller thumbnails on mobile */
+        height: 60px;
+    }
+    
+    .main-preview-image {
+        object-fit: contain;          /* Keep entire image visible on mobile */
+    }
+}
     
     .product-thumbnail {
         width: 95px;               /* Smaller for mobile */
@@ -836,7 +860,7 @@
     }
     
     .main-preview-image {
-        max-height: 60%;
+        max-height: 100%;          /* Fill container on mobile too */
     }
     
     .fitting-container {
@@ -2329,31 +2353,14 @@ body.modal-open {
     transform: scale(1.15); /* Zoom in 15% to remove buffer space */
 }
 
-/* Center Panel: Make preview gallery grow and image scale properly */
+/* Center Panel: Make preview gallery grow */
 .main-preview {
     display: flex;
     flex-direction: column;
     min-height: 0;
 }
 
-.main-preview-gallery {
-    flex: 1;
-    min-height: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-/* Increase main preview image size significantly */
-.main-preview-image {
-    max-height: 90%; /* Increased from 70% to use more vertical space */
-    max-width: 95%; /* Slightly increased horizontal space */
-    width: auto;
-    height: auto;
-    object-fit: contain;
-}
+/* Main preview gallery already styled above - no override needed */
 
 /* Ensure action buttons don't shrink the gallery */
 .action-buttons {
@@ -2380,22 +2387,14 @@ body.modal-open {
     position: relative;
 }
 
-/* Mobile: Restore original constraints to prevent overly tall images */
+/* Mobile: Upload area constraints */
 @media (max-width: 968px) {
-    .main-preview-image {
-        max-height: 60%; /* Smaller on mobile to fit thumbnails */
-    }
-    
     .upload-area {
         min-height: 200px;
         max-height: 400px; /* Prevent excessive height on mobile */
     }
 }
 
-@media (max-width: 640px) {
-    .main-preview-image {
-        max-height: 55%;
-    }
     
     .upload-area {
         min-height: 180px;
