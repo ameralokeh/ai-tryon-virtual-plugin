@@ -87,6 +87,73 @@ $system_status = $admin_settings->get_system_status();
             ?>
         </form>
         
+        <!-- Try-On Button Statistics Section -->
+        <div class="ai-virtual-fitting-section">
+            <h3>
+                <?php _e('Try-On Button Statistics', 'ai-virtual-fitting'); ?>
+                <button type="button" id="refresh-button-stats" class="button button-secondary" style="margin-left: 10px;">
+                    <?php _e('Refresh', 'ai-virtual-fitting'); ?>
+                </button>
+            </h3>
+            
+            <!-- Date Range Filter -->
+            <div class="button-stats-controls" style="margin-bottom: 20px;">
+                <label for="button-stats-date-range"><?php _e('Date Range:', 'ai-virtual-fitting'); ?></label>
+                <select id="button-stats-date-range" style="margin-left: 10px;">
+                    <option value="7"><?php _e('Last 7 Days', 'ai-virtual-fitting'); ?></option>
+                    <option value="30" selected><?php _e('Last 30 Days', 'ai-virtual-fitting'); ?></option>
+                    <option value="90"><?php _e('Last 90 Days', 'ai-virtual-fitting'); ?></option>
+                    <option value="365"><?php _e('Last Year', 'ai-virtual-fitting'); ?></option>
+                </select>
+            </div>
+            
+            <!-- Statistics Cards -->
+            <div class="ai-virtual-fitting-analytics">
+                <div class="analytics-card" id="metric-button-clicks">
+                    <h4><?php _e('Total Button Clicks', 'ai-virtual-fitting'); ?></h4>
+                    <div class="metric">0</div>
+                    <div class="description"><?php _e('Total clicks on Try-On buttons', 'ai-virtual-fitting'); ?></div>
+                </div>
+                <div class="analytics-card" id="metric-button-conversions">
+                    <h4><?php _e('Conversions', 'ai-virtual-fitting'); ?></h4>
+                    <div class="metric">0</div>
+                    <div class="description"><?php _e('Users who completed virtual fitting', 'ai-virtual-fitting'); ?></div>
+                </div>
+                <div class="analytics-card" id="metric-conversion-rate">
+                    <h4><?php _e('Conversion Rate', 'ai-virtual-fitting'); ?></h4>
+                    <div class="metric">0%</div>
+                    <div class="description"><?php _e('Percentage of clicks that converted', 'ai-virtual-fitting'); ?></div>
+                </div>
+            </div>
+            
+            <!-- Most Popular Products -->
+            <div style="margin-top: 30px;">
+                <h4><?php _e('Most Popular Products', 'ai-virtual-fitting'); ?></h4>
+                <div id="popular-products-container">
+                    <table class="wp-list-table widefat fixed striped" id="popular-products-table">
+                        <thead>
+                            <tr>
+                                <th><?php _e('Product', 'ai-virtual-fitting'); ?></th>
+                                <th><?php _e('Button Clicks', 'ai-virtual-fitting'); ?></th>
+                                <th><?php _e('Unique Users', 'ai-virtual-fitting'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody id="popular-products-tbody">
+                            <tr>
+                                <td colspan="3" style="text-align: center; padding: 20px;">
+                                    <?php _e('Loading statistics...', 'ai-virtual-fitting'); ?>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <p class="button-stats-last-updated description" style="text-align: center; margin-top: 15px;">
+                <?php _e('Click refresh to load current statistics', 'ai-virtual-fitting'); ?>
+            </p>
+        </div>
+        
         <!-- Help Section -->
         <div class="ai-virtual-fitting-help">
             <h4><?php _e('Setup Guide', 'ai-virtual-fitting'); ?></h4>

@@ -10,6 +10,12 @@ A comprehensive WordPress plugin that provides AI-powered virtual try-on experie
   - High-quality virtual fitting results
   - Support for multiple dress styles and designs
   - Automatic image composition and blending
+- **Virtual Try-On Button**: One-click access to virtual fitting from product pages
+  - Seamless integration with WooCommerce product pages
+  - Automatic product pre-selection on virtual fitting page
+  - Configurable button text, styling, and category filters
+  - Authentication-aware redirects with state preservation
+  - Analytics tracking for button clicks and conversions
 - **Credit-Based System**: Flexible usage tracking with initial free credits and purchasable credit packages
   - 2 free credits for new users
   - Purchasable credit packages (20 credits for $10)
@@ -353,6 +359,15 @@ To use the virtual fitting feature, you need a Google AI Studio API key:
 - **Database Optimization**: Enable automatic database optimization
 - **Error Reporting**: Error reporting level
 
+#### Try-On Button Settings Tab
+- **Enable Button**: Global enable/disable toggle for button display
+- **Target Page**: Virtual Fitting page ID for button redirection
+- **Button Text**: Customizable button label (default: "Try on Virtually")
+- **Show Icon**: Toggle camera icon display on button
+- **Allowed Categories**: Product categories where button appears (empty = all products)
+- **Require Login**: Respect authentication settings (uses existing setting)
+- **Analytics Tracking**: Enable button click and conversion tracking
+
 ### Configuration Best Practices
 
 1. **Security**
@@ -415,8 +430,29 @@ The virtual fitting feature allows customers to try on wedding dresses virtually
 #### Getting Started
 1. **Create Account**: Register for a WordPress account on your website or log in if you already have one
 2. **Receive Free Credits**: New users automatically receive 2 free virtual fitting credits
-3. **Access Virtual Fitting**: Navigate to the `/virtual-fitting` page on your website
+3. **Access Virtual Fitting**: Navigate to the `/virtual-fitting` page on your website, or click the "Try on Virtually" button on any product page
 4. **View Credit Balance**: Your remaining credits are displayed at the top of the page
+
+#### Quick Access via Try-On Button
+
+The fastest way to start a virtual fitting is directly from a product page:
+
+**Step 1: Browse Products**
+- Navigate to any wedding dress product page
+- Look for the "Try on Virtually" button below the "Add to Cart" button
+- The button appears with a camera icon and gradient styling
+
+**Step 2: Click to Try On**
+- Click the "Try on Virtually" button
+- You'll be redirected to the virtual fitting page
+- The dress you selected will be automatically pre-loaded
+- The product will be highlighted and scrolled into view
+
+**Step 3: Upload and Process**
+- Upload your photo (if not already uploaded)
+- The selected dress is ready to try on
+- Click "Try On This Dress" to start processing
+- View and download your result
 
 #### Virtual Fitting Process
 
@@ -424,6 +460,7 @@ The virtual fitting feature allows customers to try on wedding dresses virtually
 - Browse the product slider showing available wedding dresses
 - Click through the carousel to view different styles
 - Select the dress you want to try on virtually
+- Or use the "Try on Virtually" button on product pages for instant selection
 
 **Step 2: Upload Your Photo**
 - Click the "Upload Photo" button
@@ -537,6 +574,65 @@ Access the admin dashboard at **WordPress Admin → AI Virtual Fitting**
 - **Recent Activity**: Latest virtual fitting attempts and results
 - **System Status**: API connectivity, database health, error rates
 - **Revenue Metrics**: Credit purchases, revenue tracking, conversion rates
+- **Try-On Button Analytics**: Button clicks, conversion rates, popular products
+
+#### Try-On Button Management
+
+**Configuring the Try-On Button**
+
+Navigate to **AI Virtual Fitting → Settings → Try-On Button** to configure:
+
+1. **Enable/Disable Button**
+   - Toggle button display globally
+   - Useful for testing or temporary disabling
+
+2. **Select Target Page**
+   - Choose which page the button redirects to
+   - Typically the Virtual Fitting page
+   - Dropdown shows all available pages
+   - Page must exist and be published
+
+3. **Configure Category Filters**
+   - Select which product categories show the button
+   - Leave empty to show on all products
+   - Multi-select for multiple categories
+   - Useful for limiting to dress categories only
+
+4. **Customize Button Appearance**
+   - Set custom button text (default: "Try on Virtually")
+   - Toggle camera icon display
+   - Button automatically inherits theme styling
+   - Responsive design for mobile devices
+
+5. **Authentication Settings**
+   - Respect existing login requirements
+   - Automatic redirect to login if required
+   - Product ID preserved through login flow
+   - Seamless return to virtual fitting after login
+
+**Try-On Button Analytics**
+
+Monitor button performance in the admin dashboard:
+
+- **Total Button Clicks**: Track how many times the button is clicked
+- **Click-Through Rate**: Percentage of product views that result in clicks
+- **Conversion Rate**: Percentage of clicks that result in completed fittings
+- **Popular Products**: Which products get the most try-on clicks
+- **User Engagement**: Average clicks per user
+- **Time-Based Trends**: Daily, weekly, monthly click patterns
+
+**Viewing Button Statistics**
+1. Navigate to **AI Virtual Fitting → Analytics**
+2. Select "Try-On Button" tab
+3. View metrics and charts
+4. Filter by date range
+5. Export data for further analysis
+
+**Most Popular Products**
+- See which dresses customers try on most
+- Identify trending styles
+- Optimize product placement
+- Inform inventory decisions
 
 #### Monitoring and Analytics
 
@@ -676,6 +772,139 @@ Access the admin dashboard at **WordPress Admin → AI Virtual Fitting**
 
 ## 🔧 Technical Documentation
 
+### For Developers
+
+The plugin provides extensive hooks and filters for customization. See [DEVELOPER.md](DEVELOPER.md) for complete technical documentation.
+
+#### Try-On Button Customization
+
+**Filters for Button Customization:**
+
+```php
+// Customize button text
+add_filter('ai_virtual_fitting_tryon_button_text', function($text, $product_id) {
+    return __('Virtual Try-On', 'your-theme');
+}, 10, 2);
+
+// Customize button URL
+add_filter('ai_virtual_fitting_tryon_button_url', function($url, $product_id) {
+    // Add custom parameters
+    return add_query_arg('source', 'product-page', $url);
+}, 10, 2);
+
+// Customize button HTML
+add_filter('ai_virtual_fitting_tryon_button_html', function($html, $product_id) {
+    // Wrap button in custom container
+    return '<div class="custom-wrapper">' . $html . '</div>';
+}, 10, 2);
+
+// Customize button eligibility
+add_filter('ai_virtual_fitting_tryon_button_eligible', function($eligible, $product_id) {
+    // Custom eligibility logic
+    $product = wc_get_product($product_id);
+    return $product && $product->is_in_stock();
+}, 10, 2);
+
+// Customize button icon SVG
+add_filter('ai_virtual_fitting_tryon_button_icon', function($svg) {
+    // Return custom SVG icon
+    return '<svg>...</svg>';
+});
+```
+
+**Actions for Button Events:**
+
+```php
+// Before button render
+add_action('ai_virtual_fitting_before_tryon_button', function($product_id) {
+    // Add custom content before button
+    echo '<p class="tryon-notice">Try this dress virtually!</p>';
+});
+
+// After button render
+add_action('ai_virtual_fitting_after_tryon_button', function($product_id) {
+    // Add custom content after button
+    echo '<p class="tryon-help">See how it looks on you</p>';
+});
+
+// On button click (AJAX)
+add_action('ai_virtual_fitting_tryon_button_clicked', function($product_id, $user_id) {
+    // Track custom analytics
+    do_action('custom_analytics_track', 'tryon_button_click', $product_id);
+}, 10, 2);
+
+// On product pre-selected
+add_action('ai_virtual_fitting_product_preselected', function($product_id) {
+    // Custom logic when product is auto-selected
+    update_user_meta(get_current_user_id(), 'last_tryon_product', $product_id);
+});
+```
+
+**Example: Custom Button Styling**
+
+```php
+// Add custom CSS class to button
+add_filter('ai_virtual_fitting_tryon_button_class', function($classes) {
+    $classes[] = 'my-custom-button-class';
+    return $classes;
+});
+
+// Enqueue custom button styles
+add_action('wp_enqueue_scripts', function() {
+    if (is_product()) {
+        wp_add_inline_style('ai-virtual-fitting-tryon-button', '
+            .ai-virtual-fitting-tryon-button {
+                background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            }
+        ');
+    }
+});
+```
+
+**Example: Conditional Button Display**
+
+```php
+// Show button only for products above certain price
+add_filter('ai_virtual_fitting_tryon_button_eligible', function($eligible, $product_id) {
+    if (!$eligible) {
+        return false;
+    }
+    
+    $product = wc_get_product($product_id);
+    $min_price = 100; // Minimum price in your currency
+    
+    return $product && $product->get_price() >= $min_price;
+}, 10, 2);
+
+// Show button only for specific product tags
+add_filter('ai_virtual_fitting_tryon_button_eligible', function($eligible, $product_id) {
+    if (!$eligible) {
+        return false;
+    }
+    
+    $tags = wp_get_post_terms($product_id, 'product_tag', array('fields' => 'slugs'));
+    return in_array('virtual-fitting-enabled', $tags);
+}, 10, 2);
+```
+
+**Example: Custom Analytics Integration**
+
+```php
+// Integrate with Google Analytics
+add_action('ai_virtual_fitting_tryon_button_clicked', function($product_id, $user_id) {
+    $product = wc_get_product($product_id);
+    ?>
+    <script>
+    gtag('event', 'virtual_tryon_click', {
+        'product_id': <?php echo $product_id; ?>,
+        'product_name': '<?php echo esc_js($product->get_name()); ?>',
+        'product_price': <?php echo $product->get_price(); ?>
+    });
+    </script>
+    <?php
+}, 10, 2);
+```
+
 ### Database Schema
 The plugin creates the following database table:
 
@@ -713,9 +942,12 @@ ai-virtual-fitting/
 │   └── js/admin-settings.js
 ├── public/                         # Frontend interface
 │   ├── class-public-interface.php
+│   ├── class-tryon-button.php      # Try-On Button display module
 │   ├── virtual-fitting-page.php
 │   ├── css/virtual-fitting.css
-│   └── js/virtual-fitting.js
+│   ├── css/virtual-tryon-button.css # Try-On Button styles
+│   ├── js/virtual-fitting.js
+│   └── js/virtual-tryon-button.js   # Try-On Button functionality
 ├── tests/                          # Test files
 │   └── [various test files]
 ├── languages/                      # Translations
@@ -733,12 +965,22 @@ ai-virtual-fitting/
 - `ai_virtual_fitting_credit_added`: Fired when credits are added to user
 - `ai_virtual_fitting_credit_deducted`: Fired when credits are deducted
 - `ai_virtual_fitting_processing_complete`: Fired when AI processing completes
+- `ai_virtual_fitting_before_tryon_button`: Fired before Try-On button renders
+- `ai_virtual_fitting_after_tryon_button`: Fired after Try-On button renders
+- `ai_virtual_fitting_tryon_button_clicked`: Fired when Try-On button is clicked
+- `ai_virtual_fitting_product_preselected`: Fired when product is auto-selected
 
 #### Filters
 - `ai_virtual_fitting_initial_credits`: Filter initial credits amount
 - `ai_virtual_fitting_max_image_size`: Filter maximum image size
 - `ai_virtual_fitting_allowed_types`: Filter allowed image types
 - `ai_virtual_fitting_api_timeout`: Filter API timeout duration
+- `ai_virtual_fitting_tryon_button_text`: Filter Try-On button text
+- `ai_virtual_fitting_tryon_button_url`: Filter Try-On button URL
+- `ai_virtual_fitting_tryon_button_html`: Filter Try-On button HTML
+- `ai_virtual_fitting_tryon_button_eligible`: Filter button eligibility
+- `ai_virtual_fitting_tryon_button_icon`: Filter button icon SVG
+- `ai_virtual_fitting_tryon_button_class`: Filter button CSS classes
 
 ### API Integration
 The plugin integrates with Google AI Studio's Gemini 2.5 Flash Image model:

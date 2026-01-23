@@ -45,6 +45,8 @@ class AI_Virtual_Fitting_Analytics_Manager {
         // AJAX handlers for analytics
         add_action('wp_ajax_ai_virtual_fitting_track_metrics', array($this, 'track_frontend_metrics'));
         add_action('wp_ajax_ai_virtual_fitting_get_analytics', array($this, 'get_analytics_data'));
+        add_action('wp_ajax_ai_virtual_fitting_log_tryon_button_click', array($this, 'ajax_log_button_click'));
+        add_action('wp_ajax_nopriv_ai_virtual_fitting_log_tryon_button_click', array($this, 'ajax_log_button_click'));
         
         // Hook into plugin events for automatic tracking
         add_action('ai_virtual_fitting_image_uploaded', array($this, 'track_image_upload'));
@@ -85,6 +87,8 @@ class AI_Virtual_Fitting_Analytics_Manager {
             credits_used int(11) DEFAULT 0,
             avg_processing_time decimal(10,2) DEFAULT 0,
             peak_concurrent_users int(11) DEFAULT 0,
+            button_clicks int(11) DEFAULT 0,
+            button_conversions int(11) DEFAULT 0,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             UNIQUE KEY date_recorded (date_recorded),
@@ -103,12 +107,16 @@ class AI_Virtual_Fitting_Analytics_Manager {
             error_message text,
             user_agent text,
             ip_address varchar(45),
+            button_click tinyint(1) DEFAULT 0,
+            source_product_id bigint(20) DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY idx_user_id (user_id),
             KEY idx_event_type (event_type),
             KEY idx_created_at (created_at),
-            KEY idx_success (success)
+            KEY idx_success (success),
+            KEY idx_button_click (button_click),
+            KEY idx_source_product (source_product_id)
         ) $charset_collate;";
         
         // Performance metrics table
@@ -128,6 +136,73 @@ class AI_Virtual_Fitting_Analytics_Manager {
         dbDelta($analytics_sql);
         dbDelta($events_sql);
         dbDelta($metrics_sql);
+        
+        // Run migration for existing tables
+        $this->migrate_analytics_tables();
+    }
+    
+    /**
+     * Migrate analytics tables to add new columns
+     */
+    private function migrate_analytics_tables() {
+        global $wpdb;
+        
+        $events_table = $wpdb->prefix . self::EVENTS_TABLE;
+        $analytics_table = $wpdb->prefix . self::ANALYTICS_TABLE;
+        
+        // Check if button_click column exists in events table
+        $button_click_exists = $wpdb->get_results($wpdb->prepare("
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = %s 
+            AND TABLE_NAME = %s 
+            AND COLUMN_NAME = 'button_click'
+        ", DB_NAME, $events_table));
+        
+        if (empty($button_click_exists)) {
+            $wpdb->query("ALTER TABLE $events_table ADD COLUMN button_click tinyint(1) DEFAULT 0");
+            $wpdb->query("ALTER TABLE $events_table ADD INDEX idx_button_click (button_click)");
+        }
+        
+        // Check if source_product_id column exists in events table
+        $source_product_exists = $wpdb->get_results($wpdb->prepare("
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = %s 
+            AND TABLE_NAME = %s 
+            AND COLUMN_NAME = 'source_product_id'
+        ", DB_NAME, $events_table));
+        
+        if (empty($source_product_exists)) {
+            $wpdb->query("ALTER TABLE $events_table ADD COLUMN source_product_id bigint(20) DEFAULT NULL");
+            $wpdb->query("ALTER TABLE $events_table ADD INDEX idx_source_product (source_product_id)");
+        }
+        
+        // Check if button_clicks column exists in analytics table
+        $button_clicks_col_exists = $wpdb->get_results($wpdb->prepare("
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = %s 
+            AND TABLE_NAME = %s 
+            AND COLUMN_NAME = 'button_clicks'
+        ", DB_NAME, $analytics_table));
+        
+        if (empty($button_clicks_col_exists)) {
+            $wpdb->query("ALTER TABLE $analytics_table ADD COLUMN button_clicks int(11) DEFAULT 0");
+        }
+        
+        // Check if button_conversions column exists in analytics table
+        $button_conversions_col_exists = $wpdb->get_results($wpdb->prepare("
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = %s 
+            AND TABLE_NAME = %s 
+            AND COLUMN_NAME = 'button_conversions'
+        ", DB_NAME, $analytics_table));
+        
+        if (empty($button_conversions_col_exists)) {
+            $wpdb->query("ALTER TABLE $analytics_table ADD COLUMN button_conversions int(11) DEFAULT 0");
+        }
     }
     
     /**
@@ -149,6 +224,12 @@ class AI_Virtual_Fitting_Analytics_Manager {
         
         $events_table = $wpdb->prefix . self::EVENTS_TABLE;
         
+        // Determine if this is a button click event
+        $is_button_click = ($event_type === 'button_click' || $event_type === 'button_conversion') ? 1 : 0;
+        
+        // Extract source product ID if available
+        $source_product_id = isset($event_data['product_id']) ? (int) $event_data['product_id'] : null;
+        
         $data = array(
             'user_id' => $user_id,
             'event_type' => $event_type,
@@ -158,6 +239,8 @@ class AI_Virtual_Fitting_Analytics_Manager {
             'error_message' => $error_message,
             'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '',
             'ip_address' => $this->get_client_ip(),
+            'button_click' => $is_button_click,
+            'source_product_id' => $source_product_id,
             'created_at' => current_time('mysql')
         );
         
@@ -264,6 +347,14 @@ class AI_Virtual_Fitting_Analytics_Manager {
                 
             case 'credit_used':
                 $updates['credits_used'] = $existing->credits_used + 1;
+                break;
+                
+            case 'button_click':
+                $updates['button_clicks'] = $existing->button_clicks + 1;
+                break;
+                
+            case 'button_conversion':
+                $updates['button_conversions'] = $existing->button_conversions + 1;
                 break;
         }
         
@@ -536,6 +627,241 @@ class AI_Virtual_Fitting_Analytics_Manager {
     }
     
     /**
+     * Log button click event
+     *
+     * @param int $product_id Product ID
+     * @param int $user_id User ID (optional)
+     * @return bool Success status
+     */
+    public function log_button_click($product_id, $user_id = null) {
+        if (!AI_Virtual_Fitting_Core::get_option('enable_analytics', true)) {
+            return false;
+        }
+        
+        $event_data = array(
+            'product_id' => $product_id,
+            'source' => 'tryon_button'
+        );
+        
+        $this->track_event('button_click', $event_data, $user_id);
+        
+        return true;
+    }
+    
+    /**
+     * Track button-to-fitting conversion
+     *
+     * @param int $product_id Product ID
+     * @param int $user_id User ID
+     * @return bool Success status
+     */
+    public function track_conversion($product_id, $user_id) {
+        global $wpdb;
+        
+        if (!AI_Virtual_Fitting_Core::get_option('enable_analytics', true)) {
+            return false;
+        }
+        
+        $events_table = $wpdb->prefix . self::EVENTS_TABLE;
+        
+        // Find the most recent button click for this product and user
+        $button_click = $wpdb->get_row($wpdb->prepare("
+            SELECT id, created_at 
+            FROM $events_table 
+            WHERE event_type = 'button_click' 
+            AND user_id = %d 
+            AND JSON_EXTRACT(event_data, '$.product_id') = %d
+            ORDER BY created_at DESC 
+            LIMIT 1
+        ", $user_id, $product_id));
+        
+        if ($button_click) {
+            // Track conversion event
+            $event_data = array(
+                'product_id' => $product_id,
+                'button_click_id' => $button_click->id,
+                'time_to_conversion' => strtotime(current_time('mysql')) - strtotime($button_click->created_at)
+            );
+            
+            $this->track_event('button_conversion', $event_data, $user_id);
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Get button click statistics
+     *
+     * @param array $date_range Optional date range array with 'start' and 'end' keys
+     * @return array Button statistics
+     */
+    public function get_button_stats($date_range = null) {
+        global $wpdb;
+        
+        $events_table = $wpdb->prefix . self::EVENTS_TABLE;
+        
+        // Set default date range (last 30 days)
+        if (!$date_range) {
+            $date_range = array(
+                'start' => date('Y-m-d H:i:s', strtotime('-30 days')),
+                'end' => current_time('mysql')
+            );
+        }
+        
+        // Get total button clicks
+        $total_clicks = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) 
+            FROM $events_table 
+            WHERE event_type = 'button_click' 
+            AND created_at BETWEEN %s AND %s
+        ", $date_range['start'], $date_range['end']));
+        
+        // Get total conversions
+        $total_conversions = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) 
+            FROM $events_table 
+            WHERE event_type = 'button_conversion' 
+            AND created_at BETWEEN %s AND %s
+        ", $date_range['start'], $date_range['end']));
+        
+        // Calculate conversion rate
+        $conversion_rate = $total_clicks > 0 ? ($total_conversions / $total_clicks) * 100 : 0;
+        
+        // Get clicks by product
+        $clicks_by_product = $wpdb->get_results($wpdb->prepare("
+            SELECT 
+                JSON_EXTRACT(event_data, '$.product_id') as product_id,
+                COUNT(*) as click_count
+            FROM $events_table 
+            WHERE event_type = 'button_click' 
+            AND created_at BETWEEN %s AND %s
+            GROUP BY JSON_EXTRACT(event_data, '$.product_id')
+            ORDER BY click_count DESC
+        ", $date_range['start'], $date_range['end']));
+        
+        // Get daily breakdown
+        $daily_clicks = $wpdb->get_results($wpdb->prepare("
+            SELECT 
+                DATE(created_at) as date,
+                COUNT(*) as clicks
+            FROM $events_table 
+            WHERE event_type = 'button_click' 
+            AND created_at BETWEEN %s AND %s
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC
+        ", $date_range['start'], $date_range['end']));
+        
+        return array(
+            'total_clicks' => (int) $total_clicks,
+            'total_conversions' => (int) $total_conversions,
+            'conversion_rate' => round($conversion_rate, 2),
+            'clicks_by_product' => $clicks_by_product,
+            'daily_clicks' => $daily_clicks,
+            'date_range' => $date_range
+        );
+    }
+    
+    /**
+     * Get most popular products (by button clicks)
+     *
+     * @param int $limit Number of products to return
+     * @param array $date_range Optional date range
+     * @return array Popular products
+     */
+    public function get_popular_products($limit = 10, $date_range = null) {
+        global $wpdb;
+        
+        $events_table = $wpdb->prefix . self::EVENTS_TABLE;
+        
+        // Set default date range (last 30 days)
+        if (!$date_range) {
+            $date_range = array(
+                'start' => date('Y-m-d H:i:s', strtotime('-30 days')),
+                'end' => current_time('mysql')
+            );
+        }
+        
+        // Get products with click counts
+        $products = $wpdb->get_results($wpdb->prepare("
+            SELECT 
+                JSON_EXTRACT(event_data, '$.product_id') as product_id,
+                COUNT(*) as click_count,
+                COUNT(DISTINCT user_id) as unique_users
+            FROM $events_table 
+            WHERE event_type = 'button_click' 
+            AND created_at BETWEEN %s AND %s
+            AND JSON_EXTRACT(event_data, '$.product_id') IS NOT NULL
+            GROUP BY JSON_EXTRACT(event_data, '$.product_id')
+            ORDER BY click_count DESC
+            LIMIT %d
+        ", $date_range['start'], $date_range['end'], $limit));
+        
+        // Enrich with product data
+        $popular_products = array();
+        foreach ($products as $product) {
+            $product_id = (int) str_replace('"', '', $product->product_id);
+            $wc_product = wc_get_product($product_id);
+            
+            if ($wc_product) {
+                $popular_products[] = array(
+                    'product_id' => $product_id,
+                    'product_name' => $wc_product->get_name(),
+                    'product_url' => get_permalink($product_id),
+                    'click_count' => (int) $product->click_count,
+                    'unique_users' => (int) $product->unique_users
+                );
+            }
+        }
+        
+        return $popular_products;
+    }
+    
+    /**
+     * Calculate conversion rate for button clicks
+     *
+     * @param array $date_range Optional date range
+     * @return float Conversion rate percentage
+     */
+    public function calculate_conversion_rate($date_range = null) {
+        global $wpdb;
+        
+        $events_table = $wpdb->prefix . self::EVENTS_TABLE;
+        
+        // Set default date range (last 30 days)
+        if (!$date_range) {
+            $date_range = array(
+                'start' => date('Y-m-d H:i:s', strtotime('-30 days')),
+                'end' => current_time('mysql')
+            );
+        }
+        
+        // Get total button clicks
+        $total_clicks = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) 
+            FROM $events_table 
+            WHERE event_type = 'button_click' 
+            AND created_at BETWEEN %s AND %s
+        ", $date_range['start'], $date_range['end']));
+        
+        // Get total conversions
+        $total_conversions = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) 
+            FROM $events_table 
+            WHERE event_type = 'button_conversion' 
+            AND created_at BETWEEN %s AND %s
+        ", $date_range['start'], $date_range['end']));
+        
+        // Calculate conversion rate
+        if ($total_clicks > 0) {
+            return round(($total_conversions / $total_clicks) * 100, 2);
+        }
+        
+        return 0.0;
+    }
+    
+    /**
      * Track frontend metrics via AJAX
      */
     public function track_frontend_metrics() {
@@ -566,6 +892,41 @@ class AI_Virtual_Fitting_Analytics_Manager {
         $this->track_event('frontend_metrics', $metrics, $user_id);
         
         wp_send_json_success(array('message' => 'Metrics tracked successfully'));
+    }
+    
+    /**
+     * AJAX handler for logging button clicks
+     */
+    public function ajax_log_button_click() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_tryon_nonce')) {
+            wp_send_json_error(array('message' => 'Security check failed'));
+            return;
+        }
+        
+        // Get product ID
+        $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+        
+        if ($product_id <= 0) {
+            wp_send_json_error(array('message' => 'Invalid product ID'));
+            return;
+        }
+        
+        // Get user ID (may be null for non-logged-in users)
+        $user_id = is_user_logged_in() ? get_current_user_id() : null;
+        
+        // Log the button click
+        $result = $this->log_button_click($product_id, $user_id);
+        
+        if ($result) {
+            wp_send_json_success(array(
+                'message' => 'Button click logged successfully',
+                'product_id' => $product_id,
+                'user_id' => $user_id
+            ));
+        } else {
+            wp_send_json_error(array('message' => 'Failed to log button click'));
+        }
     }
     
     /**

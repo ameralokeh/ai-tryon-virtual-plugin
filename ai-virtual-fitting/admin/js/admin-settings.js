@@ -38,6 +38,10 @@
             // Refresh analytics button
             $('#refresh-analytics').on('click', this.loadAnalytics);
             
+            // Refresh button statistics
+            $('#refresh-button-stats').on('click', this.loadButtonStats);
+            $('#button-stats-date-range').on('change', this.loadButtonStats);
+            
             // User credit management - support both original and -tab suffixed IDs
             $('#refresh-user-credits, #refresh-user-credits-tab').on('click', this.loadUserCredits);
             $('#search-users, #search-users-tab').on('click', this.searchUsers);
@@ -188,6 +192,81 @@
             setTimeout(function() {
                 $indicator.text('Saved').fadeOut(2000);
             }, 500);
+        },
+        
+        /**
+         * Load button statistics
+         */
+        loadButtonStats: function() {
+            var $container = $('.ai-virtual-fitting-analytics');
+            var $button = $('#refresh-button-stats');
+            var dateRange = $('#button-stats-date-range').val() || 30;
+            
+            // Show loading state
+            if ($button.length) {
+                $button.prop('disabled', true).text('Loading...');
+            }
+            
+            // Show loading in table
+            $('#popular-products-tbody').html('<tr><td colspan="3" style="text-align: center; padding: 20px;">Loading statistics...</td></tr>');
+            
+            $.ajax({
+                url: ai_virtual_fitting_admin.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'ai_virtual_fitting_get_tryon_button_stats',
+                    nonce: ai_virtual_fitting_admin.nonce,
+                    date_range: dateRange
+                },
+                success: function(response) {
+                    if (response.success) {
+                        AIVirtualFittingAdmin.updateButtonStats(response.data);
+                    } else {
+                        console.error('Failed to load button statistics:', response.data);
+                        AIVirtualFittingAdmin.showNotification('Failed to load button statistics', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Button statistics request failed:', error);
+                    AIVirtualFittingAdmin.showNotification('Failed to load button statistics', 'error');
+                },
+                complete: function() {
+                    if ($button.length) {
+                        $button.prop('disabled', false).text('Refresh');
+                    }
+                }
+            });
+        },
+        
+        /**
+         * Update button statistics display
+         */
+        updateButtonStats: function(data) {
+            // Update metric cards
+            $('#metric-button-clicks .metric').text(data.total_clicks || 0);
+            $('#metric-button-conversions .metric').text(data.total_conversions || 0);
+            $('#metric-conversion-rate .metric').text((data.conversion_rate || 0) + '%');
+            
+            // Update popular products table
+            var tbody = $('#popular-products-tbody');
+            tbody.empty();
+            
+            if (!data.popular_products || data.popular_products.length === 0) {
+                tbody.html('<tr><td colspan="3" style="text-align: center; padding: 20px;">No data available for the selected period</td></tr>');
+            } else {
+                data.popular_products.forEach(function(product) {
+                    var row = '<tr>' +
+                        '<td><a href="' + product.product_url + '" target="_blank">' + product.product_name + '</a></td>' +
+                        '<td>' + product.click_count + '</td>' +
+                        '<td>' + product.unique_users + '</td>' +
+                    '</tr>';
+                    tbody.append(row);
+                });
+            }
+            
+            // Update last updated timestamp
+            var now = new Date();
+            $('.button-stats-last-updated').text('Last updated: ' + now.toLocaleString());
         },
         
         /**

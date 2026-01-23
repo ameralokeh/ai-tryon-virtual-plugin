@@ -111,8 +111,19 @@
             success: function(response) {
                 if (response.success) {
                     showMessage('Login successful! Redirecting...', 'success');
+                    
+                    // Check if there's a stored redirect URL
+                    let redirectUrl = window.location.href;
+                    if (typeof sessionStorage !== 'undefined') {
+                        const storedUrl = sessionStorage.getItem('ai_vf_redirect_after_login');
+                        if (storedUrl) {
+                            redirectUrl = decodeURIComponent(storedUrl);
+                            sessionStorage.removeItem('ai_vf_redirect_after_login');
+                        }
+                    }
+                    
                     setTimeout(function() {
-                        window.location.reload();
+                        window.location.href = redirectUrl;
                     }, 1000);
                 } else {
                     showMessage(response.data.message || 'Login failed. Please try again.', 'error');

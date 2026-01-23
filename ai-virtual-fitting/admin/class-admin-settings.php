@@ -43,6 +43,7 @@ class AI_Virtual_Fitting_Admin_Settings {
         add_action('wp_ajax_ai_virtual_fitting_get_analytics', array($this, 'get_analytics_data'));
         add_action('wp_ajax_ai_virtual_fitting_get_user_credits', array($this, 'get_user_credits'));
         add_action('wp_ajax_ai_virtual_fitting_update_user_credits', array($this, 'update_user_credits'));
+        add_action('wp_ajax_ai_virtual_fitting_get_tryon_button_stats', array($this, 'get_tryon_button_stats'));
     }
     
     /**
@@ -265,6 +266,57 @@ class AI_Virtual_Fitting_Admin_Settings {
             )
         );
         
+        // Virtual Try-On Button Settings
+        register_setting(
+            self::SETTINGS_GROUP,
+            'ai_virtual_fitting_tryon_button_enabled',
+            array(
+                'type' => 'boolean',
+                'sanitize_callback' => array($this, 'sanitize_boolean'),
+                'default' => true
+            )
+        );
+        
+        register_setting(
+            self::SETTINGS_GROUP,
+            'ai_virtual_fitting_tryon_button_page_id',
+            array(
+                'type' => 'integer',
+                'sanitize_callback' => array($this, 'sanitize_page_id'),
+                'default' => 0
+            )
+        );
+        
+        register_setting(
+            self::SETTINGS_GROUP,
+            'ai_virtual_fitting_tryon_button_text',
+            array(
+                'type' => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
+                'default' => __('Try on Virtually', 'ai-virtual-fitting')
+            )
+        );
+        
+        register_setting(
+            self::SETTINGS_GROUP,
+            'ai_virtual_fitting_tryon_button_show_icon',
+            array(
+                'type' => 'boolean',
+                'sanitize_callback' => array($this, 'sanitize_boolean'),
+                'default' => true
+            )
+        );
+        
+        register_setting(
+            self::SETTINGS_GROUP,
+            'ai_virtual_fitting_tryon_button_categories',
+            array(
+                'type' => 'array',
+                'sanitize_callback' => array($this, 'sanitize_categories'),
+                'default' => array()
+            )
+        );
+        
         // Add settings sections
         add_settings_section(
             'ai_virtual_fitting_api_section',
@@ -305,6 +357,13 @@ class AI_Virtual_Fitting_Admin_Settings {
             'ai_virtual_fitting_help_section',
             __('Help & Documentation', 'ai-virtual-fitting'),
             array($this, 'render_help_section_description'),
+            self::PAGE_SLUG
+        );
+        
+        add_settings_section(
+            'ai_virtual_fitting_tryon_button_section',
+            __('Virtual Try-On Button', 'ai-virtual-fitting'),
+            array($this, 'render_tryon_button_section_description'),
             self::PAGE_SLUG
         );
         
@@ -455,6 +514,47 @@ class AI_Virtual_Fitting_Admin_Settings {
             self::PAGE_SLUG,
             'ai_virtual_fitting_advanced_section'
         );
+        
+        // Virtual Try-On Button fields
+        add_settings_field(
+            'tryon_button_enabled',
+            __('Enable Try-On Button', 'ai-virtual-fitting'),
+            array($this, 'render_tryon_button_enabled_field'),
+            self::PAGE_SLUG,
+            'ai_virtual_fitting_tryon_button_section'
+        );
+        
+        add_settings_field(
+            'tryon_button_page_id',
+            __('Virtual Fitting Page', 'ai-virtual-fitting'),
+            array($this, 'render_tryon_button_page_id_field'),
+            self::PAGE_SLUG,
+            'ai_virtual_fitting_tryon_button_section'
+        );
+        
+        add_settings_field(
+            'tryon_button_text',
+            __('Button Text', 'ai-virtual-fitting'),
+            array($this, 'render_tryon_button_text_field'),
+            self::PAGE_SLUG,
+            'ai_virtual_fitting_tryon_button_section'
+        );
+        
+        add_settings_field(
+            'tryon_button_show_icon',
+            __('Show Icon', 'ai-virtual-fitting'),
+            array($this, 'render_tryon_button_show_icon_field'),
+            self::PAGE_SLUG,
+            'ai_virtual_fitting_tryon_button_section'
+        );
+        
+        add_settings_field(
+            'tryon_button_categories',
+            __('Allowed Categories', 'ai-virtual-fitting'),
+            array($this, 'render_tryon_button_categories_field'),
+            self::PAGE_SLUG,
+            'ai_virtual_fitting_tryon_button_section'
+        );
     }
     
     /**
@@ -545,6 +645,10 @@ class AI_Virtual_Fitting_Admin_Settings {
     
     public function render_help_section_description() {
         echo '<p>' . __('Documentation, troubleshooting guides, and system requirements.', 'ai-virtual-fitting') . '</p>';
+    }
+    
+    public function render_tryon_button_section_description() {
+        echo '<p>' . __('Configure the "Try on Virtually" button that appears on product pages.', 'ai-virtual-fitting') . '</p>';
     }
     
     /**
@@ -1095,6 +1199,163 @@ class AI_Virtual_Fitting_Admin_Settings {
         <?php
     }
     
+    public function render_tryon_button_enabled_field() {
+        $value = get_option('ai_virtual_fitting_tryon_button_enabled', true);
+        ?>
+        <label>
+            <input type="checkbox" 
+                   id="tryon_button_enabled" 
+                   name="ai_virtual_fitting_tryon_button_enabled" 
+                   value="1" 
+                   <?php checked($value, true); ?> />
+            <?php _e('Display "Try on Virtually" button on product pages', 'ai-virtual-fitting'); ?>
+        </label>
+        <p class="description">
+            <?php _e('When enabled, a button will appear on eligible product pages to redirect customers to the virtual fitting page.', 'ai-virtual-fitting'); ?>
+        </p>
+        <?php
+    }
+    
+    public function render_tryon_button_page_id_field() {
+        $value = get_option('ai_virtual_fitting_tryon_button_page_id', 0);
+        
+        // Get all pages for dropdown
+        $pages = get_pages(array(
+            'sort_column' => 'post_title',
+            'sort_order' => 'ASC'
+        ));
+        ?>
+        <select id="tryon_button_page_id" 
+                name="ai_virtual_fitting_tryon_button_page_id" 
+                class="regular-text">
+            <option value="0"><?php _e('-- Select a page --', 'ai-virtual-fitting'); ?></option>
+            <?php foreach ($pages as $page): ?>
+            <option value="<?php echo esc_attr($page->ID); ?>" <?php selected($value, $page->ID); ?>>
+                <?php echo esc_html($page->post_title); ?>
+            </option>
+            <?php endforeach; ?>
+        </select>
+        <span class="help-tooltip" 
+              title="<?php esc_attr_e('Select the page where customers will be redirected when they click the Try-On button. This should be your Virtual Fitting page.', 'ai-virtual-fitting'); ?>"
+              style="display: inline-block; width: 18px; height: 18px; background: #0073aa; color: white; border-radius: 50%; text-align: center; line-height: 18px; font-size: 12px; font-weight: bold; margin-left: 8px; cursor: help; vertical-align: middle;">?</span>
+        <p class="description">
+            <?php _e('Select the page where the virtual fitting interface is located. The button will redirect customers to this page.', 'ai-virtual-fitting'); ?>
+        </p>
+        <?php
+    }
+    
+    public function render_tryon_button_text_field() {
+        $value = get_option('ai_virtual_fitting_tryon_button_text', __('Try on Virtually', 'ai-virtual-fitting'));
+        ?>
+        <input type="text" 
+               id="tryon_button_text" 
+               name="ai_virtual_fitting_tryon_button_text" 
+               value="<?php echo esc_attr($value); ?>" 
+               class="regular-text" 
+               maxlength="50"
+               placeholder="<?php esc_attr_e('Try on Virtually', 'ai-virtual-fitting'); ?>" />
+        <span class="help-tooltip" 
+              title="<?php esc_attr_e('Customize the text displayed on the Try-On button. Keep it short and action-oriented.', 'ai-virtual-fitting'); ?>"
+              style="display: inline-block; width: 18px; height: 18px; background: #0073aa; color: white; border-radius: 50%; text-align: center; line-height: 18px; font-size: 12px; font-weight: bold; margin-left: 8px; cursor: help; vertical-align: middle;">?</span>
+        <p class="description">
+            <?php _e('Customize the button text (max 50 characters). Default: "Try on Virtually"', 'ai-virtual-fitting'); ?>
+        </p>
+        <?php
+    }
+    
+    public function render_tryon_button_show_icon_field() {
+        $value = get_option('ai_virtual_fitting_tryon_button_show_icon', true);
+        ?>
+        <label>
+            <input type="checkbox" 
+                   id="tryon_button_show_icon" 
+                   name="ai_virtual_fitting_tryon_button_show_icon" 
+                   value="1" 
+                   <?php checked($value, true); ?> />
+            <?php _e('Display icon on button', 'ai-virtual-fitting'); ?>
+        </label>
+        <p class="description">
+            <?php _e('Show a camera icon next to the button text for better visual appeal.', 'ai-virtual-fitting'); ?>
+        </p>
+        <?php
+    }
+    
+    public function render_tryon_button_categories_field() {
+        $selected_categories = get_option('ai_virtual_fitting_tryon_button_categories', array());
+        
+        // Get all product categories
+        $categories = get_terms(array(
+            'taxonomy' => 'product_cat',
+            'hide_empty' => false,
+            'orderby' => 'name',
+            'order' => 'ASC'
+        ));
+        
+        if (is_wp_error($categories) || empty($categories)) {
+            ?>
+            <p class="description">
+                <?php _e('No product categories found. Create product categories in WooCommerce first.', 'ai-virtual-fitting'); ?>
+            </p>
+            <?php
+            return;
+        }
+        ?>
+        <fieldset>
+            <label style="display: block; margin-bottom: 10px;">
+                <input type="checkbox" 
+                       id="tryon_button_all_categories" 
+                       value="all" />
+                <strong><?php _e('All Categories (Show button on all products)', 'ai-virtual-fitting'); ?></strong>
+            </label>
+            <div id="category-checkboxes" style="margin-left: 20px;">
+                <?php foreach ($categories as $category): ?>
+                <label style="display: block; margin-bottom: 5px;">
+                    <input type="checkbox" 
+                           name="ai_virtual_fitting_tryon_button_categories[]" 
+                           value="<?php echo esc_attr($category->term_id); ?>"
+                           class="category-checkbox"
+                           <?php checked(in_array($category->term_id, $selected_categories)); ?> />
+                    <?php echo esc_html($category->name); ?>
+                    <span class="description">(<?php echo esc_html($category->count); ?> <?php _e('products', 'ai-virtual-fitting'); ?>)</span>
+                </label>
+                <?php endforeach; ?>
+            </div>
+        </fieldset>
+        <span class="help-tooltip" 
+              title="<?php esc_attr_e('Select which product categories should display the Try-On button. Leave empty to show on all products.', 'ai-virtual-fitting'); ?>"
+              style="display: inline-block; width: 18px; height: 18px; background: #0073aa; color: white; border-radius: 50%; text-align: center; line-height: 18px; font-size: 12px; font-weight: bold; margin-left: 8px; cursor: help; vertical-align: top;">?</span>
+        <p class="description">
+            <?php _e('Select categories where the button should appear. If no categories are selected, the button will appear on all products.', 'ai-virtual-fitting'); ?>
+        </p>
+        
+        <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            var $allCategoriesCheckbox = $('#tryon_button_all_categories');
+            var $categoryCheckboxes = $('.category-checkbox');
+            
+            // Check if all categories are selected
+            function updateAllCategoriesCheckbox() {
+                var allChecked = $categoryCheckboxes.length === $categoryCheckboxes.filter(':checked').length;
+                $allCategoriesCheckbox.prop('checked', allChecked);
+            }
+            
+            // Initial state
+            updateAllCategoriesCheckbox();
+            
+            // Handle "All Categories" checkbox
+            $allCategoriesCheckbox.change(function() {
+                $categoryCheckboxes.prop('checked', $(this).is(':checked'));
+            });
+            
+            // Handle individual category checkboxes
+            $categoryCheckboxes.change(function() {
+                updateAllCategoriesCheckbox();
+            });
+        });
+        </script>
+        <?php
+    }
+    
     /**
      * Sanitization callbacks
      */
@@ -1283,6 +1544,50 @@ class AI_Virtual_Fitting_Admin_Settings {
         // Ensure at least administrator role is always included
         if (!in_array('administrator', $sanitized)) {
             $sanitized[] = 'administrator';
+        }
+        
+        return $sanitized;
+    }
+    
+    public function sanitize_page_id($value) {
+        $value = intval($value);
+        
+        // If 0, return 0 (no page selected)
+        if ($value === 0) {
+            return 0;
+        }
+        
+        // Validate that the page exists
+        $page = get_post($value);
+        
+        if (!$page || $page->post_type !== 'page' || $page->post_status !== 'publish') {
+            add_settings_error(
+                'ai_virtual_fitting_tryon_button_page_id',
+                'invalid_page_id',
+                __('The selected page does not exist or is not published. Please choose a valid page.', 'ai-virtual-fitting')
+            );
+            return get_option('ai_virtual_fitting_tryon_button_page_id', 0);
+        }
+        
+        return $value;
+    }
+    
+    public function sanitize_categories($value) {
+        if (!is_array($value)) {
+            return array();
+        }
+        
+        $sanitized = array();
+        
+        foreach ($value as $category_id) {
+            $category_id = intval($category_id);
+            
+            // Validate that the category exists
+            $term = get_term($category_id, 'product_cat');
+            
+            if ($term && !is_wp_error($term)) {
+                $sanitized[] = $category_id;
+            }
         }
         
         return $sanitized;
@@ -1698,6 +2003,63 @@ class AI_Virtual_Fitting_Admin_Settings {
             </div>
         </div>
         <?php
+    }
+    
+    /**
+     * Get Try-On button statistics via AJAX
+     */
+    public function get_tryon_button_stats() {
+        check_ajax_referer('ai_virtual_fitting_admin_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Insufficient permissions.', 'ai-virtual-fitting')));
+            return;
+        }
+        
+        $date_range_days = intval($_POST['date_range'] ?? 30);
+        
+        // Calculate date range
+        $date_range = array(
+            'start' => date('Y-m-d H:i:s', strtotime("-{$date_range_days} days")),
+            'end' => current_time('mysql')
+        );
+        
+        // Get analytics manager
+        $analytics_manager = null;
+        if (class_exists('AI_Virtual_Fitting_Core')) {
+            try {
+                $core = AI_Virtual_Fitting_Core::instance();
+                if (method_exists($core, 'get_analytics_manager')) {
+                    $analytics_manager = $core->get_analytics_manager();
+                }
+            } catch (Exception $e) {
+                error_log('AI Virtual Fitting: Failed to get analytics manager - ' . $e->getMessage());
+            }
+        }
+        
+        // If analytics manager is available, use it
+        if ($analytics_manager && method_exists($analytics_manager, 'get_button_stats')) {
+            $stats = $analytics_manager->get_button_stats($date_range);
+            
+            // Get popular products
+            $popular_products = array();
+            if (method_exists($analytics_manager, 'get_popular_products')) {
+                $popular_products = $analytics_manager->get_popular_products(10, $date_range);
+            }
+            
+            $stats['popular_products'] = $popular_products;
+            
+            wp_send_json_success($stats);
+        } else {
+            // Fallback: return empty stats
+            wp_send_json_success(array(
+                'total_clicks' => 0,
+                'total_conversions' => 0,
+                'conversion_rate' => 0,
+                'popular_products' => array(),
+                'date_range' => $date_range
+            ));
+        }
     }
     
     /**
