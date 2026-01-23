@@ -1,0 +1,355 @@
+/**
+ * Virtual Try-On Button Styles
+ * 
+ * Provides styling for the "Try on Virtually" button that appears on
+ * WooCommerce product pages.
+ *
+ * @package AI_Virtual_Fitting
+ */
+
+/* Screen Reader Only - Accessibility */
+.ai-virtual-fitting-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Button Wrapper */
+.ai-virtual-fitting-tryon-button-wrapper {
+    margin-top: 20px;
+    margin-bottom: 16px;
+}
+
+/* Main Button Styles */
+.ai-virtual-fitting-tryon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    /* Gradient with sufficient contrast ratio (4.5:1 minimum for WCAG AA) */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.5;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+    /* Ensure minimum touch target size (44x44px for WCAG 2.1 AA) */
+    min-height: 44px;
+}
+
+/* Hover State */
+.ai-virtual-fitting-tryon-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+    text-decoration: none;
+    color: #ffffff;
+}
+
+/* Active/Pressed State */
+.ai-virtual-fitting-tryon-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+/* Focus State (Accessibility - WCAG 2.1 AA compliant) */
+.ai-virtual-fitting-tryon-button:focus {
+    outline: 3px solid #ffd700;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+}
+
+/* Focus Visible (Modern Browsers) */
+.ai-virtual-fitting-tryon-button:focus-visible {
+    outline: 3px solid #ffd700;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+}
+
+/* Remove default focus outline for mouse users */
+.ai-virtual-fitting-tryon-button:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
+}
+
+/* Icon Styles */
+.ai-virtual-fitting-tryon-button-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* Button Text */
+.ai-virtual-fitting-tryon-button-text {
+    flex: 1;
+}
+
+/* Disabled State */
+.ai-virtual-fitting-tryon-button:disabled,
+.ai-virtual-fitting-tryon-button.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.ai-virtual-fitting-tryon-button:disabled:hover,
+.ai-virtual-fitting-tryon-button.disabled:hover {
+    transform: none;
+    box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
+}
+
+/* Loading State */
+.ai-virtual-fitting-tryon-button.loading {
+    position: relative;
+    color: transparent;
+    pointer-events: none;
+}
+
+.ai-virtual-fitting-tryon-button.loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #ffffff;
+    animation: ai-virtual-fitting-spin 0.8s linear infinite;
+}
+
+@keyframes ai-virtual-fitting-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Design - Mobile */
+@media (max-width: 768px) {
+    .ai-virtual-fitting-tryon-button {
+        font-size: 15px;
+        padding: 12px 20px;
+        /* Maintain minimum touch target size on mobile */
+        min-height: 44px;
+    }
+    
+    .ai-virtual-fitting-tryon-button-icon {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Responsive Design - Small Mobile */
+@media (max-width: 480px) {
+    .ai-virtual-fitting-tryon-button {
+        font-size: 14px;
+        padding: 12px 16px;
+        /* Maintain minimum touch target size on small mobile */
+        min-height: 44px;
+    }
+    
+    .ai-virtual-fitting-tryon-button-wrapper {
+        margin-top: 12px;
+        margin-bottom: 12px;
+    }
+}
+
+/* High Contrast Mode Support (Accessibility) */
+@media (prefers-contrast: high) {
+    .ai-virtual-fitting-tryon-button {
+        border: 2px solid #ffffff;
+    }
+    
+    .ai-virtual-fitting-tryon-button:focus {
+        outline: 4px solid #ffffff;
+    }
+}
+
+/* Reduced Motion Support (Accessibility) */
+@media (prefers-reduced-motion: reduce) {
+    .ai-virtual-fitting-tryon-button {
+        transition: none;
+    }
+    
+    .ai-virtual-fitting-tryon-button:hover {
+        transform: none;
+    }
+    
+    .ai-virtual-fitting-tryon-button.loading::after {
+        animation: none;
+        border-top-color: rgba(255, 255, 255, 0.3);
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .ai-virtual-fitting-tryon-button {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    
+    .ai-virtual-fitting-tryon-button:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    }
+}
+
+/* RTL (Right-to-Left) Support */
+[dir="rtl"] .ai-virtual-fitting-tryon-button {
+    flex-direction: row-reverse;
+}
+
+/* Print Styles */
+@media print {
+    .ai-virtual-fitting-tryon-button-wrapper {
+        display: none;
+    }
+}
+
+/* Theme Compatibility - Override common theme button styles */
+.woocommerce .ai-virtual-fitting-tryon-button,
+.woocommerce-page .ai-virtual-fitting-tryon-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-family: inherit;
+}
+
+.woocommerce .ai-virtual-fitting-tryon-button:hover,
+.woocommerce-page .ai-virtual-fitting-tryon-button:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #653a8b 100%) !important;
+    color: #ffffff !important;
+}
+
+/* Ensure button doesn't inherit unwanted WooCommerce styles */
+.woocommerce .ai-virtual-fitting-tryon-button::before,
+.woocommerce-page .ai-virtual-fitting-tryon-button::before,
+.woocommerce .ai-virtual-fitting-tryon-button::after,
+.woocommerce-page .ai-virtual-fitting-tryon-button::after {
+    display: none !important;
+}
+
+/* Storefront Theme Compatibility */
+.storefront .ai-virtual-fitting-tryon-button,
+.storefront-theme .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* Astra Theme Compatibility */
+.ast-container .ai-virtual-fitting-tryon-button,
+.astra-theme .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* OceanWP Theme Compatibility */
+.oceanwp-theme .ai-virtual-fitting-tryon-button,
+body.oceanwp .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* Flatsome Theme Compatibility */
+.flatsome-theme .ai-virtual-fitting-tryon-button,
+body.flatsome .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* Divi Theme Compatibility */
+.et_pb_section .ai-virtual-fitting-tryon-button,
+body.et_divi_builder .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* Avada Theme Compatibility */
+.fusion-body .ai-virtual-fitting-tryon-button,
+body.avada .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* GeneratePress Theme Compatibility */
+.generate-columns-container .ai-virtual-fitting-tryon-button,
+body.generatepress .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* Kadence Theme Compatibility */
+.kadence-theme .ai-virtual-fitting-tryon-button,
+body.kadence .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* Elementor Page Builder Compatibility */
+.elementor-widget-container .ai-virtual-fitting-tryon-button,
+.elementor-element .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+    width: 100%;
+}
+
+/* Gutenberg Block Editor Compatibility */
+.wp-block-woocommerce-single-product .ai-virtual-fitting-tryon-button,
+.wp-block .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* WPBakery Page Builder Compatibility */
+.vc_row .ai-virtual-fitting-tryon-button,
+.wpb_wrapper .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* Beaver Builder Compatibility */
+.fl-builder-content .ai-virtual-fitting-tryon-button,
+.fl-module .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* SiteOrigin Page Builder Compatibility */
+.so-panel .ai-virtual-fitting-tryon-button,
+.siteorigin-panels .ai-virtual-fitting-tryon-button {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
+/* Ensure button works in flex containers */
+.ai-virtual-fitting-tryon-button-wrapper {
+    display: block;
+    width: 100%;
+}
+
+/* Ensure button works in grid containers */
+.woocommerce div.product form.cart .ai-virtual-fitting-tryon-button-wrapper {
+    grid-column: 1 / -1;
+}
+
+/* Override any theme-specific button resets */
+.ai-virtual-fitting-tryon-button {
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
