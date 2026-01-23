@@ -561,9 +561,15 @@ class AI_Virtual_Fitting_Admin_Settings {
      * Enqueue admin scripts and styles
      */
     public function enqueue_admin_scripts($hook) {
-        if ('settings_page_' . self::PAGE_SLUG !== $hook) {
+        error_log('AI Virtual Fitting: enqueue_admin_scripts called with hook: ' . $hook);
+        error_log('AI Virtual Fitting: Expected hook: toplevel_page_' . self::PAGE_SLUG);
+        
+        // Check for both toplevel and settings page hooks
+        if ($hook !== 'toplevel_page_' . self::PAGE_SLUG && $hook !== 'settings_page_' . self::PAGE_SLUG) {
             return;
         }
+        
+        error_log('AI Virtual Fitting: Enqueueing admin scripts');
         
         wp_enqueue_script(
             'ai-virtual-fitting-admin',

@@ -6,6 +6,7 @@
     'use strict';
     
     $(document).ready(function() {
+        console.log('AI Virtual Fitting Admin: Document ready');
         // Initialize admin settings
         AIVirtualFittingAdmin.init();
     });
@@ -19,10 +20,14 @@
          * Initialize admin functionality
          */
         init: function() {
+            console.log('AI Virtual Fitting Admin: init() called');
             this.bindEvents();
             // Don't load analytics or user credits on init - only when tabs are clicked
             this.initSystemStatus();
             this.initTabSwitching();
+            // Auto-load button statistics on page load
+            console.log('AI Virtual Fitting Admin: About to call loadButtonStats()');
+            this.loadButtonStats();
         },
         
         /**
@@ -198,9 +203,14 @@
          * Load button statistics
          */
         loadButtonStats: function() {
+            console.log('loadButtonStats: Function called');
             var $container = $('.ai-virtual-fitting-analytics');
             var $button = $('#refresh-button-stats');
             var dateRange = $('#button-stats-date-range').val() || 30;
+            
+            console.log('loadButtonStats: dateRange =', dateRange);
+            console.log('loadButtonStats: ajax_url =', ai_virtual_fitting_admin.ajax_url);
+            console.log('loadButtonStats: nonce =', ai_virtual_fitting_admin.nonce);
             
             // Show loading state
             if ($button.length) {
@@ -219,6 +229,7 @@
                     date_range: dateRange
                 },
                 success: function(response) {
+                    console.log('AJAX response:', response);
                     if (response.success) {
                         AIVirtualFittingAdmin.updateButtonStats(response.data);
                     } else {
@@ -228,6 +239,7 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('Button statistics request failed:', error);
+                    console.error('XHR:', xhr);
                     AIVirtualFittingAdmin.showNotification('Failed to load button statistics', 'error');
                 },
                 complete: function() {
@@ -242,6 +254,8 @@
          * Update button statistics display
          */
         updateButtonStats: function(data) {
+            console.log('updateButtonStats called with data:', data);
+            
             // Update metric cards
             $('#metric-button-clicks .metric').text(data.total_clicks || 0);
             $('#metric-button-conversions .metric').text(data.total_conversions || 0);
