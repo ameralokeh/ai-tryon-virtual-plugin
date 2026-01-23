@@ -126,16 +126,59 @@ class AI_Virtual_Fitting_Image_Processor {
             return false;
         }
         
-        // Try to decrypt - if it fails, it might be an old unencrypted key
+        // Try to decrypt
         $decrypted = AI_Virtual_Fitting_Security_Manager::decrypt($encrypted_key);
         
         if ($decrypted === false) {
-            // Might be an old unencrypted key, return as-is for backward compatibility
-            // TODO: Remove this fallback after migration period
-            return $encrypted_key;
+            // Security Fix 4: Check if it's an old unencrypted key and migrate it
+            if ($this->looks_like_valid_api_key($encrypted_key)) {
+                // Auto-migrate: encrypt it now
+                $this->migrate_unencrypted_key($encrypted_key);
+                return $encrypted_key;  // Use it this time
+            }
+            
+            // Invalid or corrupted key
+            if (AI_Virtual_Fitting_Core::get_option('enable_logging', true)) {
+                error_log('AI Virtual Fitting: Failed to decrypt API key. Please re-save your settings.');
+            }
+            return false;
         }
         
         return $decrypted;
+    }
+    
+    /**
+     * Check if string looks like a valid Google AI API key
+     * 
+     * @param string $key The key to validate
+     * @return bool True if it looks like a valid API key
+     */
+    private function looks_like_valid_api_key($key) {
+        // Google AI keys start with "AIza" and are 39 characters
+        return preg_match('/^AIza[0-9A-Za-z_-]{35}$/', $key);
+    }
+    
+    /**
+     * Migrate unencrypted key to encrypted storage
+     * 
+     * @param string $plain_key The unencrypted API key
+     * @return bool True if migration succeeded
+     */
+    private function migrate_unencrypted_key($plain_key) {
+        $encrypted = AI_Virtual_Fitting_Security_Manager::encrypt($plain_key);
+        
+        if ($encrypted !== false) {
+            update_option('ai_virtual_fitting_google_ai_api_key', $encrypted);
+            if (AI_Virtual_Fitting_Core::get_option('enable_logging', true)) {
+                error_log('AI Virtual Fitting: Successfully migrated unencrypted API key to encrypted storage.');
+            }
+            return true;
+        } else {
+            if (AI_Virtual_Fitting_Core::get_option('enable_logging', true)) {
+                error_log('AI Virtual Fitting: Failed to migrate unencrypted API key. Manual re-save required.');
+            }
+            return false;
+        }
     }
     
     /**
@@ -367,11 +410,13 @@ class AI_Virtual_Fitting_Image_Processor {
             );
             
             // Make test API request
+            // Security Fix 2: Use header instead of query parameter
             $response = wp_remote_post(
-                $this->get_gemini_text_endpoint() . '?key=' . $api_key,
+                $this->get_gemini_text_endpoint(),
                 array(
                     'headers' => array(
                         'Content-Type' => 'application/json',
+                        'x-goog-api-key' => $api_key,
                     ),
                     'body' => json_encode($request_data),
                     'timeout' => 30,
@@ -631,11 +676,13 @@ class AI_Virtual_Fitting_Image_Processor {
                 }
                 
                 // Make API request to image generation endpoint
+                // Security Fix 2: Use header instead of query parameter
                 $response = wp_remote_post(
-                    $this->get_gemini_image_endpoint() . '?key=' . $api_key,
+                    $this->get_gemini_image_endpoint(),
                     array(
                         'headers' => array(
                             'Content-Type' => 'application/json',
+                            'x-goog-api-key' => $api_key,
                         ),
                         'body' => json_encode($request_data),
                         'timeout' => 120, // Longer timeout for image generation

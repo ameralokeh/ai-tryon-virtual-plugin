@@ -28,6 +28,17 @@
             // Auto-load button statistics on page load
             console.log('AI Virtual Fitting Admin: About to call loadButtonStats()');
             this.loadButtonStats();
+            
+            // Track original API key value for change detection
+            var $apiKeyInput = $('#google_ai_api_key');
+            if ($apiKeyInput.length) {
+                $apiKeyInput.data('original-value', $apiKeyInput.val());
+                
+                // Update original value after successful save
+                $(document).on('settings_saved', function() {
+                    $apiKeyInput.data('original-value', $apiKeyInput.val());
+                });
+            }
         },
         
         /**
@@ -126,32 +137,45 @@
             
             var $button = $(this);
             var $result = $('#api-test-result');
-            var apiKey = $('#google_ai_api_key').val().trim();
+            var $apiKeyInput = $('#google_ai_api_key');
+            var currentValue = $apiKeyInput.val().trim();
+            var originalValue = $apiKeyInput.data('original-value') || '';
+            var hasUnsavedKey = currentValue !== '' && currentValue !== originalValue;
             
-            if (!apiKey) {
-                AIVirtualFittingAdmin.showApiResult('error', ai_virtual_fitting_admin.messages.api_error);
+            // Check if there's an unsaved key
+            if (hasUnsavedKey && !currentValue.match(/^•+$/)) {
+                $result.removeClass('success error loading').addClass('error').show()
+                       .html('<span class="dashicons dashicons-warning"></span> Please save your API key before testing.');
+                return;
+            }
+            
+            // Check if key is configured
+            var hasKey = $apiKeyInput.data('has-key') === '1' || $apiKeyInput.data('has-key') === 1;
+            if (!hasKey && currentValue.match(/^•*$/)) {
+                $result.removeClass('success error loading').addClass('error').show()
+                       .html('<span class="dashicons dashicons-warning"></span> No API key configured. Please enter and save your API key first.');
                 return;
             }
             
             // Show loading state
             $button.prop('disabled', true).text(ai_virtual_fitting_admin.messages.testing_api);
             $result.removeClass('success error').addClass('loading').show()
-                   .html('<span class="spinner"></span>' + ai_virtual_fitting_admin.messages.testing_api);
+                   .html('<span class="spinner is-active"></span> ' + ai_virtual_fitting_admin.messages.testing_api);
             
-            // Make AJAX request
+            // Make AJAX request WITHOUT sending the key
             $.ajax({
                 url: ai_virtual_fitting_admin.ajax_url,
                 type: 'POST',
                 data: {
                     action: 'ai_virtual_fitting_test_api',
-                    nonce: ai_virtual_fitting_admin.nonce,
-                    api_key: apiKey
+                    nonce: ai_virtual_fitting_admin.nonce
+                    // Security: No api_key parameter - uses stored encrypted key
                 },
                 success: function(response) {
                     if (response.success) {
-                        AIVirtualFittingAdmin.showApiResult('success', response.data);
+                        AIVirtualFittingAdmin.showApiResult('success', response.data.message || response.data);
                     } else {
-                        AIVirtualFittingAdmin.showApiResult('error', response.data);
+                        AIVirtualFittingAdmin.showApiResult('error', response.data.message || response.data);
                     }
                 },
                 error: function(xhr, status, error) {

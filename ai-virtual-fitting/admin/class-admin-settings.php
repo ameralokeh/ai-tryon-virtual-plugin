@@ -664,6 +664,13 @@ class AI_Virtual_Fitting_Admin_Settings {
         $value = get_option('ai_virtual_fitting_google_ai_api_key', '');
         $vertex_credentials = get_option('ai_virtual_fitting_vertex_credentials', '');
         $api_provider = get_option('ai_virtual_fitting_api_provider', 'google_ai_studio');
+        
+        // Security Fix 3: Mask the API key in the UI
+        $has_key = !empty($value);
+        $masked_value = $has_key ? str_repeat('•', 40) : '';
+        $placeholder = $has_key 
+            ? __('Enter new key to update', 'ai-virtual-fitting')
+            : __('Enter your Google AI Studio API key', 'ai-virtual-fitting');
         ?>
         <div class="api-provider-selection">
             <label>
@@ -681,12 +688,26 @@ class AI_Virtual_Fitting_Admin_Settings {
             <input type="password" 
                    id="google_ai_api_key" 
                    name="ai_virtual_fitting_google_ai_api_key" 
-                   value="<?php echo esc_attr($value); ?>" 
+                   value="<?php echo esc_attr($masked_value); ?>" 
                    class="regular-text" 
-                   placeholder="<?php esc_attr_e('Enter your Google AI Studio API key', 'ai-virtual-fitting'); ?>" />
+                   placeholder="<?php echo esc_attr($placeholder); ?>"
+                   data-has-key="<?php echo $has_key ? '1' : '0'; ?>" />
             <span class="help-tooltip" 
                   title="<?php esc_attr_e('Your Google AI Studio API key is required for AI-powered virtual fitting. Get your free API key from Google AI Studio and paste it here. The key should start with AIza...', 'ai-virtual-fitting'); ?>"
                   style="display: inline-block; width: 18px; height: 18px; background: #0073aa; color: white; border-radius: 50%; text-align: center; line-height: 18px; font-size: 12px; font-weight: bold; margin-left: 8px; cursor: help; vertical-align: middle;">?</span>
+            
+            <?php if ($has_key): ?>
+            <p class="description" style="color: #46b450;">
+                <span class="dashicons dashicons-yes-alt"></span>
+                <?php _e('API key is configured and encrypted. Enter a new key to update it.', 'ai-virtual-fitting'); ?>
+            </p>
+            <?php else: ?>
+            <p class="description" style="color: #f56e28;">
+                <span class="dashicons dashicons-warning"></span>
+                <?php _e('No API key configured. Please enter your Google AI Studio API key.', 'ai-virtual-fitting'); ?>
+            </p>
+            <?php endif; ?>
+            
             <p class="description">
                 <?php _e('Get your API key from Google AI Studio. This key is required for virtual fitting functionality.', 'ai-virtual-fitting'); ?>
                 <a href="https://aistudio.google.com/app/apikey" target="_blank"><?php _e('Get API Key', 'ai-virtual-fitting'); ?></a>
@@ -1368,12 +1389,18 @@ class AI_Virtual_Fitting_Admin_Settings {
     public function sanitize_api_key($value) {
         $value = sanitize_text_field(trim($value));
         
-        // If empty, return empty
+        // Security Fix 3: Check if value is the masked placeholder
+        if (preg_match('/^•+$/', $value)) {
+            // User didn't change the key, keep existing value
+            return get_option('ai_virtual_fitting_google_ai_api_key', '');
+        }
+        
+        // If empty, allow deletion
         if (empty($value)) {
             return '';
         }
         
-        // Encrypt the API key before storing
+        // New key provided, encrypt it
         $encrypted = AI_Virtual_Fitting_Security_Manager::encrypt($value);
         
         if ($encrypted === false) {
@@ -1606,23 +1633,39 @@ class AI_Virtual_Fitting_Admin_Settings {
         check_ajax_referer('ai_virtual_fitting_admin_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
-            wp_die(__('Insufficient permissions.', 'ai-virtual-fitting'));
+            wp_send_json_error(array('message' => __('Insufficient permissions.', 'ai-virtual-fitting')));
+            return;
         }
         
-        $api_key = sanitize_text_field($_POST['api_key'] ?? '');
+        // Security: Get stored encrypted key instead of accepting from POST
+        $encrypted_key = get_option('ai_virtual_fitting_google_ai_api_key', '');
+        
+        if (empty($encrypted_key)) {
+            wp_send_json_error(array('message' => __('API key not configured. Please save your API key first.', 'ai-virtual-fitting')));
+            return;
+        }
+        
+        // Decrypt the key server-side
+        $api_key = AI_Virtual_Fitting_Security_Manager::decrypt($encrypted_key);
+        
+        if ($api_key === false) {
+            // Try unencrypted for backward compatibility
+            $api_key = $encrypted_key;
+        }
         
         if (empty($api_key)) {
-            wp_send_json_error(__('API key is required.', 'ai-virtual-fitting'));
+            wp_send_json_error(array('message' => __('Failed to retrieve API key. Please re-save your settings.', 'ai-virtual-fitting')));
+            return;
         }
         
-        // Test API connection using Image Processor
+        // Test the connection
         $image_processor = new AI_Virtual_Fitting_Image_Processor();
         $test_result = $image_processor->test_api_connection($api_key);
         
         if ($test_result['success']) {
-            wp_send_json_success(__('API connection successful!', 'ai-virtual-fitting'));
+            wp_send_json_success(array('message' => __('API connection successful! Your Google AI Studio API key is working correctly.', 'ai-virtual-fitting')));
         } else {
-            wp_send_json_error($test_result['message']);
+            wp_send_json_error(array('message' => $test_result['message']));
         }
     }
     
