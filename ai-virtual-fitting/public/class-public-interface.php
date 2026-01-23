@@ -98,6 +98,10 @@ class AI_Virtual_Fitting_Public_Interface {
         // AJAX login handler
         add_action('wp_ajax_nopriv_ai_vf_ajax_login', array($this, 'handle_ajax_login'));
         
+        // Fetch single product by ID (for product pre-selection)
+        add_action('wp_ajax_ai_virtual_fitting_get_single_product', array($this, 'handle_get_single_product'));
+        add_action('wp_ajax_nopriv_ai_virtual_fitting_get_single_product', array($this, 'handle_get_single_product'));
+        
         // Enqueue scripts and styles
         add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
         
@@ -173,7 +177,7 @@ class AI_Virtual_Fitting_Public_Interface {
                 'ai-virtual-fitting-modern-style',
                 plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
                 array(),
-                '1.7.16'  // Updated: Force cache refresh after deployment
+                '1.7.17'  // Updated: Added "See More" pagination functionality
             );
             
             // Enqueue React checkout modal CSS (Simplified version)
@@ -281,7 +285,7 @@ class AI_Virtual_Fitting_Public_Interface {
                 'ai-virtual-fitting-modern-script',
                 plugin_dir_url(__FILE__) . 'js/modern-virtual-fitting.js',
                 array('jquery', 'ai-virtual-fitting-checkout-modal-react'),
-                '1.5.5',  // Updated: Force cache refresh after deployment
+                '1.5.6',  // Updated: Added "See More" pagination functionality
                 true
             );
             
@@ -328,7 +332,7 @@ class AI_Virtual_Fitting_Public_Interface {
             'ai-virtual-fitting-modern-style',
             plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
             array(),
-            '1.7.16'  // Updated: Force cache refresh after deployment
+            '1.7.17'  // Updated: Added "See More" pagination functionality
         );
         
         // Enqueue login modal CSS
@@ -411,7 +415,7 @@ class AI_Virtual_Fitting_Public_Interface {
             'ai-virtual-fitting-modern-script',
             plugin_dir_url(__FILE__) . 'js/modern-virtual-fitting.js',
             array('jquery', 'ai-virtual-fitting-checkout-modal-react'),
-            '1.5.5',
+            '1.5.6',
             true
         );
         
@@ -454,14 +458,17 @@ class AI_Virtual_Fitting_Public_Interface {
         $credits = $is_logged_in ? $this->credit_manager->get_customer_credits($current_user_id) : 0;
         $free_credits = $is_logged_in ? $this->credit_manager->get_free_credits_remaining($current_user_id) : 0;
         
-        // Get WooCommerce products for the slider
-        $products = $this->get_woocommerce_products();
+        // Get WooCommerce products for the slider (first page only)
+        $result = $this->get_woocommerce_products(1, 20);
+        $products = $result['products'];
+        $has_more = $result['has_more'];
+        $total_products = $result['total'];
         
         // Get WooCommerce categories for the dropdown
         $categories = $this->get_woocommerce_categories();
         
         // Debug: Log product count
-        error_log('AI Virtual Fitting - Products loaded: ' . count($products));
+        error_log('AI Virtual Fitting - Products loaded: ' . count($products) . ' of ' . $total_products);
         if (!empty($products)) {
             error_log('AI Virtual Fitting - First product: ' . json_encode($products[0]));
         }
@@ -501,15 +508,20 @@ class AI_Virtual_Fitting_Public_Interface {
 
     /**
      * Get WooCommerce products for virtual fitting
+     * 
+     * @param int $page Page number (default: 1)
+     * @param int $per_page Products per page (default: 20)
+     * @return array Array with 'products', 'has_more', and 'total' keys
      */
-    private function get_woocommerce_products() {
+    private function get_woocommerce_products($page = 1, $per_page = 20) {
         // Get virtual credit product ID to exclude it
         $credit_product_id = get_option('ai_virtual_fitting_credit_product_id');
         
         $args = array(
             'post_type' => 'product',
-            'posts_per_page' => 20,
-            'post_status' => 'publish'
+            'posts_per_page' => $per_page,
+            'post_status' => 'publish',
+            'paged' => $page
         );
         
         // Exclude virtual credit product
@@ -517,7 +529,8 @@ class AI_Virtual_Fitting_Public_Interface {
             $args['post__not_in'] = array($credit_product_id);
         }
         
-        $products = get_posts($args);
+        $query = new WP_Query($args);
+        $products = $query->posts;
         $product_data = array();
         
         foreach ($products as $product_post) {
@@ -559,7 +572,15 @@ class AI_Virtual_Fitting_Public_Interface {
             }
         }
         
-        return $product_data;
+        // Calculate if there are more products
+        $has_more = $query->max_num_pages > $page;
+        $total = $query->found_posts;
+        
+        return array(
+            'products' => $product_data,
+            'has_more' => $has_more,
+            'total' => $total
+        );
     }
     
     /**
@@ -882,8 +903,19 @@ class AI_Virtual_Fitting_Public_Interface {
             wp_send_json_error(array('message' => 'Security check failed'));
         }
         
-        $products = $this->get_woocommerce_products();
-        wp_send_json_success(array('products' => $products));
+        // Get pagination parameters
+        $page = isset($_POST['page']) ? intval($_POST['page']) : 1;
+        $per_page = isset($_POST['per_page']) ? intval($_POST['per_page']) : 20;
+        
+        // Get products with pagination
+        $result = $this->get_woocommerce_products($page, $per_page);
+        
+        wp_send_json_success(array(
+            'products' => $result['products'],
+            'has_more' => $result['has_more'],
+            'total' => $result['total'],
+            'page' => $page
+        ));
     }
     
     /**
@@ -2912,5 +2944,70 @@ class AI_Virtual_Fitting_Public_Interface {
         } else {
             wp_send_json_success(array('message' => 'Login successful'));
         }
+    }
+    
+    /**
+     * Handle AJAX request to get single product by ID
+     */
+    public function handle_get_single_product() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
+            wp_send_json_error(array('message' => 'Security check failed'));
+            return;
+        }
+        
+        $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+        
+        if (!$product_id) {
+            wp_send_json_error(array('message' => 'Invalid product ID'));
+            return;
+        }
+        
+        // Get the product
+        $product = wc_get_product($product_id);
+        
+        if (!$product || !$product->is_visible()) {
+            wp_send_json_error(array('message' => 'Product not found or not visible'));
+            return;
+        }
+        
+        // Check if this is the credit product (exclude it)
+        $credit_product_id = get_option('ai_virtual_fitting_credit_product_id');
+        if ($credit_product_id && $product_id == $credit_product_id) {
+            wp_send_json_error(array('message' => 'This product is not available for virtual try-on'));
+            return;
+        }
+        
+        // Get product data
+        $featured_image = wp_get_attachment_image_src(get_post_thumbnail_id($product_id), 'large');
+        $gallery_images = $this->get_product_gallery_images($product_id);
+        
+        // Combine featured image with gallery images
+        $all_images = array();
+        if ($featured_image) {
+            $all_images[] = $featured_image[0];
+        }
+        $all_images = array_merge($all_images, $gallery_images);
+        
+        // Get product categories
+        $product_categories = wp_get_post_terms($product_id, 'product_cat');
+        $category_slugs = array();
+        if (!is_wp_error($product_categories) && !empty($product_categories)) {
+            foreach ($product_categories as $cat) {
+                $category_slugs[] = $cat->slug;
+            }
+        }
+        
+        $product_data = array(
+            'id' => $product->get_id(),
+            'name' => $product->get_name(),
+            'price' => $product->get_price_html(),
+            'description' => $product->get_short_description() ?: wp_trim_words($product->get_description(), 20),
+            'image' => $featured_image ? array($featured_image[0]) : array(),
+            'gallery' => $all_images,
+            'categories' => $category_slugs
+        );
+        
+        wp_send_json_success(array('product' => $product_data));
     }
 }

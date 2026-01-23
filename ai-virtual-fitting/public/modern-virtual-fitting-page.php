@@ -212,9 +212,11 @@ if (!defined('ABSPATH')) {
                     <?php endforeach; ?>
                     
                     <!-- See More Button -->
-                    <div class="see-more-btn" id="see-more-btn">
+                    <?php if ($has_more): ?>
+                    <div class="see-more-btn" id="see-more-btn" data-page="1" data-total="<?php echo esc_attr($total_products); ?>">
                         See More
                     </div>
+                    <?php endif; ?>
                 <?php else: ?>
                     <div class="no-products-message">
                         <p>No dresses available at the moment.</p>

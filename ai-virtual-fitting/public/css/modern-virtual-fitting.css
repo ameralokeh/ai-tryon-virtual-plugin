@@ -1113,6 +1113,21 @@
     z-index: 5;
 }
 
+/* Highlight animation for product pre-selection */
+.product-card.highlight-pulse {
+    animation: highlight-pulse 2s ease-in-out;
+}
+
+@keyframes highlight-pulse {
+    0%, 100% {
+        box-shadow: 0 12px 32px rgba(74, 144, 226, 0.25);
+    }
+    50% {
+        box-shadow: 0 12px 48px rgba(74, 144, 226, 0.5);
+        transform: translateY(-4px) scale(1.02);
+    }
+}
+
 .product-image {
     width: 100%;
     height: 100%;
@@ -1241,6 +1256,24 @@
 .see-more-btn:hover {
     background: #ecf0f1;
     color: #2c3e50;
+}
+
+.see-more-btn.loading {
+    opacity: 0.6;
+    cursor: wait;
+    pointer-events: none;
+}
+
+.see-more-btn.loading::after {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-left: 8px;
+    border: 2px solid #7f8c8d;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
 }
 
 /* Loading States */

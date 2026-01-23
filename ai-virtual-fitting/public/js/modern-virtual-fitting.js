@@ -51,7 +51,209 @@
         if (isMobileDevice()) {
             initializeMobileBrowserOptimizations();
         }
+        
+        // Check for product pre-selection from URL
+        const productIdFromURL = getProductIdFromURL();
+        if (productIdFromURL) {
+            console.log('AI Virtual Fitting: Product ID from URL:', productIdFromURL);
+            autoSelectProduct(productIdFromURL);
+        }
     });
+
+    /**
+     * Get product ID from URL parameter
+     * @returns {number|null} Product ID if valid, null otherwise
+     */
+    function getProductIdFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('product_id');
+        
+        console.log('AI Virtual Fitting: Checking URL for product_id:', productId);
+        
+        // Validate that product_id is numeric
+        if (productId && /^\d+$/.test(productId)) {
+            return parseInt(productId, 10);
+        }
+        
+        return null;
+    }
+
+    /**
+     * Auto-select product by ID
+     * @param {number} productId - The product ID to select
+     * @returns {boolean} True if product was found and selected, false otherwise
+     */
+    function autoSelectProduct(productId) {
+        console.log('AI Virtual Fitting: Attempting to auto-select product:', productId);
+        
+        // Find product card by data-product-id attribute
+        const $productCard = $(`.product-card[data-product-id="${productId}"]`);
+        
+        console.log('AI Virtual Fitting: Product cards found:', $productCard.length);
+        
+        if (!$productCard.length) {
+            console.warn(`AI Virtual Fitting: Product ${productId} not found in grid. Fetching via AJAX...`);
+            
+            // Fetch the product via AJAX and add it to the grid
+            fetchAndAddProduct(productId);
+            
+            return false;
+        }
+        
+        // Wait for DOM to be fully ready before triggering selection
+        setTimeout(function() {
+            console.log('AI Virtual Fitting: Triggering click on product:', productId);
+            // Trigger click event to select product (reuses existing selection logic)
+            $productCard.trigger('click');
+            
+            // Scroll product into view
+            scrollToProduct(productId);
+        }, 500); // Small delay to ensure all elements are loaded
+        
+        return true;
+    }
+    
+    /**
+     * Fetch product by ID via AJAX and add to grid
+     * @param {number} productId - The product ID to fetch
+     */
+    function fetchAndAddProduct(productId) {
+        console.log('AI Virtual Fitting: Fetching product', productId, 'via AJAX');
+        
+        $.ajax({
+            url: ai_virtual_fitting_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'ai_virtual_fitting_get_single_product',
+                nonce: ai_virtual_fitting_ajax.nonce,
+                product_id: productId
+            },
+            success: function(response) {
+                if (response.success && response.data.product) {
+                    console.log('AI Virtual Fitting: Product fetched successfully:', response.data.product);
+                    
+                    // Add product to the grid
+                    addProductToGrid(response.data.product);
+                    
+                    // Wait a moment for the product to be added to DOM, then select it
+                    setTimeout(function() {
+                        const $newCard = $(`.product-card[data-product-id="${productId}"]`);
+                        if ($newCard.length) {
+                            console.log('AI Virtual Fitting: Product added to grid, selecting it');
+                            $newCard.trigger('click');
+                            scrollToProduct(productId);
+                        } else {
+                            console.error('AI Virtual Fitting: Product was fetched but not added to grid');
+                        }
+                    }, 300);
+                } else {
+                    console.error('AI Virtual Fitting: Failed to fetch product:', response.data ? response.data.message : 'Unknown error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AI Virtual Fitting: AJAX error fetching product:', error);
+            }
+        });
+    }
+    
+    /**
+     * Add product to the products grid
+     * @param {Object} product - Product data object
+     */
+    function addProductToGrid(product) {
+        // Handle both inline format and AJAX format
+        const productImage = product.image && product.image.length > 0 ? product.image[0] : '';
+        const productGallery = product.gallery || [];
+        const productCategories = product.categories || [];
+        
+        // Convert categories array to space-separated string for data attribute
+        const categoriesString = Array.isArray(productCategories) ? productCategories.join(' ') : productCategories;
+        
+        // Create product card HTML
+        const productCard = `
+            <div class="product-card" 
+                 data-product-id="${product.id}" 
+                 data-categories="${categoriesString}"
+                 data-gallery='${JSON.stringify(productGallery)}'>
+                <!-- Selection Indicator -->
+                <div class="selection-indicator">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
+                    </svg>
+                </div>
+                
+                <!-- Product Image -->
+                ${productImage ? `
+                    <img src="${productImage}" 
+                         alt="${product.name}" 
+                         class="product-image">
+                ` : `
+                    <div class="product-image-placeholder">
+                        <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; fill: #bdc3c7;">
+                            <path d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z"/>
+                        </svg>
+                    </div>
+                `}
+                
+                <!-- Product Info Overlay -->
+                <div class="product-info">
+                    <h4 class="product-name">${product.name}</h4>
+                    <div class="product-price">${product.price}</div>
+                </div>
+            </div>
+        `;
+        
+        // Insert before the "See More" button (or append to grid if no button)
+        const $seeMoreBtn = $('#see-more-btn');
+        if ($seeMoreBtn.length) {
+            $seeMoreBtn.before(productCard);
+        } else {
+            $('.products-grid').append(productCard);
+        }
+        
+        console.log('AI Virtual Fitting: Product card added to grid');
+    }
+
+    /**
+     * Scroll product card into view
+     * @param {number} productId - The product ID to scroll to
+     */
+    function scrollToProduct(productId) {
+        const $productCard = $(`.product-card[data-product-id="${productId}"]`);
+        
+        if (!$productCard.length) {
+            return;
+        }
+        
+        // Get the products grid container
+        const $grid = $('.products-grid');
+        
+        if (!$grid.length) {
+            return;
+        }
+        
+        // Calculate scroll position to center the product card
+        const gridTop = $grid.offset().top;
+        const cardTop = $productCard.offset().top;
+        const cardHeight = $productCard.outerHeight();
+        const gridHeight = $grid.height();
+        
+        // Calculate the scroll position to center the card in the viewport
+        const scrollPosition = $grid.scrollTop() + (cardTop - gridTop) - (gridHeight / 2) + (cardHeight / 2);
+        
+        // Smooth scroll to the product
+        $grid.animate({
+            scrollTop: scrollPosition
+        }, 600, 'swing', function() {
+            // Add highlight animation after scroll completes
+            $productCard.addClass('highlight-pulse');
+            
+            // Remove highlight after animation
+            setTimeout(function() {
+                $productCard.removeClass('highlight-pulse');
+            }, 2000);
+        });
+    }
 
     /**
      * Initialize the interface
@@ -133,6 +335,9 @@
         
         // Product thumbnail clicks
         $(document).on('click', '.product-thumbnail', handleProductThumbnailClick);
+        
+        // See More button for pagination
+        $(document).on('click', '#see-more-btn', handleSeeMoreProducts);
         
         // Purchase credits button (global binding)
         $(document).on('click', '#purchase-credits-btn', function(e) {
@@ -866,6 +1071,68 @@
                 $(this).show();
             } else {
                 $(this).hide();
+            }
+        });
+    }
+    
+    /**
+     * Handle "See More" button click to load next batch of products
+     */
+    function handleSeeMoreProducts() {
+        const $btn = $(this);
+        
+        // Prevent multiple clicks
+        if ($btn.hasClass('loading')) {
+            return;
+        }
+        
+        // Get current page and increment
+        const currentPage = parseInt($btn.data('page')) || 1;
+        const nextPage = currentPage + 1;
+        
+        // Show loading state
+        $btn.addClass('loading').text('Loading...');
+        
+        // Make AJAX request to load more products
+        $.ajax({
+            url: ai_virtual_fitting_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'ai_virtual_fitting_get_products',
+                nonce: ai_virtual_fitting_ajax.nonce,
+                page: nextPage,
+                per_page: 20
+            },
+            success: function(response) {
+                if (response.success && response.data.products) {
+                    const products = response.data.products;
+                    
+                    // Add each product to the grid
+                    products.forEach(function(product) {
+                        addProductToGrid(product);
+                    });
+                    
+                    // Update button state
+                    if (response.data.has_more) {
+                        // More products available - update page number
+                        $btn.data('page', nextPage).removeClass('loading').text('See More');
+                    } else {
+                        // No more products - hide button
+                        $btn.fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                    }
+                    
+                    console.log(`Loaded ${products.length} more products (page ${nextPage})`);
+                } else {
+                    showMessage('Failed to load more products. Please try again.', 'error');
+                    $btn.removeClass('loading').text('See More');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading more products:', error);
+                showMessage('Network error while loading products. Please try again.', 'error');
+                $btn.removeClass('loading').text('See More');
             }
         });
     }
