@@ -1,0 +1,46 @@
+# Development and test files
+ai-virtual-fitting/tests/
+ai-virtual-fitting/phpunit.xml
+ai-virtual-fitting/public/css/test-design-tokens.js
+ai-virtual-fitting/public/css/auto-replace-tokens.js
+ai-virtual-fitting/public/css/DESIGN-TOKENS-SUMMARY.md
+
+# Deployment scripts
+upload-*.sh
+*.sh
+
+# Development documentation
+DEPLOYMENT-CHECKLIST-*.md
+PACKAGE-SUMMARY-*.md
+MOBILE-TESTING-GUIDE.md
+SECURITY-*.md
+SEARCH-IMPROVEMENT-SUMMARY.md
+
+# Mobile requirements folder
+Mobile requirepemnts/
+
+# Kiro specs
+.kiro/specs/
+
+# Version packages (keep only latest)
+ai-virtual-fitting-v1.0.7.*.zip
+ai-virtual-fitting-v1.0.8.*.zip
+ai-virtual-fitting-v1.0.9.0.zip
+ai-virtual-fitting-v1.0.9.1.zip
+
+# System files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+
+# Node modules
+node_modules/
+package-lock.json
+
+# Logs
+*.log
