@@ -51,6 +51,9 @@ class AI_Virtual_Fitting_Public_Interface {
      * Initialize hooks
      */
     private function init_hooks() {
+        // Add viewport meta tag for mobile responsiveness
+        add_action('wp_head', array($this, 'add_viewport_meta'), 1);
+        
         // AJAX hooks for logged-in and non-logged-in users
         add_action('wp_ajax_ai_virtual_fitting_upload', array($this, 'handle_image_upload'));
         add_action('wp_ajax_nopriv_ai_virtual_fitting_upload', array($this, 'handle_image_upload'));
@@ -107,6 +110,14 @@ class AI_Virtual_Fitting_Public_Interface {
         
         // Add virtual fitting page shortcode
         add_shortcode('ai_virtual_fitting', array($this, 'render_virtual_fitting_shortcode'));
+    }
+    
+    /**
+     * Add viewport meta tag for mobile responsiveness
+     */
+    public function add_viewport_meta() {
+        // Only add if not already present (check if theme already includes it)
+        echo '<meta name="viewport" content="width=device-width, initial-scale=1">' . "\n";
     }
     
     /**
@@ -172,12 +183,12 @@ class AI_Virtual_Fitting_Public_Interface {
         }
         
         if ($should_enqueue) {
-            // Enqueue modern CSS
+            // Enqueue modern CSS with timestamp-based cache busting
             wp_enqueue_style(
                 'ai-virtual-fitting-modern-style',
                 plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
                 array(),
-                '1.7.19'  // Updated: Image fills container edge-to-edge
+                '2.0.0-' . time()  // Timestamp cache buster for mobile deployment
             );
             
             // Enqueue React checkout modal CSS (Simplified version)
@@ -327,12 +338,12 @@ class AI_Virtual_Fitting_Public_Interface {
      * Force enqueue assets (called from shortcode)
      */
     private function force_enqueue_assets() {
-        // Enqueue modern CSS
+        // Enqueue modern CSS with timestamp-based cache busting
         wp_enqueue_style(
             'ai-virtual-fitting-modern-style',
             plugin_dir_url(__FILE__) . 'css/modern-virtual-fitting.css',
             array(),
-            '1.7.18'  // Updated: Floating thumbnail overlay with stretched preview
+            '2.0.0-' . time()  // Timestamp cache buster for mobile deployment
         );
         
         // Enqueue login modal CSS
@@ -511,9 +522,11 @@ class AI_Virtual_Fitting_Public_Interface {
      * 
      * @param int $page Page number (default: 1)
      * @param int $per_page Products per page (default: 20)
+     * @param string $search Search term (optional)
+     * @param string $category Category slug (optional)
      * @return array Array with 'products', 'has_more', and 'total' keys
      */
-    private function get_woocommerce_products($page = 1, $per_page = 20) {
+    private function get_woocommerce_products($page = 1, $per_page = 20, $search = '', $category = '') {
         // Get virtual credit product ID to exclude it
         $credit_product_id = get_option('ai_virtual_fitting_credit_product_id');
         
@@ -523,6 +536,22 @@ class AI_Virtual_Fitting_Public_Interface {
             'post_status' => 'publish',
             'paged' => $page
         );
+        
+        // Add search parameter
+        if (!empty($search)) {
+            $args['s'] = $search;
+        }
+        
+        // Add category filter
+        if (!empty($category) && $category !== 'all') {
+            $args['tax_query'] = array(
+                array(
+                    'taxonomy' => 'product_cat',
+                    'field' => 'slug',
+                    'terms' => $category
+                )
+            );
+        }
         
         // Exclude virtual credit product
         if ($credit_product_id) {
@@ -907,14 +936,22 @@ class AI_Virtual_Fitting_Public_Interface {
         $page = isset($_POST['page']) ? intval($_POST['page']) : 1;
         $per_page = isset($_POST['per_page']) ? intval($_POST['per_page']) : 20;
         
-        // Get products with pagination
-        $result = $this->get_woocommerce_products($page, $per_page);
+        // Get search parameter
+        $search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+        
+        // Get category filter
+        $category = isset($_POST['category']) ? sanitize_text_field($_POST['category']) : '';
+        
+        // Get products with pagination and filters
+        $result = $this->get_woocommerce_products($page, $per_page, $search, $category);
         
         wp_send_json_success(array(
             'products' => $result['products'],
             'has_more' => $result['has_more'],
             'total' => $result['total'],
-            'page' => $page
+            'page' => $page,
+            'search' => $search,
+            'category' => $category
         ));
     }
     

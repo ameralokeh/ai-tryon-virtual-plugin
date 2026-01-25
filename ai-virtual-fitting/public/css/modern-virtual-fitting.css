@@ -1,15 +1,64 @@
 /**
- * Modern Virtual Fitting Interface - Exact Design Match
+ * Modern Virtual Fitting Interface - Mobile-Responsive UX Enhancement
  * Three-panel layout: Upload/Result | Main Preview | Product Selection
- * Version: 1.7.10
+ * Version: 2.0.0 - Mobile-First with Design Tokens
  */
+
+/* =========================================================
+   Phase 1: Foundation - Design Token System
+   Task 1: Define CSS custom properties for design tokens
+   Requirements: 2.1, 2.2, 2.3, 2.4, 2.5
+   ========================================================= */
+
+:root {
+  /* Colors */
+  --avf-bg-page: #f7f8fa;
+  --avf-bg-surface: #ffffff;
+  --avf-bg-card: #ffffff;
+  --avf-bg-muted: #f3f4f6;
+  --avf-text-primary: #1f2937;
+  --avf-text-secondary: #4b5563;
+  --avf-border-soft: rgba(0,0,0,0.06);
+  --avf-primary: #3b82f6;
+  --avf-primary-hover: #2563eb;
+  
+  /* Shadows */
+  --avf-shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+  --avf-shadow-sm: 0 2px 6px rgba(0,0,0,0.06);
+  --avf-shadow-md: 0 6px 18px rgba(0,0,0,0.08);
+  --avf-shadow-lg: 0 12px 32px rgba(0,0,0,0.10);
+  --avf-shadow-layered: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+  
+  /* Radius */
+  --avf-radius-sm: 10px;
+  --avf-radius-md: 14px;
+  --avf-radius-lg: 18px;
+  --avf-radius-xl: 22px;
+  
+  /* Spacing */
+  --avf-space-4: 8px;
+  --avf-space-6: 12px;
+  --avf-space-8: 16px;
+  --avf-space-12: 24px;
+  
+  /* Typography */
+  --avf-font-family: inherit;
+  --avf-text-base: 14px;
+  --avf-text-lg: 16px;
+}
+
+/* =========================================================
+   Phase 1: Foundation - Surface Blending
+   Task 2: Apply transparent backgrounds and soft shadows
+   Requirements: 1.1, 1.2, 1.3, 1.4, 1.5
+   ========================================================= */
 
 /* Reset and Base Styles */
 .ai-virtual-fitting-app {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: var(--avf-font-family);
     margin: 0;
     padding: 0;
-    background: #ffffff; /* Changed from #f8f9fa to white to blend with page */
+    background: transparent; /* Blend with page background */
     position: relative;
     width: 100%;
     max-width: 100%;
@@ -18,11 +67,11 @@
 
 /* Consent Box Styles */
 .consent-box {
-    background: white;
-    border-radius: 16px;
+    background: var(--avf-bg-surface);
+    border-radius: var(--avf-radius-md);
     padding: 32px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 2px solid #e8ecef;
+    box-shadow: var(--avf-shadow-layered);
+    border: 2px solid var(--avf-border-soft);
     margin-bottom: 20px;
     width: 100%; /* Take full width of parent */
     max-width: 100%; /* Ensure it doesn't overflow */
@@ -134,12 +183,12 @@
 
 /* Credits Banner */
 .credits-banner {
-    background: white;
-    border-radius: 16px;
+    background: var(--avf-bg-surface);
+    border-radius: var(--avf-radius-md);
     padding: 24px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: var(--avf-shadow-layered);
+    border: 1px solid var(--avf-border-soft);
 }
 
 .credits-banner-content {
@@ -264,40 +313,64 @@
 
 /* Responsive Credits Banner */
 @media (max-width: 768px) {
+    .credits-banner {
+        position: sticky;
+        bottom: 10px;
+        margin: 0 12px;
+        border-radius: 16px; /* Rounded rectangle instead of pill */
+        padding: 12px 16px; /* More padding to prevent text overflow */
+        z-index: 100;
+    }
+    
     .credits-banner-content {
-        flex-direction: column;
-        gap: 20px;
-        text-align: center;
+        flex-direction: row; /* Horizontal layout */
+        gap: 12px;
+        align-items: center;
+        text-align: left;
     }
     
     .credits-stats {
-        justify-content: center;
+        flex-direction: row;
+        gap: 12px;
+        justify-content: flex-start;
+    }
+    
+    .credit-number {
+        font-size: 20px; /* Reduced from 32px */
+    }
+    
+    .credit-label {
+        font-size: 11px; /* Reduced from 13px */
+        white-space: nowrap; /* Prevent text wrapping */
     }
     
     .credits-purchase-btn {
-        width: 100%;
+        width: auto;
         justify-content: center;
+        padding: 8px 16px;
+        font-size: 12px;
+        white-space: nowrap; /* Prevent button text wrapping */
     }
 }
 
 @media (max-width: 480px) {
     .credits-banner {
-        padding: 20px;
-        margin-bottom: 16px;
+        padding: 10px 14px;
+        margin: 0 12px;
     }
     
     .credits-stats {
-        flex-direction: column;
-        gap: 16px;
+        flex-direction: row;
+        gap: 12px;
     }
     
     .credit-divider {
-        width: 40px;
-        height: 1px;
+        width: 1px;
+        height: 30px;
     }
     
     .credit-number {
-        font-size: 28px;
+        font-size: 20px;
     }
 }
 
@@ -338,10 +411,11 @@
 
 /* Left Panel - Upload & Result */
 .fitting-panel {
-    background: white;
-    border-radius: 16px;
+    background: rgba(255,255,255,0.94); /* Soft translucent surface */
+    border-radius: var(--avf-radius-lg); /* 20px using token */
     padding: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--avf-shadow-layered); /* Layered soft shadows */
+    border: none; /* Remove hard edges */
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -353,10 +427,11 @@
 
 /* Center Panel - Main Preview */
 .main-preview {
-    background: white;
-    border-radius: 16px;
+    background: rgba(255,255,255,0.94); /* Soft translucent surface */
+    border-radius: var(--avf-radius-lg); /* 20px using token */
     padding: 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--avf-shadow-layered); /* Layered soft shadows */
+    border: none; /* Remove hard edges */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -370,10 +445,11 @@
 
 /* Right Panel - Product Selection */
 .products-panel {
-    background: white;
-    border-radius: 16px;
+    background: rgba(255,255,255,0.94); /* Soft translucent surface */
+    border-radius: var(--avf-radius-lg); /* 20px using token */
     padding: 24px 0;  /* Only top/bottom padding, let header control horizontal */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--avf-shadow-layered); /* Layered soft shadows */
+    border: none; /* Remove hard edges */
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -853,34 +929,6 @@
         object-fit: contain;          /* Keep entire image visible on mobile */
     }
 }
-    
-    .product-thumbnail {
-        width: 95px;               /* Smaller for mobile */
-        height: 70px;
-    }
-    
-    .main-preview-image {
-        max-height: 100%;          /* Fill container on mobile too */
-    }
-    
-    .fitting-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto;
-        height: auto;
-        gap: 16px;
-        padding: 16px;
-    }
-    
-    .products-grid {
-        grid-template-columns: repeat(2, 1fr);
-        max-height: 500px;
-        gap: 16px;
-    }
-    
-    .product-card {
-        min-height: 200px;
-    }
-}
 
 @media (max-width: 640px) {
     .product-thumbnail {
@@ -1088,6 +1136,35 @@
     scrollbar-gutter: stable !important;
     box-sizing: border-box !important;
     align-content: start !important; /* Align grid items to top, preventing stretching */
+    position: relative;
+}
+
+/* Search loading state */
+.products-grid.searching::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(2px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.products-grid.searching::after {
+    content: 'Searching...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px;
+    font-weight: 600;
+    color: #4a90e2;
+    z-index: 101;
 }
 
 .products-grid::-webkit-scrollbar {
@@ -2387,17 +2464,542 @@ body.modal-open {
     position: relative;
 }
 
+/* =========================================================
+   Phase 5: Polish & Accessibility - Focus Indicators
+   Task 17: Apply focus indicators for keyboard navigation
+   Requirements: 9.4
+   ========================================================= */
+
+/* Focus indicators for all interactive elements */
+.btn:focus,
+.product-card:focus,
+.search-box:focus,
+.category-dropdown:focus,
+#category-dropdown:focus,
+.product-thumbnail:focus,
+.floating-btn:focus,
+.credits-purchase-btn:focus,
+.checkout-modal-close:focus,
+.zero-credits-close:focus,
+.consent-checkbox:focus-within,
+.upload-area:focus-within {
+    outline: 3px solid #4a90e2; /* Using primary color */
+    outline-offset: 2px;
+}
+
+/* Remove default focus outline to use custom one */
+.btn:focus-visible,
+.product-card:focus-visible,
+.search-box:focus-visible,
+.category-dropdown:focus-visible,
+#category-dropdown:focus-visible,
+.product-thumbnail:focus-visible,
+.floating-btn:focus-visible,
+.credits-purchase-btn:focus-visible {
+    outline: 3px solid #4a90e2;
+    outline-offset: 2px;
+}
+
 /* Mobile: Upload area constraints */
-@media (max-width: 968px) {
+@media (max-width: 768px) {
     .upload-area {
         min-height: 200px;
         max-height: 400px; /* Prevent excessive height on mobile */
     }
-}
-
     
-    .upload-area {
-        min-height: 180px;
-        max-height: 350px;
+    /* =========================================================
+       Phase 2: Mobile Layout - Responsive Container
+       Task 3: Convert grid to flexbox column on mobile
+       ========================================================= */
+    
+    .fitting-container {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        height: auto !important;
+        padding: 16px !important;
+        max-height: none !important;
+    }
+    
+    /* =========================================================
+       Phase 2: Mobile Layout - Content Reordering
+       Task 4: Apply flexbox order for Mobile_Flow
+       ========================================================= */
+    
+    /* Upload/Result first - Fitting panel */
+    .fitting-panel {
+        order: 1 !important;
+    }
+    
+    /* Preview/Result second - Preview area */
+    .main-preview {
+        order: 2 !important;
+    }
+    
+    /* Products last - Products panel */
+    .products-panel {
+        order: 3 !important;
+    }
+    
+    /* =========================================================
+       Phase 2: Mobile Layout - Preview Area Hero Content
+       Task 5: Style preview area as hero content on mobile
+       ========================================================= */
+    
+    /* Preview area takes significant vertical space as hero content */
+    .main-preview {
+        min-height: 60vh !important;
+        padding: 16px !important;
+    }
+    
+    /* Main preview image shows full image without cropping */
+    .main-preview-image {
+        object-fit: contain !important;
+    }
+    
+    /* Placeholder text centered and readable */
+    .preview-placeholder {
+        font-size: 16px !important;
+        text-align: center !important;
+        color: var(--avf-text-secondary) !important;
+    }
+    
+    /* =========================================================
+       Phase 2: Mobile Layout - Thumbnail Carousel Mobile Styling
+       Task 6: Optimize thumbnail carousel for mobile
+       ========================================================= */
+    
+    /* Position thumbnails closer to bottom with reduced width */
+    .product-thumbnails,
+    #product-thumbnails {
+        bottom: 10px !important;
+        width: calc(100% - 20px) !important;
+        padding: 10px 12px !important;
+        gap: 8px !important;
+    }
+    
+    /* Reduce thumbnail size for mobile */
+    .product-thumbnail {
+        width: 80px !important;
+        height: 60px !important;
+    }
+    
+    /* =========================================================
+       Phase 3: Product Carousel - Horizontal Scroll Implementation
+       Task 8: Convert products grid to horizontal scroll on mobile
+       ========================================================= */
+    
+    /* Convert products grid from vertical grid to horizontal flex row */
+    .products-grid {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        gap: 12px !important;
+        padding: 0 16px 6px 16px !important;
+        -webkit-overflow-scrolling: touch !important; /* iOS momentum scrolling */
+        scroll-snap-type: x mandatory !important; /* Snap to cards */
+        grid-template-columns: unset !important; /* Remove grid columns */
+        grid-auto-rows: unset !important; /* Remove grid rows */
+    }
+    
+    /* =========================================================
+       Phase 3: Product Carousel - Scrollbar Styling
+       Task 10: Style scrollbar for horizontal scroll
+       ========================================================= */
+    
+    /* Scrollbar styling for horizontal scroll */
+    .products-grid::-webkit-scrollbar {
+        height: 4px !important;
+        width: auto !important;
+    }
+    
+    .products-grid::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.04) !important;
+    }
+    
+    .products-grid::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15) !important;
+        border-radius: 2px !important;
+    }
+    
+    /* =========================================================
+       Phase 3: Product Carousel - Product Card Sizing
+       Task 9: Set product card dimensions for mobile
+       ========================================================= */
+    
+    /* Product cards have fixed width and don't shrink */
+    .product-card {
+        min-width: 220px !important;
+        flex-shrink: 0 !important;
+        scroll-snap-align: start !important;
+    }
+    
+    /* =========================================================
+       Phase 4: Component Optimization - Button Hierarchy
+       Task 12: Style button hierarchy for mobile
+       Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
+       ========================================================= */
+    
+    /* Primary button - touch-friendly with strong emphasis */
+    .btn-primary {
+        height: 48px !important;
+        border-radius: 14px !important; /* Using var(--avf-radius-md) equivalent */
+        font-weight: 800 !important;
+        width: 100% !important; /* Full width on mobile */
+        padding: 0 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* Secondary button - slightly smaller, muted background */
+    .btn-secondary {
+        height: 44px !important;
+        background: #f3f4f6 !important; /* Muted background */
+        color: #2c3e50 !important;
+        border: 1px solid #e1e8ed !important;
+        font-weight: 600 !important; /* Normal weight, not bold */
+        padding: 0 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* Stack action buttons vertically with 12px gap */
+    .action-buttons {
+        flex-direction: column !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+    
+    /* Ensure buttons take full width in vertical stack */
+    .action-buttons .btn {
+        width: 100% !important;
+        flex: none !important; /* Remove flex: 1 from desktop */
+    }
+    
+    /* =========================================================
+       Phase 5: Polish & Accessibility - Touch Targets
+       Task 16: Ensure all interactive elements meet touch target requirements
+       Requirements: 9.1, 9.2
+       ========================================================= */
+    
+    /* Minimum 44px touch targets for all interactive elements */
+    .btn,
+    .product-card,
+    .product-thumbnail,
+    .floating-btn {
+        min-height: 44px !important;
+        min-width: 44px !important;
+    }
+    
+    /* Primary actions get 48px minimum height */
+    .btn-primary,
+    #try-on-btn {
+        min-height: 48px !important;
+    }
+    
+    /* Additional touch-friendly elements */
+    .search-box {
+        min-height: 44px !important;
+    }
+    
+    .category-dropdown,
+    #category-dropdown {
+        min-height: 44px !important;
+    }
+    
+    .credits-purchase-btn {
+        min-height: 44px !important;
+        min-width: 44px !important;
+    }
+    
+    .checkout-modal-close,
+    .zero-credits-close {
+        min-height: 44px !important;
+        min-width: 44px !important;
+    }
+    
+    /* =========================================================
+       Phase 5: Polish & Accessibility - Focus Indicators
+       Task 17: Apply focus indicators for keyboard navigation
+       Requirements: 9.4
+       ========================================================= */
+    
+    /* Focus indicators for all interactive elements on mobile */
+    .btn:focus,
+    .product-card:focus,
+    .search-box:focus {
+        outline: 3px solid #4a90e2 !important; /* Using primary color */
+        outline-offset: 2px !important;
+    }
+    
+    /* Additional focus indicators for other interactive elements */
+    .category-dropdown:focus,
+    #category-dropdown:focus,
+    .product-thumbnail:focus,
+    .floating-btn:focus,
+    .credits-purchase-btn:focus,
+    .checkout-modal-close:focus,
+    .zero-credits-close:focus,
+    .consent-checkbox:focus-within {
+        outline: 3px solid #4a90e2 !important;
+        outline-offset: 2px !important;
     }
 }
+
+/* =========================================================
+   Phase 5: Polish & Accessibility - Reduced Motion Support
+   Task 18: Add reduced motion support for accessibility
+   Requirements: 9.3
+   ========================================================= */
+
+/* Reduced Motion Support - Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* =========================================================
+   Phase 5: Polish & Accessibility - Edge Case Handling
+   Task 20: Handle very small screens, landscape, and fallbacks
+   Requirements: 12.5
+   ========================================================= */
+
+/* Very Small Screens (< 320px) - iPhone SE, older devices */
+@media (max-width: 320px) {
+    /* Reduce product card width for very small screens */
+    .product-card {
+        min-width: 180px !important;
+    }
+    
+    /* Smaller credits banner text */
+    .credits-banner {
+        font-size: 12px !important;
+    }
+    
+    .credit-number {
+        font-size: 18px !important;
+    }
+    
+    .credit-label {
+        font-size: 10px !important;
+    }
+    
+    /* Smaller button padding */
+    .btn-primary,
+    .btn-secondary {
+        padding: 0 16px !important;
+        font-size: 13px !important;
+    }
+    
+    /* Reduce preview area height slightly */
+    .main-preview {
+        min-height: 50vh !important;
+    }
+    
+    /* Smaller thumbnails */
+    .product-thumbnail {
+        width: 70px !important;
+        height: 52px !important;
+    }
+    
+    /* Compact modal padding */
+    .checkout-modal-header {
+        padding: 12px 16px !important;
+    }
+    
+    .checkout-modal-header h3 {
+        font-size: 16px !important;
+    }
+    
+    /* Smaller form elements */
+    .search-box,
+    .category-dropdown,
+    #category-dropdown {
+        font-size: 13px !important;
+        padding: 10px 14px !important;
+    }
+}
+
+/* Landscape Orientation on Mobile - Optimize vertical space */
+@media (max-width: 768px) and (orientation: landscape) {
+    /* Reduce preview area height in landscape */
+    .main-preview {
+        min-height: 50vh !important;
+    }
+    
+    /* Reduce upload area height */
+    .upload-area {
+        min-height: 150px !important;
+        max-height: 300px !important;
+    }
+    
+    /* Compact credits banner */
+    .credits-banner {
+        padding: 8px 12px !important;
+    }
+    
+    .credit-number {
+        font-size: 18px !important;
+    }
+    
+    .credit-label {
+        font-size: 10px !important;
+    }
+    
+    /* Reduce button heights slightly */
+    .btn-primary {
+        height: 44px !important;
+    }
+    
+    .btn-secondary {
+        height: 40px !important;
+    }
+    
+    /* Compact product cards */
+    .product-card {
+        min-width: 200px !important;
+        height: 240px !important;
+    }
+    
+    /* Smaller thumbnails in landscape */
+    .product-thumbnail {
+        width: 70px !important;
+        height: 52px !important;
+    }
+    
+    /* Reduce modal heights */
+    .checkout-modal {
+        max-height: 85vh !important;
+    }
+    
+    .checkout-form-container,
+    .checkout-success,
+    .checkout-error,
+    .checkout-loading {
+        min-height: 40vh !important;
+        padding: 16px 20px !important;
+    }
+    
+    /* Compact zero credits modal */
+    .zero-credits-modal {
+        max-height: 80vh !important;
+        padding: 16px !important;
+    }
+}
+
+/* CSS Fallbacks for backdrop-filter (older browsers) */
+/* Credits banner fallback */
+.credits-banner {
+    background: rgba(255, 255, 255, 0.95); /* Fallback solid background */
+    backdrop-filter: blur(10px); /* Enhancement for modern browsers */
+    -webkit-backdrop-filter: blur(10px); /* Safari support */
+}
+
+/* Floating buttons fallback */
+.floating-btn {
+    background: rgba(255, 255, 255, 0.95); /* Fallback solid background */
+    backdrop-filter: blur(10px); /* Enhancement */
+    -webkit-backdrop-filter: blur(10px); /* Safari */
+}
+
+.floating-btn.reset-btn {
+    background: rgba(108, 117, 125, 0.95); /* Fallback */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.floating-btn.download-btn {
+    background: rgba(74, 144, 226, 0.95); /* Fallback */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Result buttons fallback */
+.result-buttons .floating-btn {
+    background: rgba(255, 255, 255, 0.95); /* Fallback */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.result-buttons .floating-btn.reset-btn {
+    background: rgba(108, 117, 125, 0.95); /* Fallback */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.result-buttons .floating-btn.download-btn {
+    background: rgba(74, 144, 226, 0.95); /* Fallback */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Modal overlays fallback */
+.login-modal-overlay,
+.checkout-modal-overlay {
+    background: rgba(0, 0, 0, 0.85); /* Fallback solid background */
+    backdrop-filter: blur(10px); /* Enhancement */
+    -webkit-backdrop-filter: blur(10px); /* Safari */
+}
+
+/* Zero credits overlay fallback */
+.zero-credits-overlay {
+    background: rgba(0, 0, 0, 0.85); /* Fallback */
+    backdrop-filter: blur(12px); /* Enhancement */
+    -webkit-backdrop-filter: blur(12px); /* Safari */
+}
+
+/* Loading overlay fallback */
+.loading-overlay {
+    background: rgba(255, 255, 255, 0.95); /* Fallback */
+    backdrop-filter: blur(5px); /* Enhancement */
+    -webkit-backdrop-filter: blur(5px); /* Safari */
+}
+
+/* Feature detection for backdrop-filter support */
+@supports not (backdrop-filter: blur(10px)) {
+    /* If backdrop-filter is not supported, use fully opaque backgrounds */
+    .credits-banner {
+        background: rgba(255, 255, 255, 1) !important;
+    }
+    
+    .floating-btn {
+        background: rgba(255, 255, 255, 1) !important;
+    }
+    
+    .floating-btn.reset-btn {
+        background: rgba(108, 117, 125, 1) !important;
+    }
+    
+    .floating-btn.download-btn {
+        background: rgba(74, 144, 226, 1) !important;
+    }
+    
+    .result-buttons .floating-btn {
+        background: rgba(255, 255, 255, 1) !important;
+    }
+    
+    .result-buttons .floating-btn.reset-btn {
+        background: rgba(108, 117, 125, 1) !important;
+    }
+    
+    .result-buttons .floating-btn.download-btn {
+        background: rgba(74, 144, 226, 1) !important;
+    }
+    
+    .login-modal-overlay,
+    .checkout-modal-overlay,
+    .zero-credits-overlay {
+        background: rgba(0, 0, 0, 0.9) !important;
+    }
+    
+    .loading-overlay {
+        background: rgba(255, 255, 255, 1) !important;
+    }
+}
+

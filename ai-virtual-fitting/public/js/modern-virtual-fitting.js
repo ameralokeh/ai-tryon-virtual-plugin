@@ -1061,18 +1061,159 @@
      * Handle product search
      */
     function handleProductSearch() {
-        const searchTerm = $(this).val().toLowerCase();
+        const searchTerm = $(this).val().trim();
         
-        $('.product-card').each(function() {
-            const productName = $(this).find('.product-name').text().toLowerCase();
-            const productPrice = $(this).find('.product-price').text().toLowerCase();
-            
-            if (productName.includes(searchTerm) || productPrice.includes(searchTerm)) {
-                $(this).show();
-            } else {
-                $(this).hide();
+        // Clear any existing search timeout
+        if (window.searchTimeout) {
+            clearTimeout(window.searchTimeout);
+        }
+        
+        // If search is empty, show all loaded products and restore "See More" button
+        if (searchTerm === '') {
+            $('.product-card').show();
+            $('#see-more-btn').show();
+            return;
+        }
+        
+        // Debounce search - wait 500ms after user stops typing
+        window.searchTimeout = setTimeout(function() {
+            performProductSearch(searchTerm);
+        }, 500);
+    }
+    
+    /**
+     * Perform product search via AJAX
+     */
+    function performProductSearch(searchTerm) {
+        const $grid = $('.products-grid');
+        const $seeMoreBtn = $('#see-more-btn');
+        
+        // Show loading indicator
+        $grid.addClass('searching');
+        
+        // Hide "See More" button during search
+        $seeMoreBtn.hide();
+        
+        $.ajax({
+            url: ai_virtual_fitting_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'ai_virtual_fitting_get_products',
+                nonce: ai_virtual_fitting_ajax.nonce,
+                search: searchTerm,
+                per_page: 100 // Load more results for search
+            },
+            success: function(response) {
+                $grid.removeClass('searching');
+                
+                if (response.success && response.data.products) {
+                    const products = response.data.products;
+                    
+                    if (products.length === 0) {
+                        // No results found
+                        showNoResultsMessage(searchTerm);
+                    } else {
+                        // Clear current products (except selected one)
+                        const selectedProductId = $('.product-card.selected').data('product-id');
+                        $('.product-card').each(function() {
+                            if ($(this).data('product-id') !== selectedProductId) {
+                                $(this).remove();
+                            }
+                        });
+                        
+                        // Add search results
+                        products.forEach(function(product) {
+                            // Skip if this product is already in the grid
+                            if ($(`.product-card[data-product-id="${product.id}"]`).length === 0) {
+                                addProductToGrid(product);
+                            }
+                        });
+                        
+                        // Show message about results
+                        showSearchResultsMessage(products.length, searchTerm);
+                    }
+                } else {
+                    showMessage('Search failed. Please try again.', 'error');
+                }
+            },
+            error: function() {
+                $grid.removeClass('searching');
+                showMessage('Search failed. Please try again.', 'error');
             }
         });
+    }
+    
+    /**
+     * Show no results message
+     */
+    function showNoResultsMessage(searchTerm) {
+        const $grid = $('.products-grid');
+        
+        // Remove existing message
+        $('.no-results-message').remove();
+        
+        // Create message
+        const message = $(`
+            <div class="no-results-message" style="
+                grid-column: 1;
+                text-align: center;
+                padding: 40px 20px;
+                color: #7f8c8d;
+            ">
+                <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; fill: #bdc3c7; margin-bottom: 16px;">
+                    <path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
+                </svg>
+                <h3 style="font-size: 18px; font-weight: 600; color: #2c3e50; margin: 0 0 8px 0;">
+                    No products found
+                </h3>
+                <p style="font-size: 14px; margin: 0;">
+                    No products match "${searchTerm}". Try a different search term.
+                </p>
+            </div>
+        `);
+        
+        // Hide all products
+        $('.product-card').hide();
+        
+        // Add message to grid
+        $grid.prepend(message);
+    }
+    
+    /**
+     * Show search results message
+     */
+    function showSearchResultsMessage(count, searchTerm) {
+        // Remove existing message
+        $('.search-results-message, .no-results-message').remove();
+        
+        // Create temporary message
+        const message = $(`
+            <div class="search-results-message" style="
+                position: fixed;
+                bottom: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(74, 144, 226, 0.95);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 25px;
+                font-size: 14px;
+                font-weight: 600;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            ">
+                Found ${count} product${count !== 1 ? 's' : ''} matching "${searchTerm}"
+            </div>
+        `);
+        
+        $('body').append(message);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(function() {
+            message.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 3000);
     }
     
     /**
@@ -1285,7 +1426,7 @@
         } else if (!hasImage) {
             buttonText = 'Upload Image First';
         } else if (!hasProduct) {
-            buttonText = 'Select Dress First';
+            buttonText = 'Select Dress Next'; // Changed from "Select Dress First"
         } else if (canTryOn) {
             buttonText = 'Try On Dress';
         }
