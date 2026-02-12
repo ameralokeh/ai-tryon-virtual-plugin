@@ -75,7 +75,7 @@ class AI_Virtual_Fitting_Image_Processor {
      * Default Google AI Studio API endpoints
      * These can be overridden in admin settings
      */
-    const DEFAULT_GEMINI_TEXT_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+    const DEFAULT_GEMINI_TEXT_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     const DEFAULT_GEMINI_IMAGE_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
     
     /**
@@ -633,13 +633,13 @@ class AI_Virtual_Fitting_Image_Processor {
         
         for ($attempt = 1; $attempt <= $retry_attempts; $attempt++) {
             try {
-                // Prepare request data for image generation using correct format
+                // Prepare request data for image generation using correct format for gemini-3-pro-image-preview
                 $parts = array();
                 
                 // Add text prompt first
                 $parts[] = array('text' => $prompt);
                 
-                // Add all images with correct format
+                // Add all images with correct format (inline_data with underscores for this model)
                 foreach ($images_data as $image_data) {
                     $parts[] = array(
                         'inline_data' => array(
@@ -671,7 +671,13 @@ class AI_Virtual_Fitting_Image_Processor {
                         'endpoint' => $this->get_gemini_image_endpoint(),
                         'parts_count' => count($parts),
                         'has_text' => !empty($prompt),
-                        'images_count' => count($images_data)
+                        'images_count' => count($images_data),
+                        'request_structure' => array(
+                            'has_contents' => isset($request_data['contents']),
+                            'has_generationConfig' => isset($request_data['generationConfig']),
+                            'responseModalities' => $request_data['generationConfig']['responseModalities'],
+                            'imageConfig' => $request_data['generationConfig']['imageConfig']
+                        )
                     )));
                 }
                 

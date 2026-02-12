@@ -112,6 +112,17 @@ class AI_Virtual_Fitting_TryOn_Button {
     private $show_icon;
     
     /**
+     * Show overlay button flag
+     *
+     * Whether to display a round overlay button on the product image.
+     * When true, a floating "Try On" button appears on the bottom-right of the main product image.
+     *
+     * @since 1.0.9.4
+     * @var bool
+     */
+    private $show_overlay_button;
+    
+    /**
      * Require login flag
      *
      * Whether users must be logged in to use the virtual fitting feature.
@@ -178,6 +189,7 @@ class AI_Virtual_Fitting_TryOn_Button {
         $this->allowed_categories = get_option('ai_virtual_fitting_tryon_button_categories', array());
         $this->button_text = get_option('ai_virtual_fitting_tryon_button_text', __('Try on Virtually', 'ai-virtual-fitting'));
         $this->show_icon = get_option('ai_virtual_fitting_tryon_button_show_icon', true);
+        $this->show_overlay_button = get_option('ai_virtual_fitting_tryon_button_show_overlay', false);
         $this->require_login = get_option('ai_virtual_fitting_require_login', true);
     }
     
@@ -589,7 +601,10 @@ class AI_Virtual_Fitting_TryOn_Button {
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('ai_virtual_fitting_tryon_nonce'),
             'user_logged_in' => is_user_logged_in(),
-            'require_login' => $this->require_login
+            'require_login' => $this->require_login,
+            'show_overlay' => $this->show_overlay_button,
+            'button_text' => $this->button_text,
+            'page_url' => get_permalink($this->page_id)
         ));
         
         // Localize login modal script with AJAX data (for non-logged-in users)

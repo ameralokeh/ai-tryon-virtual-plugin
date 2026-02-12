@@ -194,6 +194,7 @@ class AI_Virtual_Fitting_WooCommerce_Integration {
         }
         
         $credits_added = 0;
+        $activity_logger = new AI_Virtual_Fitting_Activity_Logger();
         
         // Check each item in the order
         foreach ($order->get_items() as $item_id => $item) {
@@ -218,8 +219,36 @@ class AI_Virtual_Fitting_WooCommerce_Integration {
                     if ($success) {
                         $credits_added += $total_credits;
                         error_log("AI Virtual Fitting: Added {$total_credits} credits to user {$customer_id} from order {$order_id}");
+                        
+                        // Log successful credit purchase
+                        $product = wc_get_product($product_id);
+                        $product_name = $product ? $product->get_name() : 'Virtual Fitting Credits';
+                        
+                        $activity_logger->log_activity(
+                            $customer_id,
+                            'credit_purchase',
+                            $product_id,
+                            $product_name,
+                            'success',
+                            "Added {$total_credits} credits from order #{$order_id}",
+                            0
+                        );
                     } else {
                         error_log("AI Virtual Fitting: Failed to add credits to user {$customer_id} from order {$order_id}");
+                        
+                        // Log failed credit purchase
+                        $product = wc_get_product($product_id);
+                        $product_name = $product ? $product->get_name() : 'Virtual Fitting Credits';
+                        
+                        $activity_logger->log_activity(
+                            $customer_id,
+                            'credit_purchase',
+                            $product_id,
+                            $product_name,
+                            'error',
+                            "Failed to add {$total_credits} credits from order #{$order_id}",
+                            0
+                        );
                     }
                 }
             }

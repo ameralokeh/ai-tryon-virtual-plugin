@@ -37,6 +37,9 @@ $system_status = $admin_settings->get_system_status();
         <a href="#users" class="nav-tab" data-tab="users">
             <?php _e('User Management', 'ai-virtual-fitting'); ?>
         </a>
+        <a href="#activity" class="nav-tab" data-tab="activity">
+            <?php _e('Activity Log', 'ai-virtual-fitting'); ?>
+        </a>
     </h2>
     
     <div class="ai-virtual-fitting-admin-content">
@@ -271,6 +274,11 @@ $system_status = $admin_settings->get_system_status();
         </div>
         
         </div><!-- End Users Tab -->
+        
+        <!-- Activity Log Tab Content -->
+        <div id="tab-activity" class="tab-content" style="display: none;">
+            <?php include plugin_dir_path(__FILE__) . 'activity-log-page.php'; ?>
+        </div><!-- End Activity Log Tab -->
         
         <!-- Credit Management Modal -->
         <div id="credit-management-modal" style="display: none; position: fixed; z-index: 100000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">

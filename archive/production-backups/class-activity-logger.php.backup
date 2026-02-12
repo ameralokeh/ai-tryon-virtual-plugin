@@ -1,0 +1,333 @@
+<?php
+/**
+ * Activity Logger for AI Virtual Fitting Plugin
+ * Logs all virtual fitting requests with detailed information
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class AI_Virtual_Fitting_Activity_Logger {
+    
+    private $table_name;
+    
+    public function __construct() {
+        global $wpdb;
+        $this->table_name = $wpdb->prefix . 'virtual_fitting_activity_log';
+    }
+    
+    /**
+     * Log a virtual fitting activity
+     *
+     * @param int $user_id User ID
+     * @param string $action Action performed (e.g., 'virtual_fitting', 'credit_purchase')
+     * @param int $product_id Product ID (optional)
+     * @param string $product_name Product name (optional)
+     * @param string $status 'success' or 'error'
+     * @param string $error_message Error message if status is error (optional)
+     * @param float $processing_time Processing time in milliseconds (optional)
+     * @return int|false Log ID on success, false on failure
+     */
+    public function log_activity($user_id, $action, $product_id = 0, $product_name = '', $status = 'success', $error_message = '', $processing_time = 0) {
+        global $wpdb;
+        
+        // Get user information
+        $user = get_userdata($user_id);
+        $user_email = '';
+        $user_name = '';
+        
+        if ($user) {
+            $user_email = $user->user_email;
+            $user_name = $user->display_name;
+        } else {
+            // For guest users or invalid user IDs
+            $user_email = 'guest@example.com';
+            $user_name = 'Guest User';
+        }
+        
+        // Prepare log entry
+        $log_data = array(
+            'user_id' => intval($user_id),
+            'user_email' => sanitize_email($user_email),
+            'user_name' => sanitize_text_field($user_name),
+            'action' => sanitize_text_field($action),
+            'product_id' => $product_id > 0 ? intval($product_id) : null,
+            'product_name' => !empty($product_name) ? sanitize_text_field($product_name) : null,
+            'status' => sanitize_text_field($status),
+            'error_message' => !empty($error_message) ? sanitize_textarea_field($error_message) : null,
+            'ip_address' => $this->get_client_ip(),
+            'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? substr($_SERVER['HTTP_USER_AGENT'], 0, 500) : '',
+            'processing_time' => $processing_time > 0 ? floatval($processing_time) : null,
+            'created_at' => current_time('mysql')
+        );
+        
+        // Define format for each field
+        $format = array(
+            '%d', // user_id
+            '%s', // user_email
+            '%s', // user_name
+            '%s', // action
+            $product_id > 0 ? '%d' : null, // product_id
+            !empty($product_name) ? '%s' : null, // product_name
+            '%s', // status
+            !empty($error_message) ? '%s' : null, // error_message
+            '%s', // ip_address
+            '%s', // user_agent
+            $processing_time > 0 ? '%f' : null, // processing_time
+            '%s'  // created_at
+        );
+        
+        // Remove null formats
+        $format = array_filter($format, function($f) { return $f !== null; });
+        
+        // Insert into database
+        $result = $wpdb->insert(
+            $this->table_name,
+            $log_data,
+            $format
+        );
+        
+        if ($result) {
+            // Auto-cleanup old logs (older than 30 days) - run occasionally
+            if (rand(1, 100) === 1) {
+                $this->cleanup_old_logs();
+            }
+            return $wpdb->insert_id;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Get activity logs with filters
+     *
+     * @param array $args Query arguments
+     * @return array Activity logs
+     */
+    public function get_logs($args = array()) {
+        global $wpdb;
+        
+        $defaults = array(
+            'days' => 3,
+            'status' => '',
+            'user_id' => 0,
+            'action' => '',
+            'limit' => 100,
+            'offset' => 0,
+            'orderby' => 'created_at',
+            'order' => 'DESC'
+        );
+        
+        $args = wp_parse_args($args, $defaults);
+        
+        // Build WHERE clause
+        $where = array('1=1');
+        
+        if ($args['days'] > 0) {
+            $date_from = date('Y-m-d H:i:s', strtotime("-{$args['days']} days"));
+            $where[] = $wpdb->prepare('created_at >= %s', $date_from);
+        }
+        
+        if (!empty($args['status'])) {
+            $where[] = $wpdb->prepare('status = %s', $args['status']);
+        }
+        
+        if ($args['user_id'] > 0) {
+            $where[] = $wpdb->prepare('user_id = %d', $args['user_id']);
+        }
+        
+        if (!empty($args['action'])) {
+            $where[] = $wpdb->prepare('action = %s', $args['action']);
+        }
+        
+        $where_clause = implode(' AND ', $where);
+        
+        // Build ORDER BY clause
+        $orderby = sanitize_sql_orderby($args['orderby'] . ' ' . $args['order']);
+        if (!$orderby) {
+            $orderby = 'created_at DESC';
+        }
+        
+        // Build query
+        $query = "SELECT * FROM {$this->table_name} 
+                  WHERE {$where_clause} 
+                  ORDER BY {$orderby} 
+                  LIMIT %d OFFSET %d";
+        
+        $results = $wpdb->get_results(
+            $wpdb->prepare($query, $args['limit'], $args['offset']),
+            OBJECT
+        );
+        
+        return $results;
+    }
+    
+    /**
+     * Get total count of logs with filters
+     *
+     * @param array $args Query arguments
+     * @return int Total count
+     */
+    public function get_logs_count($args = array()) {
+        global $wpdb;
+        
+        $defaults = array(
+            'days' => 3,
+            'status' => '',
+            'user_id' => 0,
+            'action' => ''
+        );
+        
+        $args = wp_parse_args($args, $defaults);
+        
+        // Build WHERE clause
+        $where = array('1=1');
+        
+        if ($args['days'] > 0) {
+            $date_from = date('Y-m-d H:i:s', strtotime("-{$args['days']} days"));
+            $where[] = $wpdb->prepare('created_at >= %s', $date_from);
+        }
+        
+        if (!empty($args['status'])) {
+            $where[] = $wpdb->prepare('status = %s', $args['status']);
+        }
+        
+        if ($args['user_id'] > 0) {
+            $where[] = $wpdb->prepare('user_id = %d', $args['user_id']);
+        }
+        
+        if (!empty($args['action'])) {
+            $where[] = $wpdb->prepare('action = %s', $args['action']);
+        }
+        
+        $where_clause = implode(' AND ', $where);
+        
+        $query = "SELECT COUNT(*) FROM {$this->table_name} WHERE {$where_clause}";
+        
+        return (int) $wpdb->get_var($query);
+    }
+    
+    /**
+     * Delete logs by IDs
+     *
+     * @param array $ids Log IDs to delete
+     * @return int|false Number of rows deleted or false on failure
+     */
+    public function delete_logs($ids) {
+        global $wpdb;
+        
+        if (empty($ids) || !is_array($ids)) {
+            return false;
+        }
+        
+        $ids = array_map('intval', $ids);
+        $ids_placeholder = implode(',', array_fill(0, count($ids), '%d'));
+        
+        $query = "DELETE FROM {$this->table_name} WHERE id IN ($ids_placeholder)";
+        
+        return $wpdb->query($wpdb->prepare($query, $ids));
+    }
+    
+    /**
+     * Delete all logs
+     *
+     * @return int|false Number of rows deleted or false on failure
+     */
+    public function delete_all_logs() {
+        global $wpdb;
+        return $wpdb->query("TRUNCATE TABLE {$this->table_name}");
+    }
+    
+    /**
+     * Cleanup logs older than 30 days
+     *
+     * @return int|false Number of rows deleted or false on failure
+     */
+    public function cleanup_old_logs() {
+        global $wpdb;
+        
+        $date_threshold = date('Y-m-d H:i:s', strtotime('-30 days'));
+        
+        return $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$this->table_name} WHERE created_at < %s",
+                $date_threshold
+            )
+        );
+    }
+    
+    /**
+     * Get client IP address
+     *
+     * @return string IP address
+     */
+    private function get_client_ip() {
+        $ip_keys = array('HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR');
+        
+        foreach ($ip_keys as $key) {
+            if (array_key_exists($key, $_SERVER) === true) {
+                foreach (explode(',', $_SERVER[$key]) as $ip) {
+                    $ip = trim($ip);
+                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
+                        return $ip;
+                    }
+                }
+            }
+        }
+        
+        return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'unknown';
+    }
+    
+    /**
+     * Get statistics
+     *
+     * @param int $days Number of days to analyze
+     * @return array Statistics
+     */
+    public function get_statistics($days = 7) {
+        global $wpdb;
+        
+        $date_from = date('Y-m-d H:i:s', strtotime("-{$days} days"));
+        
+        $stats = array(
+            'total_requests' => 0,
+            'successful_requests' => 0,
+            'failed_requests' => 0,
+            'unique_users' => 0,
+            'avg_processing_time' => 0
+        );
+        
+        // Total requests
+        $stats['total_requests'] = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$this->table_name} WHERE created_at >= %s",
+            $date_from
+        ));
+        
+        // Successful requests
+        $stats['successful_requests'] = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$this->table_name} WHERE created_at >= %s AND status = 'success'",
+            $date_from
+        ));
+        
+        // Failed requests
+        $stats['failed_requests'] = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$this->table_name} WHERE created_at >= %s AND status = 'error'",
+            $date_from
+        ));
+        
+        // Unique users
+        $stats['unique_users'] = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT user_id) FROM {$this->table_name} WHERE created_at >= %s",
+            $date_from
+        ));
+        
+        // Average processing time
+        $stats['avg_processing_time'] = (float) $wpdb->get_var($wpdb->prepare(
+            "SELECT AVG(processing_time) FROM {$this->table_name} WHERE created_at >= %s AND processing_time IS NOT NULL",
+            $date_from
+        ));
+        
+        return $stats;
+    }
+}

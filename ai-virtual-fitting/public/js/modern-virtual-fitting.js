@@ -893,7 +893,12 @@
      * Handle try-on request
      */
     function handleTryOnRequest() {
-        if (isProcessing) return;
+        // DUPLICATE PREVENTION: Check if already processing
+        if (isProcessing) {
+            console.log('Try-on request blocked: Already processing');
+            showMessage('Please wait for the current request to complete.', 'warning');
+            return;
+        }
 
         // Check if user is logged in
         if (!ai_virtual_fitting_ajax.user_logged_in) {
@@ -912,6 +917,12 @@
             return;
         }
 
+        // DUPLICATE PREVENTION: Set processing flag immediately
+        isProcessing = true;
+        
+        // Disable the Try On button immediately to prevent double-clicks
+        $('#try-on-btn').prop('disabled', true).addClass('btn-disabled');
+        
         // Check credits
         checkCreditsAndProcess();
     }
@@ -932,13 +943,22 @@
                     if (response.data.credits > 0) {
                         processVirtualFitting();
                     } else {
+                        // Reset processing flag if insufficient credits
+                        isProcessing = false;
+                        $('#try-on-btn').prop('disabled', false).removeClass('btn-disabled');
                         showInsufficientCreditsMessage();
                     }
                 } else {
+                    // Reset processing flag on error
+                    isProcessing = false;
+                    $('#try-on-btn').prop('disabled', false).removeClass('btn-disabled');
                     showMessage('Error checking credits. Please try again.', 'error');
                 }
             },
             error: function() {
+                // Reset processing flag on network error
+                isProcessing = false;
+                $('#try-on-btn').prop('disabled', false).removeClass('btn-disabled');
                 showMessage('Network error. Please try again.', 'error');
             }
         });
@@ -948,7 +968,7 @@
      * Process virtual fitting
      */
     function processVirtualFitting() {
-        isProcessing = true;
+        // Note: isProcessing is already set to true in handleTryOnRequest()
         
         // Log the request details for debugging
         console.log('Processing Virtual Fitting:', {
@@ -963,8 +983,8 @@
         // Start rotating wedding dress facts
         startFactRotation();
         
-        // Disable buttons and UI elements
-        $('#try-on-btn').prop('disabled', true).addClass('btn-loading');
+        // Disable buttons and UI elements (button already disabled in handleTryOnRequest)
+        $('#try-on-btn').addClass('btn-loading');
         $('.product-card').css('pointer-events', 'none');
         $('#category-dropdown, #search-box').prop('disabled', true);
 
@@ -997,10 +1017,11 @@
                 }
             },
             complete: function() {
+                // DUPLICATE PREVENTION: Reset processing flag and re-enable button
                 isProcessing = false;
                 stopFactRotation();
                 $('#loading-overlay').fadeOut(300);
-                $('#try-on-btn').prop('disabled', false).removeClass('btn-loading');
+                $('#try-on-btn').prop('disabled', false).removeClass('btn-loading btn-disabled');
                 $('.product-card').css('pointer-events', 'auto');
                 $('#category-dropdown, #search-box').prop('disabled', false);
             }

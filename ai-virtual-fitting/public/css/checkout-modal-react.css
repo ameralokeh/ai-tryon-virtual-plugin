@@ -657,10 +657,31 @@
 }
 
 /* Mobile */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
     .ai-virtual-fitting-app .checkout-modal.react-modal {
-        width: 100%;
-        border-radius: 16px;
+        width: 95%;
+        max-width: 500px;
+        border-radius: var(--avf-radius-xl, 22px);
+    }
+
+    .ai-virtual-fitting-app .checkout-modal-content {
+        padding: 24px 20px;
+    }
+
+    .ai-virtual-fitting-app .checkout-modal-header h3 {
+        font-size: 18px;
+    }
+
+    .ai-virtual-fitting-app .checkout-modal .btn {
+        min-height: 48px;
+        margin-top: 16px;
+    }
+
+    /* Fix WooCommerce price formatting */
+    .ai-virtual-fitting-app .checkout-summary span {
+        all: unset;
+        font-weight: 700;
+        color: var(--avf-text-primary, #2c3e50);
     }
 
     .ai-virtual-fitting-app .form-row {
@@ -670,6 +691,13 @@
     .ai-virtual-fitting-app .form-actions,
     .ai-virtual-fitting-app .error-actions {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .ai-virtual-fitting-app .checkout-modal.react-modal {
+        width: 100%;
+        border-radius: 16px;
     }
 }
 

@@ -93,6 +93,13 @@ class AI_Virtual_Fitting_Core {
     private $tryon_button;
     
     /**
+     * Cleanup Manager instance
+     *
+     * @var AI_Virtual_Fitting_Cleanup_Manager
+     */
+    private $cleanup_manager;
+    
+    /**
      * Get core instance
      *
      * @return AI_Virtual_Fitting_Core
@@ -176,6 +183,9 @@ class AI_Virtual_Fitting_Core {
         if (!is_admin()) {
             $this->tryon_button = new AI_Virtual_Fitting_TryOn_Button();
         }
+        
+        // Initialize Cleanup Manager
+        $this->cleanup_manager = new AI_Virtual_Fitting_Cleanup_Manager();
     }
     
     /**

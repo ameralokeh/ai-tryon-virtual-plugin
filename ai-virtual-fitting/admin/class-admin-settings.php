@@ -208,6 +208,26 @@ class AI_Virtual_Fitting_Admin_Settings {
         
         register_setting(
             self::SETTINGS_GROUP,
+            'ai_virtual_fitting_cleanup_enabled',
+            array(
+                'type' => 'boolean',
+                'sanitize_callback' => array($this, 'sanitize_boolean'),
+                'default' => true
+            )
+        );
+        
+        register_setting(
+            self::SETTINGS_GROUP,
+            'ai_virtual_fitting_cleanup_retention_hours',
+            array(
+                'type' => 'integer',
+                'sanitize_callback' => array($this, 'sanitize_cleanup_hours'),
+                'default' => 24
+            )
+        );
+        
+        register_setting(
+            self::SETTINGS_GROUP,
             'ai_virtual_fitting_enable_analytics',
             array(
                 'type' => 'boolean',
@@ -304,6 +324,16 @@ class AI_Virtual_Fitting_Admin_Settings {
                 'type' => 'boolean',
                 'sanitize_callback' => array($this, 'sanitize_boolean'),
                 'default' => true
+            )
+        );
+        
+        register_setting(
+            self::SETTINGS_GROUP,
+            'ai_virtual_fitting_tryon_button_show_overlay',
+            array(
+                'type' => 'boolean',
+                'sanitize_callback' => array($this, 'sanitize_boolean'),
+                'default' => false
             )
         );
         
@@ -544,6 +574,14 @@ class AI_Virtual_Fitting_Admin_Settings {
             'tryon_button_show_icon',
             __('Show Icon', 'ai-virtual-fitting'),
             array($this, 'render_tryon_button_show_icon_field'),
+            self::PAGE_SLUG,
+            'ai_virtual_fitting_tryon_button_section'
+        );
+        
+        add_settings_field(
+            'tryon_button_show_overlay',
+            __('Show Overlay Button on Image', 'ai-virtual-fitting'),
+            array($this, 'render_tryon_button_show_overlay_field'),
             self::PAGE_SLUG,
             'ai_virtual_fitting_tryon_button_section'
         );
@@ -943,7 +981,7 @@ class AI_Virtual_Fitting_Admin_Settings {
     
     public function render_gemini_text_endpoint_field() {
         $value = get_option('ai_virtual_fitting_gemini_text_api_endpoint', '');
-        $default = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+        $default = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
         ?>
         <input type="url" 
                id="gemini_text_api_endpoint" 
@@ -1104,19 +1142,51 @@ class AI_Virtual_Fitting_Admin_Settings {
     }
     
     public function render_cleanup_hours_field() {
-        $value = get_option('ai_virtual_fitting_temp_file_cleanup_hours', 24);
+        $enabled = get_option('ai_virtual_fitting_cleanup_enabled', true);
+        $retention_hours = get_option('ai_virtual_fitting_cleanup_retention_hours', 24);
+        $stats = AI_Virtual_Fitting_Cleanup_Manager::get_cleanup_stats();
+        $next_run = AI_Virtual_Fitting_Cleanup_Manager::get_next_cleanup_time();
         ?>
-        <input type="number" 
-               id="temp_file_cleanup_hours" 
-               name="ai_virtual_fitting_temp_file_cleanup_hours" 
-               value="<?php echo esc_attr($value); ?>" 
-               min="1" 
-               max="168" 
-               class="small-text" />
-        <span><?php _e('hours', 'ai-virtual-fitting'); ?></span>
-        <p class="description">
-            <?php _e('How long to keep temporary files before automatic cleanup (1-168 hours).', 'ai-virtual-fitting'); ?>
-        </p>
+        <div class="cleanup-settings-wrapper">
+            <label>
+                <input type="checkbox" 
+                       id="cleanup_enabled" 
+                       name="ai_virtual_fitting_cleanup_enabled" 
+                       value="1" 
+                       <?php checked($enabled, true); ?> />
+                <?php _e('Enable automatic cleanup of customer uploads', 'ai-virtual-fitting'); ?>
+            </label>
+            
+            <div class="cleanup-retention-setting" style="margin-top: 10px;">
+                <label for="cleanup_retention_hours">
+                    <?php _e('Delete customer uploads older than:', 'ai-virtual-fitting'); ?>
+                </label>
+                <input type="number" 
+                       id="cleanup_retention_hours" 
+                       name="ai_virtual_fitting_cleanup_retention_hours" 
+                       value="<?php echo esc_attr($retention_hours); ?>" 
+                       min="1" 
+                       max="168" 
+                       class="small-text" />
+                <span><?php _e('hours', 'ai-virtual-fitting'); ?></span>
+            </div>
+            
+            <p class="description">
+                <?php _e('Automatically deletes customer uploaded photos after the specified time to maintain privacy and reduce storage. Recommended: 24 hours.', 'ai-virtual-fitting'); ?>
+            </p>
+            
+            <?php if ($stats['last_run'] !== 'Never'): ?>
+            <div class="cleanup-stats" style="margin-top: 15px; padding: 10px; background: #f0f0f1; border-left: 4px solid #2271b1;">
+                <strong><?php _e('Last Cleanup Run:', 'ai-virtual-fitting'); ?></strong> <?php echo esc_html($stats['last_run']); ?><br>
+                <strong><?php _e('Files Deleted:', 'ai-virtual-fitting'); ?></strong> <?php echo esc_html($stats['deleted_count']); ?><br>
+                <strong><?php _e('Files Kept:', 'ai-virtual-fitting'); ?></strong> <?php echo esc_html($stats['kept_count']); ?><br>
+                <?php if ($stats['error_count'] > 0): ?>
+                <strong style="color: #d63638;"><?php _e('Errors:', 'ai-virtual-fitting'); ?></strong> <?php echo esc_html($stats['error_count']); ?><br>
+                <?php endif; ?>
+                <strong><?php _e('Next Scheduled Run:', 'ai-virtual-fitting'); ?></strong> <?php echo esc_html($next_run); ?>
+            </div>
+            <?php endif; ?>
+        </div>
         <?php
     }
     
@@ -1307,6 +1377,23 @@ class AI_Virtual_Fitting_Admin_Settings {
         <?php
     }
     
+    public function render_tryon_button_show_overlay_field() {
+        $value = get_option('ai_virtual_fitting_tryon_button_show_overlay', false);
+        ?>
+        <label>
+            <input type="checkbox" 
+                   id="tryon_button_show_overlay" 
+                   name="ai_virtual_fitting_tryon_button_show_overlay" 
+                   value="1" 
+                   <?php checked($value, true); ?> />
+            <?php _e('Show round overlay button on product image', 'ai-virtual-fitting'); ?>
+        </label>
+        <p class="description">
+            <?php _e('Display a floating "Try On" button on the bottom-right corner of the main product image. This provides a more prominent call-to-action.', 'ai-virtual-fitting'); ?>
+        </p>
+        <?php
+    }
+    
     public function render_tryon_button_categories_field() {
         $selected_categories = get_option('ai_virtual_fitting_tryon_button_categories', array());
         
@@ -1389,29 +1476,61 @@ class AI_Virtual_Fitting_Admin_Settings {
     public function sanitize_api_key($value) {
         $value = sanitize_text_field(trim($value));
         
+        // Get existing key
+        $existing_key = get_option('ai_virtual_fitting_google_ai_api_key', '');
+        
         // Security Fix 3: Check if value is the masked placeholder
-        if (preg_match('/^•+$/', $value)) {
+        // Use mb_strlen for proper UTF-8 character counting (bullet • is 1 char but 3 bytes)
+        $char_count = mb_strlen($value, 'UTF-8');
+        
+        // Check for empty, bullet characters (•), asterisks (*), or masked placeholder
+        if (empty($value) || 
+            preg_match('/^[•*]+$/u', $value) || 
+            ($char_count === 40 && preg_match('/^[^\w\s]+$/u', $value))) {
             // User didn't change the key, keep existing value
-            return get_option('ai_virtual_fitting_google_ai_api_key', '');
+            error_log('AI Virtual Fitting: API key field contains masked value (detected via UTF-8 char count), preserving existing key');
+            return $existing_key;
         }
         
-        // If empty, allow deletion
-        if (empty($value)) {
-            return '';
+        // Check if the value is already encrypted (base64 format, longer than any real key)
+        if (strlen($value) > 50 && base64_decode($value, true) !== false) {
+            // This is already an encrypted key, keep it
+            error_log('AI Virtual Fitting: API key appears to be already encrypted, preserving it');
+            return $value;
+        }
+        
+        // If the value is the same as existing (somehow), keep it
+        if ($value === $existing_key) {
+            error_log('AI Virtual Fitting: API key unchanged, preserving existing key');
+            return $existing_key;
+        }
+        
+        // Validate new key format (Google AI keys start with AIza and are 39 chars)
+        if (!preg_match('/^AIza[0-9A-Za-z_-]{35}$/', $value)) {
+            error_log('AI Virtual Fitting: Invalid API key format provided');
+            add_settings_error(
+                'ai_virtual_fitting_google_ai_api_key',
+                'invalid_format',
+                __('Invalid API key format. Google AI Studio keys should start with "AIza" and be 39 characters long.', 'ai-virtual-fitting')
+            );
+            return $existing_key;
         }
         
         // New key provided, encrypt it
+        error_log('AI Virtual Fitting: New API key provided, encrypting it');
         $encrypted = AI_Virtual_Fitting_Security_Manager::encrypt($value);
         
         if ($encrypted === false) {
+            error_log('AI Virtual Fitting: Failed to encrypt API key');
             add_settings_error(
                 'ai_virtual_fitting_google_ai_api_key',
                 'encryption_failed',
                 __('Failed to encrypt API key. Please try again.', 'ai-virtual-fitting')
             );
-            return get_option('ai_virtual_fitting_google_ai_api_key', '');
+            return $existing_key;
         }
         
+        error_log('AI Virtual Fitting: API key encrypted successfully');
         return $encrypted;
     }
     

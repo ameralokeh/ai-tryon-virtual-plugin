@@ -125,7 +125,7 @@ class AI_Virtual_Fitting_Plugin_Config {
     /**
      * API endpoints
      */
-    const DEFAULT_GEMINI_TEXT_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+    const DEFAULT_GEMINI_TEXT_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     const DEFAULT_GEMINI_IMAGE_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
     
     /**

@@ -772,42 +772,122 @@ class AI_Virtual_Fitting_Public_Interface {
      * Handle virtual fitting request
      */
     public function handle_fitting_request() {
+        $start_time = microtime(true);
+        $user_id = get_current_user_id();
+        $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+        $product_name = '';
+        $error_message = '';
+        
+        // Get product name for logging
+        if ($product_id) {
+            $product = wc_get_product($product_id);
+            if ($product) {
+                $product_name = $product->get_name();
+            }
+        }
+        
         // Verify nonce
         if (!wp_verify_nonce($_POST['nonce'], 'ai_virtual_fitting_nonce')) {
-            wp_send_json_error(array('message' => 'Security check failed'));
+            $error_message = 'Security check failed';
+            
+            // Log failed attempt
+            $activity_logger = new AI_Virtual_Fitting_Activity_Logger();
+            $activity_logger->log_activity(
+                $user_id,
+                'virtual_fitting',
+                $product_id,
+                $product_name,
+                'error',
+                $error_message,
+                0
+            );
+            
+            wp_send_json_error(array('message' => $error_message));
         }
         
         // Check rate limit
-        $user_id = get_current_user_id();
         if (!AI_Virtual_Fitting_Security_Manager::check_rate_limit('process_fitting', $user_id)) {
+            $error_message = 'Too many requests. Please wait a few minutes and try again.';
+            
+            // Log rate limit error
+            $activity_logger = new AI_Virtual_Fitting_Activity_Logger();
+            $activity_logger->log_activity(
+                $user_id,
+                'virtual_fitting',
+                $product_id,
+                $product_name,
+                'error',
+                $error_message,
+                0
+            );
+            
             wp_send_json_error(array(
-                'message' => 'Too many requests. Please wait a few minutes and try again.',
+                'message' => $error_message,
                 'error_code' => 'RATE_LIMIT_EXCEEDED'
             ));
         }
         
         // Check if user is logged in
         if (!is_user_logged_in()) {
-            wp_send_json_error(array('message' => 'Please log in to use virtual fitting'));
+            $error_message = 'Please log in to use virtual fitting';
+            
+            // Log auth error
+            $activity_logger = new AI_Virtual_Fitting_Activity_Logger();
+            $activity_logger->log_activity(
+                0,
+                'virtual_fitting',
+                $product_id,
+                $product_name,
+                'error',
+                $error_message,
+                0
+            );
+            
+            wp_send_json_error(array('message' => $error_message));
         }
-        
-        $user_id = get_current_user_id();
         
         // Check if user has credits
         $credits = $this->credit_manager->get_customer_credits($user_id);
         if ($credits <= 0) {
+            $error_message = 'Insufficient credits';
+            
+            // Log insufficient credits
+            $activity_logger = new AI_Virtual_Fitting_Activity_Logger();
+            $activity_logger->log_activity(
+                $user_id,
+                'virtual_fitting',
+                $product_id,
+                $product_name,
+                'error',
+                $error_message,
+                0
+            );
+            
             wp_send_json_error(array(
-                'message' => 'Insufficient credits',
+                'message' => $error_message,
                 'credits' => 0
             ));
         }
         
         // Get request parameters
         $temp_filename = sanitize_text_field($_POST['temp_file']);
-        $product_id = intval($_POST['product_id']);
         
         if (empty($temp_filename) || empty($product_id)) {
-            wp_send_json_error(array('message' => 'Missing required parameters'));
+            $error_message = 'Missing required parameters';
+            
+            // Log missing parameters
+            $activity_logger = new AI_Virtual_Fitting_Activity_Logger();
+            $activity_logger->log_activity(
+                $user_id,
+                'virtual_fitting',
+                $product_id,
+                $product_name,
+                'error',
+                $error_message,
+                0
+            );
+            
+            wp_send_json_error(array('message' => $error_message));
         }
         
         // Get customer image path
@@ -816,7 +896,21 @@ class AI_Virtual_Fitting_Public_Interface {
         $customer_image_path = $temp_dir . $temp_filename;
         
         if (!file_exists($customer_image_path)) {
-            wp_send_json_error(array('message' => 'Customer image not found'));
+            $error_message = 'Customer image not found';
+            
+            // Log image not found
+            $activity_logger = new AI_Virtual_Fitting_Activity_Logger();
+            $activity_logger->log_activity(
+                $user_id,
+                'virtual_fitting',
+                $product_id,
+                $product_name,
+                'error',
+                $error_message,
+                0
+            );
+            
+            wp_send_json_error(array('message' => $error_message));
         }
         
         // Log customer image details for debugging
@@ -834,24 +928,83 @@ class AI_Virtual_Fitting_Public_Interface {
         // Get product images
         $product_images = $this->get_product_images_for_ai($product_id);
         if (empty($product_images)) {
-            wp_send_json_error(array('message' => 'Product images not found'));
+            $error_message = 'Product images not found';
+            
+            // Log product images not found
+            $activity_logger = new AI_Virtual_Fitting_Activity_Logger();
+            $activity_logger->log_activity(
+                $user_id,
+                'virtual_fitting',
+                $product_id,
+                $product_name,
+                'error',
+                $error_message,
+                0
+            );
+            
+            wp_send_json_error(array('message' => $error_message));
         }
         
         // Process virtual fitting
         $result = $this->image_processor->process_virtual_fitting($customer_image_path, $product_images);
         
         if (is_wp_error($result)) {
-            wp_send_json_error(array('message' => $result->get_error_message()));
+            $error_message = $result->get_error_message();
+            $processing_time = round((microtime(true) - $start_time) * 1000, 2);
+            
+            // Log processing error
+            $activity_logger = new AI_Virtual_Fitting_Activity_Logger();
+            $activity_logger->log_activity(
+                $user_id,
+                'virtual_fitting',
+                $product_id,
+                $product_name,
+                'error',
+                $error_message,
+                $processing_time
+            );
+            
+            wp_send_json_error(array('message' => $error_message));
         }
         
         // Check if processing was successful
         if (!$result['success']) {
-            wp_send_json_error(array('message' => $result['error']));
+            $error_message = $result['error'];
+            $processing_time = round((microtime(true) - $start_time) * 1000, 2);
+            
+            // Log processing failure
+            $activity_logger = new AI_Virtual_Fitting_Activity_Logger();
+            $activity_logger->log_activity(
+                $user_id,
+                'virtual_fitting',
+                $product_id,
+                $product_name,
+                'error',
+                $error_message,
+                $processing_time
+            );
+            
+            wp_send_json_error(array('message' => $error_message));
         }
         
         // Deduct credit after successful processing
         $this->credit_manager->deduct_credit($user_id);
         $remaining_credits = $this->credit_manager->get_customer_credits($user_id);
+        
+        // Calculate processing time
+        $processing_time = round((microtime(true) - $start_time) * 1000, 2);
+        
+        // Log successful processing
+        $activity_logger = new AI_Virtual_Fitting_Activity_Logger();
+        $activity_logger->log_activity(
+            $user_id,
+            'virtual_fitting',
+            $product_id,
+            $product_name,
+            'success',
+            '',
+            $processing_time
+        );
         
         wp_send_json_success(array(
             'message' => 'Virtual fitting completed successfully',
