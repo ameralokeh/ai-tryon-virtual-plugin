@@ -3,7 +3,7 @@
  * Plugin Name: AI Virtual Fitting
  * Plugin URI: https://example.com/ai-virtual-fitting
  * Description: AI-powered virtual try-on experience for wedding dresses using Google AI Studio's Gemini 2.5 Flash Image model. Integrates with WooCommerce for product management and credit-based usage tracking. Now with mobile-responsive UX and server-side search!
- * Version: 1.0.9.2
+ * Version: 1.0.9.7
  * Author: Your Name
  * Author URI: https://example.com
  * License: GPL v2 or later
@@ -25,7 +25,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('AI_VIRTUAL_FITTING_VERSION', '1.0.9.2');
+define('AI_VIRTUAL_FITTING_VERSION', '1.0.9.7');
 define('AI_VIRTUAL_FITTING_PLUGIN_FILE', __FILE__);
 define('AI_VIRTUAL_FITTING_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('AI_VIRTUAL_FITTING_PLUGIN_URL', plugin_dir_url(__FILE__));

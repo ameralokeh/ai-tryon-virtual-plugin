@@ -70,17 +70,20 @@ if (!defined('ABSPATH')) {
                         </div>
                         <h4 class="consent-title">Image Upload Guidelines</h4>
                         <div class="consent-terms">
-                            <p>By uploading an image, you agree to the following:</p>
+                            <p><strong>I confirm that:</strong></p>
                             <ul>
-                                <li>I will only upload personal photos of myself</li>
-                                <li>Images will not contain nudity or inappropriate content</li>
-                                <li>I have the right to use and upload this image</li>
-                                <li>Images are processed securely and not stored permanently</li>
+                                <li>I am 18+ years old</li>
+                                <li>This photo is mine or I have permission to use it</li>
+                                <li>The image contains no nudity or inappropriate content</li>
+                                <li>I consent to Brides & Tailor using AI technology to temporarily process my image for virtual try-on previews</li>
+                                <li>I understand results are simulations only and not a guarantee of final fit</li>
+                                <li>I agree to the <a href="https://bridesandtailor.com/terms-and-conditions/" target="_blank" rel="noopener noreferrer">Terms & Privacy Policy</a></li>
                             </ul>
+                            <p class="consent-footer">By uploading your photo, you agree to these guidelines.</p>
                         </div>
                         <label class="consent-checkbox">
-                            <input type="checkbox" id="consent-checkbox">
-                            <span class="checkbox-label">I agree to these terms and conditions</span>
+                            <input type="checkbox" id="consent-checkbox" required>
+                            <span class="checkbox-label">I confirm and agree to all of the above</span>
                         </label>
                     </div>
                 </div>
